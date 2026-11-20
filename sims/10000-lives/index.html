@@ -51,6 +51,11 @@ header.top { display: flex; justify-content: space-between; align-items: flex-en
 .lede { max-width: 60ch; color: var(--ink-2); font-size: 16px; margin-top: 12px; }
 .runbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .runbar label { font-size: 13px; color: var(--ink-3); }
+.check { display: inline-flex; gap: 6px; align-items: center; margin-right: 6px; }
+.check input { accent-color: var(--ink); width: 16px; height: 16px; }
+.sources { font-size: 13px; color: var(--ink-3); }
+.sources li { margin: 3px 0; }
+.sources a { color: var(--ink-2); }
 #status { font-size: 13px; color: var(--ink-3); min-width: 120px; }
 
 .tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 22px; }
@@ -140,7 +145,7 @@ header.top { display: flex; justify-content: space-between; align-items: flex-en
 .events li { display: grid; grid-template-columns: 34px 74px 1fr; gap: 8px; font-size: 13.5px; padding: 5px 0; border-bottom: 1px solid var(--surface-2); align-items: baseline; }
 .events .a { font-family: var(--font-mono); color: var(--ink-3); font-size: 12.5px; }
 .events .k { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-3); }
-.events .k.bad { color: var(--bad); } .events .k.good { color: var(--good); } .events .k.family, .events .k.home { color: var(--hi); }
+.events .k.bad, .events .k.crime { color: var(--bad); } .events .k.drug { color: #8a4bb8; } .events .k.good { color: var(--good); } .events .k.family, .events .k.home { color: var(--hi); }
 .lifestats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .lifestats .tile { padding: 8px 10px; }
 .lifestats .tile .v { font-size: 17px; }
@@ -162,9 +167,12 @@ th { font-weight: 500; color: var(--ink-3); }
 <header class="top">
   <div>
     <h1>10,000 <em>Lives</em></h1>
-    <p class="lede">One person, Sam, lives from age 18 to the end, 10,000 times over. Each time, Sam makes ten big life choices at random, and luck handles the rest. Then the narrator goes through what actually mattered.</p>
+    <p class="lede">One person, Sam, lives from age 18 to the end, 10,000 times over. Each time, Sam makes a dozen big life choices at random, from school and money to drugs and crime, and luck handles the rest. Then the narrator goes through what actually mattered.</p>
   </div>
   <div class="runbar">
+    <span class="check"><input id="vice" type="checkbox" checked><label for="vice">Include drugs &amp; crime</label></span>
+    <label for="police">Policing</label>
+    <select id="police"><option value="0">Light</option><option value="1" selected>Typical</option><option value="2">Heavy</option></select>
     <label for="seed">World seed</label>
     <input id="seed" type="number" value="1" min="1" max="999999">
     <button class="primary" id="run" type="button">Live 10,000 new lives</button>
@@ -240,8 +248,28 @@ th { font-weight: 500; color: var(--ink-3); }
         <li><b>Retirement</b> is paid for from savings, government pensions from 65 (with a minimum income top-up, like GIS) and, for long-time employees, a workplace pension.</li>
         <li><b>Life satisfaction</b> each year, on a 0 to 10 scale, adds up Sam's natural temperament, spending (with diminishing returns), marriage, divorce, young and grown children, job fit, layoffs, illness, money stress, commuting and retirement.</li>
         <li><b>Lifespan</b> follows real-world death rates by age, adjusted for exercise, health genes, illness, marriage and poverty.</li>
+        <li><b>Drugs:</b> each Sam has one drug they would use if the chance came. A habit starts from a specific origin (a friend's offer, curiosity, a cousin, coworkers, a partner, a crisis, or for heroin sometimes a painkiller prescription), most often in the late teens and twenties. Regular users can become dependent at real-world rates, recover, relapse and overdose. Heavy drinking and smoking raise the risk of fatal disease over decades, and quitting before 40 removes most of the smoking risk. Opioid addiction is the deadliest, and methadone treatment cuts that risk sharply. Addiction costs money, jobs and marriages.</li>
+        <li><b>Crime</b> can start from a friend, a recruiter, a layoff, debt or a drug habit. Petty crime (theft, small-time dealing, scams) and serious crime (robbery, trafficking, large fraud) bring in money but carry arrest, legal fees, prison, rivals and victims who fight back. Prison stops income and strains marriages, and the risk of overdose is highest just after release. Most criminals age out by their mid-30s. Every Sam can also be the victim of other people's crimes.</li>
+        <li><b>Policing</b> is a setting for the whole world. More policing means fewer victims and murders and more arrests, including more charges for minor offences and drug possession. The direction follows research on police force size; the exact sizes are estimates.</li>
       </ul>
       <p>The numbers are rough, chosen to look like the real world, but this is a model and not a forecast. It shows how these forces combine. It can't tell anyone what their own life will look like.</p>
+      <h3 style="margin-top:14px">Sources for the drug and crime numbers</h3>
+      <ul class="sources">
+        <li><a href="https://pubmed.ncbi.nlm.nih.gov/21145178/">Lopez-Quintero et al. (2011), chance of becoming dependent on nicotine, alcohol, cannabis and cocaine</a></li>
+        <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3227547">Lopez-Quintero et al. (2011), remission from dependence</a></li>
+        <li><a href="https://www.dcp-3.org/sites/default/files/resources/NEJMsa1211128.pdf">Jha et al. (2013), 21st-century hazards of smoking and benefits of quitting</a></li>
+        <li><a href="https://research-information.bris.ac.uk/en/publications/mortality-among-regular-or-dependent-users-of-heroin-and-other-op/">Degenhardt et al. (2011), mortality among people dependent on opioids</a></li>
+        <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7914269">Peacock et al. (2021), mortality among people who use cocaine regularly</a></li>
+        <li><a href="https://www.connections.edu.au/publication-highlight/mortality-among-people-regular-or-problematic-use-amphetamines-systematic">Stockings et al. (2019), mortality among people who use amphetamines regularly</a></li>
+        <li><a href="https://www.bu.edu/aodhealth/?p=314">Roerecke and Rehm, mortality in alcohol use disorders</a></li>
+        <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC2955973">Merrall et al. (2010), drug-related deaths soon after release from prison</a></li>
+        <li><a href="https://health-infobase.canada.ca/substance-related-harms/opioids-stimulants/">Health Canada, opioid- and stimulant-related harms</a></li>
+        <li><a href="https://www150.statcan.gc.ca/n1/daily-quotidien/251202/dq251202a-eng.htm">Statistics Canada, homicide in Canada, 2024</a></li>
+        <li><a href="https://www150.statcan.gc.ca/n1/pub/85-002-x/2012001/article/11647/tbl/tbl03-eng.htm">Statistics Canada, police-reported clearance rates</a></li>
+        <li><a href="https://www.canada.ca/en/correctional-service/corporate/library/research/report/426.html">Correctional Service of Canada, recidivism among federal offenders</a></li>
+        <li><a href="https://www.nber.org/papers/w32747">Garin et al. (2024), the impact of incarceration on employment and earnings</a></li>
+        <li><a href="https://www.aeaweb.org/doi/10.1257/aeri.20200792">Chalfin et al. (2022), police force size and crime</a></li>
+      </ul>
     </section>
   </div>
 
@@ -306,6 +334,51 @@ const DECISIONS = [
     short: ['retiring at 55', 'retiring at 65', 'working until 70'],
     advice: ['retire early at 55', 'retire at 65', 'keep working until 70'] },
 ];
+DECISIONS.push(
+  { key: 'drug', label: 'Drug of choice', noun: 'drugs', tag: 'vice',
+    opts: ['Never use drugs', 'Soft: cannabis', 'Soft: magic mushrooms', 'Medium: heavy drinking', 'Medium: cigarettes', 'Medium: cocaine', 'Hard: meth', 'Hard: heroin / fentanyl'],
+    short: ['never using drugs', 'cannabis', 'magic mushrooms', 'heavy drinking', 'cigarettes', 'cocaine', 'meth', 'heroin and fentanyl'],
+    advice: ['stay away from drugs', 'stay away from anything harder than cannabis', 'stay away from anything harder than mushrooms', 'drink heavily', 'smoke', 'use cocaine', 'use meth', 'use heroin'] },
+  { key: 'crime', label: 'Crime', noun: 'whether to break the law', tag: 'vice',
+    opts: ['Never break the law', 'Only when desperate', 'Petty crime for easy money', 'Serious crime'],
+    short: ['staying honest', 'crime only when desperate', 'petty crime', 'serious crime'],
+    advice: ['stay on the right side of the law', 'only break the law when desperate', 'do a little petty crime', 'go into serious crime'] },
+);
+// Substances. dep = lifetime chance a regular user becomes dependent; depHalf = years until half of eventual cases appear;
+// remit = years until half of dependent users recover (Lopez-Quintero et al. 2011, NESARC; meth and opioid values are assumptions).
+// acute = yearly risk of a fatal overdose/accident while [using, dependent]. Sources listed on the page.
+const DRUGS = [
+  null,
+  { name: 'cannabis', tryName: 'cannabis', illegal: false, dep: 0.089, depHalf: 4, remit: 6, quit: 0.08, cost: [1500, 3500], incPen: 0.93, layoffX: 1.3, hDep: -0.4, acute: [0, 0.0001], divX: 1.3,
+    start: 'smoking cannabis', stop: 'stopped smoking cannabis', depText: 'became dependent on cannabis' },
+  { name: 'magic mushrooms', tryName: 'magic mushrooms', illegal: true, dep: 0, depHalf: 5, remit: 3, quit: 0.15, cost: [300, 300], incPen: 1, layoffX: 1, hDep: 0, acute: [0.00005, 0], divX: 1,
+    start: 'taking magic mushrooms now and then', stop: 'lost interest in mushrooms', depText: '' },
+  { name: 'alcohol', tryName: 'shots', illegal: false, dep: 0.227, depHalf: 13, remit: 14, quit: 0.04, cost: [3000, 7000], incPen: 0.85, layoffX: 2, hDep: -0.9, acute: [0.0004, 0.002], divX: 2.2,
+    start: 'drinking heavily', stop: 'cut back on drinking', depText: 'developed an alcohol use disorder' },
+  { name: 'cigarettes', tryName: 'a cigarette', illegal: false, dep: 0.675, depHalf: 12, remit: 26, quit: 0.05, cost: [2500, 5500], incPen: 0.98, layoffX: 1, hDep: -0.15, acute: [0, 0], divX: 1,
+    start: 'smoking cigarettes', stop: 'quit smoking', depText: 'became a pack-a-day smoker' },
+  { name: 'cocaine', tryName: 'cocaine', illegal: true, dep: 0.209, depHalf: 4, remit: 5, quit: 0.12, cost: [3000, 18000], incPen: 0.85, layoffX: 2.5, hDep: -1.1, acute: [0.0015, 0.008], divX: 2.2,
+    start: 'using cocaine', stop: 'stopped using cocaine', depText: 'became addicted to cocaine' },
+  { name: 'meth', tryName: 'meth', illegal: true, dep: 0.3, depHalf: 3, remit: 6, quit: 0.08, cost: [3000, 12000], incPen: 0.7, layoffX: 3, hDep: -1.4, acute: [0.002, 0.008], divX: 2.5,
+    start: 'using meth', stop: 'stopped using meth', depText: 'became addicted to meth' },
+  { name: 'opioids', tryName: 'heroin', illegal: true, dep: 0.3, depHalf: 2, remit: 8, quit: 0.06, cost: [5000, 25000], incPen: 0.65, layoffX: 3, hDep: -1.6, acute: [0.01, 0.04], divX: 2.5,
+    start: 'using opioids', stop: 'stopped using opioids', depText: 'became addicted to opioids' },
+];
+const CRIMES = {
+  theft:       { verb: 'shoplifting and petty theft', gain: [1500, 6000], arrest: 0.15, prisonP: 0.15, sentence: [0.5, 1], rival: 0, violent: 0 },
+  dealing:     { verb: 'selling drugs on a small scale', gain: [5000, 20000], arrest: 0.12, prisonP: 0.45, sentence: [1, 2], rival: 0.003, violent: 0 },
+  fraud:       { verb: 'running small scams', gain: [4000, 25000], arrest: 0.08, prisonP: 0.3, sentence: [1, 2], rival: 0, violent: 0 },
+  robbery:     { verb: 'armed robbery', gain: [8000, 45000], arrest: 0.3, prisonP: 0.95, sentence: [3, 6], rival: 0, violent: 0.25 },
+  trafficking: { verb: 'drug trafficking', gain: [40000, 200000], arrest: 0.15, prisonP: 0.9, sentence: [3, 8], rival: 0.008, violent: 0 },
+  bigfraud:    { verb: 'large-scale fraud', gain: [40000, 250000], arrest: 0.12, prisonP: 0.7, sentence: [2, 5], rival: 0, violent: 0 },
+};
+// World-level policing. Effects follow the direction of research on police force size (more officers: fewer homicides and
+// serious crimes, more arrests for minor offences); the exact sizes are assumptions.
+const POLICE = [
+  { name: 'Light policing', arrest: 0.7, victim: 1.25, homicide: 1.25, deter: 1.12, possession: 0.6 },
+  { name: 'Typical policing', arrest: 1, victim: 1, homicide: 1, deter: 1, possession: 1 },
+  { name: 'Heavy policing', arrest: 1.4, victim: 0.82, homicide: 0.8, deter: 0.88, possession: 1.7 },
+];
 const EDU = [
   { years: 4, start: 60000, peak: 2.1, debt: 38000, verb: 'studied STEM/business at university' },
   { years: 4, start: 44000, peak: 1.65, debt: 38000, verb: 'studied the arts at university' },
@@ -342,7 +415,8 @@ function taxOn(inc) {
 function randomChoices(R) { return DECISIONS.map(d => Math.floor(R() * d.opts.length)); }
 
 // Simulate one life. c = array of option indices. rec = record events + yearly series.
-function simLife(R, c, rec) {
+function simLife(R, c, rec, opt) {
+  const PM = POLICE[(opt && opt.police != null) ? opt.police : 1];
   const gauss = () => { let u = 0; while (u === 0) u = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * R()); };
   const talent = gauss(), sp = 6.85 + 0.75 * gauss(), hg = gauss();
   const E = EDU[c[0]]; let big = c[1] === 0; const cs = 18 + E.years;
@@ -370,6 +444,18 @@ function simLife(R, c, rec) {
   const inheritAge = R() < 0.35 ? 50 + Math.floor(R() * 19) : 0;
   const inheritAmt = Math.exp(Math.log(90000) + 0.9 * gauss());
   const fixedLuck = { talent, sp, hg };
+  // drugs
+  const drug = c[10] || 0, DG = DRUGS[drug];
+  let dState = 'none', dStart = 0, dOrigin = '', depEver = false, depAt = 0, recovEver = false, recovAt = 0;
+  let smokeYrs = 0, smokeEx = 0, smokeRes = 0, alcEx = 0, mat = false, overdoses = 0, hitBottom = false, lastStress = '';
+  const painAge = drug === 7 && R() < 0.25 ? 22 + Math.floor(R() * 30) : 0;
+  // crime
+  const stance = c[11] || 0;
+  let crimeOn = false, crimeEver = false, crimeStart = 0, crimeOrigin = '', desisted = false, convictions = 0, arrests = 0, possArrests = 0;
+  let prisonLeft = 0, prisonYrs = 0, releasedAt = 0, crimeGain = 0, killedSomeone = false, violentVictim = 0, propVictim = 0;
+  let crimeKind = '', forcedDeath = '', cause = 'natural', lastT = 30000, lastDesperate = false;
+  const baseQ = (age) => 0.000026 * Math.exp(0.092 * age) * (c[8] === 0 ? 0.8 : 1.2) * Math.exp(0.3 * hg) * (chronic ? 1.8 : 1) * (married ? 0.9 : 1) * (outOfMoney ? 1.2 : 1) + (age < 45 ? 0.0005 : 0);
+  const pickW = (items) => { let t = 0; for (const it of items) t += it[1]; let x = R() * t; for (const it of items) { x -= it[1]; if (x < 0) return it[0]; } return items[items.length - 1][0]; };
 
   if (c[0] <= 2) say(18, `started ${c[0] <= 1 ? 'university' : 'college'}${c[0] === 0 ? ' in STEM/business' : c[0] === 1 ? ' in the arts' : ''}`, 'school');
   else if (c[0] === 3) say(18, 'started a paid apprenticeship in a skilled trade', 'school');
@@ -391,6 +477,45 @@ function simLife(R, c, rec) {
       if (big) say(age, 'moved to the big city for work', 'life');
     }
     if (age === 18 && E.years === 0 && big) say(age, 'moved to the big city', 'life');
+
+    // ---- a year in prison ----
+    if (prisonLeft > 0) {
+      prisonLeft--; prisonYrs++;
+      port = port * (1 + r);
+      if (owns) {
+        homeVal *= Math.exp(hr);
+        let hc = homeVal * 0.018;
+        if (mort > 0) { hc += mortPay; mort -= (mortPay - mort * 0.05); if (mort < 0) mort = 0; }
+        port -= married ? hc * 0.5 : hc;
+      }
+      if (sDebt > 0) sDebt *= 1.03;
+      if (otherDebt > 0) otherDebt *= 1.07;
+      if (port < 0) { otherDebt += -port; port = 0; }
+      if (owns && !married && otherDebt > 20000) {
+        const eq = homeVal * 0.94 - mort; owns = false; port += Math.max(0, eq); homeVal = 0; mort = 0;
+        say(age, 'lost their home while in prison', 'bad');
+      }
+      if (married && R() < 0.12) {
+        married = false; everDivorced = true; divorcedAt = age; divorceHit = 2.0; port *= 0.5;
+        if (owns) { port += (homeVal * 0.94 - mort) * 0.5; owns = false; homeVal = 0; mort = 0; }
+        say(age, 'were divorced by their partner while in prison', 'bad');
+      }
+      if (dState === 'dep' && R() < 0.15) { dState = 'recovered'; recovEver = true; recovAt = age; say(age, `got clean from ${DG.name} while inside`, 'drug'); }
+      let h = Math.max(0, Math.min(10, sp - 2.0 + 0.35 * gauss()));
+      hSum += h; years++;
+      const nw = port + (owns ? homeVal - mort : 0) - sDebt - otherDebt;
+      if (age === 65) nw65 = nw;
+      if (S) { S.age.push(age); S.nw.push(nw); S.h.push(h); }
+      const qp = baseQ(age) + 0.001;
+      if (R() < qp) { died = age; cause = R() < 0.001 / qp ? 'prison' : 'natural'; say(age, cause === 'prison' ? `were killed in prison at ${age}` : `died in prison at ${age}`, 'end'); break; }
+      if (prisonLeft === 0) {
+        releasedAt = age + 1;
+        say(age + 1, 'were released from prison with a criminal record', 'crime');
+        if (stance >= 2 && R() < 0.45) { crimeOn = true; } else { crimeOn = false; desisted = true; }
+        if (dState === 'recovered' && R() < 0.4) { dState = 'dep'; }
+      }
+      continue;
+    }
 
     // partner
     if (!married && marryWorks && age === marryAge && !everDivorced) {
@@ -476,6 +601,145 @@ function simLife(R, c, rec) {
         say(age, recession ? 'were laid off during a recession' : 'lost their job', 'bad');
       }
     }
+    // ---- drugs ----
+    let drugCost = 0, odThisYear = false, drugJobLoss = false;
+    hitBottom = false;
+    if (drug > 0) {
+      const illegalX = DG.illegal ? PM.deter : 1;
+      if (dState === 'none') {
+        let hz = (age <= 25 ? 0.22 : age <= 35 ? 0.07 : 0.025) * illegalX;
+        if (lastStress) hz += 0.15;
+        const rx = painAge && age === painAge;
+        if (rx || R() < hz) {
+          dState = 'using'; dStart = age;
+          const origins = rx ? [['prescription', 1]] : [
+            ['curiosity', 30], ['friend', 35], ['partner', married ? 12 : 0], ['coworker', working && age >= cs ? 10 : 0],
+            ['family', age < 23 ? 8 : 0], ['stress', lastStress ? 45 : 0]];
+          dOrigin = pickW(origins);
+          const txt = {
+            curiosity: `tried ${DG.tryName} out of curiosity, and kept ${DG.start}`,
+            friend: `were offered ${DG.tryName} by a friend at a party, and kept ${DG.start}`,
+            partner: `started ${DG.start} with their partner`,
+            coworker: `started ${DG.start} with coworkers after work`,
+            family: `were introduced to ${DG.tryName} by an older cousin, and kept ${DG.start}`,
+            stress: `started ${DG.start} to cope after ${lastStress}`,
+            prescription: 'were prescribed painkillers after an injury, and the pills led to heroin and fentanyl',
+          }[dOrigin];
+          say(age, txt, 'drug');
+        }
+      } else if (dState === 'using') {
+        if (drug === 4 || drug === 3) { /* smoking & drinking tracked below */ }
+        const t = age - dStart, lam = Math.LN2 / DG.depHalf, F = x => 1 - Math.exp(-lam * x);
+        const pd = DG.dep * (F(t + 1) - F(t)) / Math.max(1e-6, 1 - DG.dep * F(t));
+        if (R() < pd) { dState = 'dep'; depEver = true; depAt = age; say(age, DG.depText, 'drug'); }
+        else if (R() < DG.quit) { dState = 'stopped'; say(age, DG.stop, 'drug'); }
+      } else if (dState === 'dep') {
+        if (drug === 7) {
+          if (!mat && R() < 0.25) { mat = true; say(age, 'started treatment with methadone', 'drug'); }
+          else if (mat && R() < 0.3) { mat = false; }
+        }
+        const odP = drug === 7 ? (mat ? 0.03 : 0.1) : drug === 5 ? 0.03 : drug === 6 ? 0.04 : drug === 3 ? 0.02 : 0;
+        if (R() < odP) { overdoses++; odThisYear = true; hitBottom = true; say(age, drug === 3 ? 'ended up in hospital with alcohol poisoning' : `survived an overdose`, 'bad'); }
+        let rem = Math.LN2 / DG.remit * (married ? 1.3 : 1) * (kidsU18 ? 1.2 : 1) * (hitBottom || lastStress === 'an arrest' ? 2 : 1) * (mat ? 1.5 : 1);
+        if (R() < rem) { dState = 'recovered'; recovEver = true; recovAt = age; mat = false; say(age, drug === 4 ? `quit smoking after ${age - dStart} years` : drug === 3 ? 'got sober' : `got clean from ${DG.name}`, 'drug'); }
+      } else if (dState === 'recovered') {
+        if (R() < (age - recovAt < 5 ? 0.08 : 0.02) * (lastStress ? 2 : 1)) { dState = 'dep'; say(age, drug === 4 ? 'started smoking again' : `relapsed on ${DG.name}`, 'drug'); }
+      } else if (dState === 'stopped') {
+        if (R() < 0.03 * (lastStress ? 3 : 1)) { dState = 'using'; dStart = age; }
+      }
+      if (dState === 'using') drugCost = DG.cost[0];
+      if (dState === 'dep') {
+        drugCost = DG.cost[1];
+        if (working && age >= cs && !retired) {
+          inc *= DG.incPen;
+          const lpx = 0.03 * (DG.layoffX - 1);
+          if (!laidOff && lpx > 0 && R() < lpx) { inc *= 0.45; scar *= 0.97; laidOff = true; drugJobLoss = true; say(age, `lost their job because of their ${DG.name === 'alcohol' ? 'drinking' : DG.name + ' use'}`, 'bad'); }
+        }
+      }
+      // long-term disease risk from smoking and heavy drinking
+      const active = dState === 'using' || dState === 'dep';
+      if (drug === 4) {
+        if (active) { smokeYrs++; smokeEx = Math.min(1.9, 0.065 * smokeYrs); smokeRes = smokeEx * (age < 40 ? 0.1 : age < 55 ? 0.4 : 0.65); }
+        else smokeEx = smokeRes + (smokeEx - smokeRes) * 0.85;
+      }
+      if (drug === 3) {
+        const target = dState === 'dep' ? 2.0 : dState === 'using' ? 0.3 : (depEver ? 0.3 : 0);
+        alcEx = active ? target : target + (alcEx - target) * 0.85;
+      }
+      // possession charges for illegal drugs
+      if (DG.illegal && active && R() < (dState === 'dep' ? 0.03 : 0.006) * PM.possession) {
+        possArrests++;
+        if (R() < 0.6) say(age, `were caught with ${DG.name} and sent to a diversion program instead of court`, 'crime');
+        else { convictions++; say(age, `were charged with possession of ${DG.name} and got a criminal record`, 'crime'); }
+        hitBottom = true;
+      }
+    }
+
+    // ---- crime ----
+    let crimeCash = 0, legalFees = 0, arrestedNow = false, jailNow = false, crimeType = '', newPrison = 0;
+    if (stance > 0 && age <= 70) {
+      const desperate = lastDesperate || (laidOff && port < 10000) || (dState === 'dep' && DG.cost[1] > 0.12 * Math.max(lastT, 1));
+      if (!crimeOn) {
+        let hz = stance === 1 ? (desperate ? 0.2 : 0) : (age <= 25 ? 0.22 : age <= 35 ? 0.07 : 0.02) * (desperate ? 2 : 1);
+        hz *= PM.deter * (desisted ? 0.15 : 1);
+        if (R() < hz) {
+          crimeOn = true;
+          if (!crimeEver) {
+            crimeEver = true; crimeStart = age;
+            const needDrugs = dState === 'dep' && DG.cost[1] > 5000;
+            crimeOrigin = stance === 1
+              ? (needDrugs ? 'drugs' : laidOff ? 'jobloss' : 'debt')
+              : pickW([['friend', 35], ['cousin', 15], ['coworker', working && age >= cs ? 12 : 0], ['broke', desperate ? 30 : 8], ['drugs', dState === 'dep' ? 30 : 0], ['opportunity', 15]]);
+            const why = {
+              drugs: `needed money for ${DG ? DG.name : "drugs"}`, jobloss: 'had just lost their job', debt: 'were drowning in debt',
+              friend: 'a friend brought them in', cousin: 'an older cousin recruited them', coworker: 'a coworker showed them an easy scheme',
+              broke: 'they were broke and saw a way out', opportunity: 'an opportunity fell into their lap',
+            }[crimeOrigin];
+            crimeType = crimeKind = stance === 3 ? pickW([['robbery', 35], ['trafficking', 35], ['bigfraud', 30]]) : pickW([['theft', 40], ['dealing', 35], ['fraud', 25]]);
+            say(age, `turned to ${CRIMES[crimeType].verb} because ${why.startsWith('a') || why.startsWith('they') ? why : 'they ' + why}`, 'crime');
+          }
+        }
+      } else {
+        let ds = 0.04 + Math.max(0, age - 25) * 0.006 + (married ? 0.05 : 0) + (kidsU18 ? 0.03 : 0) + (inc > 60000 ? 0.04 : 0);
+        if (stance === 1 && !desperate) ds += 0.4;
+        if (R() < ds) { crimeOn = false; desisted = true; say(age, 'gave up crime for good', 'crime'); }
+      }
+      if (crimeOn) {
+        crimeType = crimeKind = crimeKind || (stance === 3 ? pickW([['robbery', 35], ['trafficking', 35], ['bigfraud', 30]]) : pickW([['theft', 40], ['dealing', 35], ['fraud', 25]]));
+        const K = CRIMES[crimeType];
+        let g = K.gain[0] + R() * (K.gain[1] - K.gain[0]);
+        // other people's choices
+        if (R() < 0.08) { g *= -0.5; say(age, 'were ripped off by a partner in crime and lost money', 'crime'); }
+        let killedNow = false;
+        if (K.violent && R() < K.violent) { // the victim fights back
+          if (R() < 0.05) { killedNow = true; killedSomeone = true; say(age, 'killed someone when a robbery went wrong', 'crime'); }
+          else if (R() < 0.04) { forcedDeath = 'robbery'; }
+          else if (R() < 0.3) { say(age, 'were hurt when a robbery victim fought back', 'bad'); }
+        }
+        if (K.rival && R() < K.rival * PM.homicide) forcedDeath = 'rival';
+        crimeCash = g; crimeGain += g;
+        let pa = K.arrest * PM.arrest;
+        if (R() < 0.1) { pa += 0.25; }
+        if (killedNow) pa = Math.min(0.95, 0.75 * Math.sqrt(PM.arrest));
+        if (!forcedDeath && R() < pa) {
+          arrests++; arrestedNow = true;
+          if (R() < 0.8 || killedNow) {
+            convictions++;
+            legalFees = 5000 + R() * 25000;
+            let pr = killedNow ? 1 : Math.min(1, K.prisonP * (1 + 0.3 * (convictions - 1)));
+            if (R() < pr) {
+              let yrs = killedNow ? 10 + R() * 10 : (K.sentence[0] + R() * (K.sentence[1] - K.sentence[0])) * (1 + 0.25 * (convictions - 1)) * 0.67;
+              if (yrs < 1) { jailNow = true; say(age, `were caught for ${K.verb} and spent a few months in jail`, 'crime'); }
+              else { newPrison = Math.round(yrs); say(age, `were convicted ${killedNow ? 'of manslaughter' : 'for ' + K.verb} and sent to prison for ${newPrison} year${newPrison > 1 ? 's' : ''}`, 'crime'); }
+            } else say(age, `were arrested for ${K.verb} and got probation and a criminal record`, 'crime');
+          } else say(age, `were arrested for ${K.verb}, but the charges were dropped`, 'crime');
+        }
+      }
+    }
+    if (newPrison) { prisonLeft = newPrison; crimeOn = false; }
+    if (convictions > 0) inc *= 0.95;
+    if (releasedAt && age - releasedAt < 5 && !retired) inc *= 0.6 + 0.08 * (age - releasedAt);
+    if (jailNow) inc *= 0.5;
     if (working) { yearsWorked++; earn += inc; if (age >= cs) lastInc = 0.7 * lastInc + 0.3 * inc; }
 
     // household after-tax income
@@ -490,6 +754,7 @@ function simLife(R, c, rec) {
     if (age >= 65 && T < (married ? 34000 : 22000)) T = married ? 34000 : 22000; // income-tested top-up (like GIS)
     if (kidsU18 > 0) T += kidsU18 * 6500 * Math.max(0, 1 - Math.max(0, T - 35000) / 150000); // income-tested child benefit
     if (inheritAge && age === inheritAge) { port += inheritAmt; say(age, `inherited ${money(inheritAmt)} from family`, 'good'); }
+    T += crimeCash - legalFees;
 
     // costs
     const atHome = (age < cs && c[0] !== 3) || (age < 21 && c[0] >= 3);
@@ -522,7 +787,7 @@ function simLife(R, c, rec) {
     if (age >= cs && sDebt > 0) { const p = Math.min(sPay, sDebt * 1.05); debtPay += p; sDebt = sDebt * 1.05 - p; if (sDebt < 1) { sDebt = 0; } }
     if (otherDebt > 0) { const p = Math.min(otherDebt * 1.07, Math.max(3000, otherDebt * 0.2)); debtPay += p; otherDebt = otherDebt * 1.07 - p; if (otherDebt < 1) otherDebt = 0; }
 
-    const D = T - housing - kidCost - debtPay;
+    const D = T - housing - kidCost - debtPay - drugCost;
     if (!owns && !atHome && D < living * 0.9) stressYrs++; else stressYrs = 0;
     if (stressYrs >= 2 && rentMult <= 0.6 && big && !retired) { big = false; rentMult = 1; stressYrs = 0; say(age, 'gave up on the big city and moved back to the hometown', 'life'); }
     if (stressYrs >= 2 && rentMult > 0.6) { rentMult *= 0.75; stressYrs = 0; say(age, 'moved somewhere cheaper to cut the rent', 'life'); }
@@ -575,22 +840,35 @@ function simLife(R, c, rec) {
       }
     }
     // divorce
+    let divorcedNow = false;
     if (married) {
       const ym = age - marriedAt;
       let hz = (c[5] === 0 || everDivorced) ? (ym < 10 ? 0.02 : 0.008) : (ym < 10 ? 0.011 : 0.005);
       if (otherDebt > 0 || laidOff) hz *= 1.6;
+      if (dState === 'dep') hz *= DG.divX;
+      if (crimeOn) hz *= 1.5;
+      if (arrestedNow) hz *= 2;
       if (R() < hz) {
         married = false; everDivorced = true; divorcedAt = age; divorceHit = 2.0;
         port *= 0.5;
         if (owns) { port += (homeVal * 0.94 - mort) * 0.5; owns = false; homeVal = 0; mort = 0; }
-        say(age, 'went through a divorce and split everything in half', 'bad');
+        say(age, 'went through a divorce and split everything in half', 'bad'); divorcedNow = true;
       }
     }
     // health
+    let illNow = false;
     const habit = c[8] === 0 ? 0.75 : 1.3;
     if (!chronic && R() < 0.0004 * Math.exp(0.065 * (age - 18)) * habit * Math.exp(0.25 * hg)) {
-      chronic = true; illHit = 1.6; say(age, 'were diagnosed with a serious long-term illness', 'bad');
+      chronic = true; illHit = 1.6; say(age, 'were diagnosed with a serious long-term illness', 'bad'); illNow = true;
     }
+    // ---- being a victim of other people's crimes ----
+    const hardDep = dState === 'dep' && DG.illegal;
+    const vm = PM.victim * (big ? 1.25 : 1) * (crimeOn ? 2.5 : 1) * (hardDep ? 1.8 : 1);
+    let victimHit = 0;
+    if (R() < 0.04 * vm) { const loss = 500 + R() * 4500; port -= loss; if (port < 0) { otherDebt += -port; port = 0; } propVictim++; victimHit += 0.2; if (loss > 2500) say(age, `had their home broken into and lost ${money(loss)}`, 'bad'); }
+    if (R() < 0.004 * vm) { violentVictim++; victimHit += 0.9; say(age, 'were assaulted and injured', 'bad'); }
+    const dealing = crimeOn && (crimeType === 'dealing' || crimeType === 'trafficking');
+    const qHom = 0.000012 * PM.homicide * (big ? 1.2 : 1) * (dealing ? 25 : crimeOn ? 6 : 1) * (hardDep ? 3 : 1) * (age < 45 ? 1.5 : 0.6);
 
     // happiness (0-10)
     const ceq = Math.max(1000, C) / ((married ? 1.5 : 1) * (1 + 0.3 * kidsU18));
@@ -616,6 +894,12 @@ function simLife(R, c, rec) {
     if (otherDebt > 0) h -= 0.3;
     if (retired && !backToWork) h += outOfMoney ? -1.1 : (age - retireAge < 5 ? 0.5 : 0.2);
     if (backToWork) h -= 0.5;
+    if (dState === 'dep') h += DG.hDep;
+    if (odThisYear) h -= 1.0;
+    if (crimeOn) h -= 0.15;
+    if (arrestedNow) h -= 1.2;
+    if (releasedAt && age - releasedAt < 2) h -= 0.8;
+    h -= victimHit;
     h -= 0.25 * Math.exp(-Math.pow((age - 48) / 10, 2));
     h += 0.35 * gauss();
     h = Math.max(0, Math.min(10, h));
@@ -628,21 +912,46 @@ function simLife(R, c, rec) {
     if (S) { S.age.push(age); S.nw.push(nw); S.h.push(h); }
 
     // mortality
-    let q = 0.000026 * Math.exp(0.092 * age) * (c[8] === 0 ? 0.8 : 1.2) * Math.exp(0.3 * hg) * (chronic ? 1.8 : 1) * (married ? 0.9 : 1) * (outOfMoney ? 1.2 : 1) + (age < 45 ? 0.0005 : 0);
-    if (R() < q || age === 105) {
+    const qN = baseQ(age);
+    const qSmoke = qN * smokeEx, qAlc = qN * alcEx;
+    let qOD = 0, qHeart = 0;
+    if (drug > 0 && (dState === 'using' || dState === 'dep')) {
+      qOD = dState === 'dep' ? (drug === 7 ? (mat ? 0.006 : 0.04) : DG.acute[1]) : DG.acute[0];
+      if (releasedAt && age - releasedAt < 1 && DG.illegal) qOD *= 5;
+      if (dState === 'dep' && (drug === 5 || drug === 6)) qHeart = qN * 0.5;
+    }
+    const q = qN + qSmoke + qAlc + qOD + qHeart + qHom;
+    if (forcedDeath || R() < q || age === 105) {
       died = age;
-      say(age, `died at ${age}${nw > 0 ? `, leaving ${money(nw)}` : ''}`, 'end');
+      if (forcedDeath) cause = forcedDeath;
+      else {
+        const parts = [['natural', qN], ['smoking', qSmoke], ['alcohol', qAlc], ['overdose', qOD], ['heart', qHeart], ['homicide', qHom]];
+        cause = pickW(parts);
+      }
+      const how = {
+        natural: `died at ${age}`, smoking: `died of smoking-related disease at ${age}`, alcohol: `died of alcohol-related disease at ${age}`,
+        overdose: drug === 3 ? `died in an alcohol-related accident at ${age}` : drug === 2 ? `died in an accident while high on mushrooms at ${age}` : drug === 1 ? `died at ${age}` : `died of ${drug === 7 ? 'a fentanyl' : drug === 6 ? 'a meth' : 'a cocaine'} overdose at ${age}`,
+        heart: `died of heart failure linked to ${DG ? DG.name : 'drugs'} at ${age}`, homicide: `were murdered at ${age}`,
+        robbery: `were killed during a robbery at ${age}`, rival: `were shot by a rival dealer at ${age}`,
+      }[cause];
+      if (cause === 'overdose' && drug === 1) cause = 'natural';
+      say(age, `${how}${nw > 0 ? `, leaving ${money(nw)}` : ''}`, 'end');
       break;
     }
+    lastT = T;
+    lastDesperate = (port <= 0 && otherDebt > 0) || bankrupt;
+    lastStress = laidOff ? (drugJobLoss ? '' : 'losing their job') : divorcedNow ? 'their divorce' : bankrupt ? 'going bankrupt' : illNow ? 'a serious diagnosis' : arrestedNow ? 'an arrest' : '';
   }
   return {
     c, nw65, life: died, avgH: hSum / years, earn, ran: outOfMoney, divorced: everDivorced, ill: chronic,
     biz: biz ? biz.out : '', millionAt, everOwned, lostHouse, peakNW, luck: fixedLuck,
+    cause, drugStart: dStart, drugOrigin: dOrigin, depEver, recovEver, overdoses, smokeYrs,
+    crimeEver, crimeStart, crimeOrigin, convictions, arrests, possArrests, prisonYrs, killedSomeone, crimeGain, violentVictim, propVictim,
     events: rec ? ev : null, series: S,
   };
 }
 
-if (typeof module !== 'undefined') module.exports = { DECISIONS, EDU, simLife, lifeRng, randomChoices, money, mulberry32 };
+if (typeof module !== 'undefined') module.exports = { DECISIONS, DRUGS, CRIMES, POLICE, EDU, simLife, lifeRng, randomChoices, money, mulberry32 };
 
 </script>
 <script>
@@ -651,6 +960,11 @@ if (typeof module !== 'undefined') module.exports = { DECISIONS, EDU, simLife, l
 const $ = id => document.getElementById(id);
 const N = 10000;
 let SEED = 1, LIVES = [], STATS = null, SCRIPT = [];
+let VICE = true, POL = 1, ACT = [], POLCMP = null;
+function setAct() { ACT = DECISIONS.map((d, k) => k).filter(k => VICE || DECISIONS[k].tag !== 'vice'); }
+function choose(seed, i) { const c = randomChoices(lifeRng(seed, i, 1)); if (!VICE) { c[10] = 0; c[11] = 0; } return c; }
+const NUMW = { 10: 'ten', 11: 'eleven', 12: 'twelve' };
+setAct();
 
 // ---------- stats helpers ----------
 const sorted = a => a.filter(x => !isNaN(x)).sort((x, y) => x - y);
@@ -681,7 +995,7 @@ function r2(lives, yf, extra) {
   for (const l of lives) {
     const y = yf(l); if (isNaN(y)) continue;
     const x = [1];
-    DECISIONS.forEach((d, k) => { for (let j = 1; j < d.opts.length; j++) x.push(l.c[k] === j ? 1 : 0); });
+    ACT.forEach(k => { for (let j = 1; j < DECISIONS[k].opts.length; j++) x.push(l.c[k] === j ? 1 : 0); });
     if (extra) x.push(...extra(l));
     rows.push(x); ys.push(y);
   }
@@ -706,10 +1020,20 @@ function runAll(seed) {
   SEED = seed;
   LIVES = new Array(N);
   for (let i = 0; i < N; i++) {
-    const c = randomChoices(lifeRng(seed, i, 1));
-    const l = simLife(lifeRng(seed, i, 2), c, false);
+    const c = choose(seed, i);
+    const l = simLife(lifeRng(seed, i, 2), c, false, { police: POL });
     l.id = i;
     LIVES[i] = l;
+  }
+  // the same world under all three policing levels, for the narrator's comparison
+  POLCMP = null;
+  if (VICE) {
+    POLCMP = [0, 1, 2].map(p => {
+      if (p === POL) return viceSummary(LIVES);
+      const L = [];
+      for (let i = 0; i < N; i++) L.push(simLife(lifeRng(seed, i, 2), choose(seed, i), false, { police: p }));
+      return viceSummary(L);
+    });
   }
   computeStats();
   SCRIPT = buildScript();
@@ -719,12 +1043,36 @@ function runAll(seed) {
 }
 function reSim(spec) {
   if (spec.kind === 'main') {
-    const c = randomChoices(lifeRng(SEED, spec.i, 1));
-    const l = simLife(lifeRng(SEED, spec.i, 2), c, true); l.id = spec.i; return l;
+    const c = choose(SEED, spec.i);
+    const l = simLife(lifeRng(SEED, spec.i, 2), c, true, { police: POL }); l.id = spec.i; return l;
   }
-  const l = simLife(lifeRng(SEED, spec.i, 3), spec.c, true); l.id = spec.i; return l;
+  const l = simLife(lifeRng(SEED, spec.i, 3), spec.c, true, { police: POL }); l.id = spec.i; return l;
+}
+const KILLED = ['homicide', 'rival', 'robbery'];
+function viceSummary(L) {
+  const fr = f => L.filter(f).length / L.length;
+  const honest = L.filter(l => l.c[11] === 0);
+  return {
+    murdered: L.filter(l => KILLED.includes(l.cause)).length,
+    victim: fr(l => l.violentVictim > 0), honestVictim: honest.filter(l => l.violentVictim > 0).length / Math.max(1, honest.length),
+    record: fr(l => l.convictions > 0), possession: fr(l => l.possArrests > 0), prison: fr(l => l.prisonYrs > 0),
+    killers: L.filter(l => l.killedSomeone).length,
+  };
 }
 
+function pickHooked() {
+  if (!VICE) return null;
+  const g = LIVES.filter(l => l.c[10] >= 5 && l.depEver && l.cause === 'overdose').sort((a, b) => a.life - b.life);
+  if (!g.length) return null;
+  const pref = g.filter(l => l.drugOrigin === 'friend');
+  const pool = pref.length ? pref : g;
+  return pool[Math.floor(pool.length / 2)].id;
+}
+function pickCrook() {
+  if (!VICE) return null;
+  const g = LIVES.filter(l => l.c[11] === 3 && l.prisonYrs > 0 && l.life >= 66).sort((a, b) => b.crimeGain - a.crimeGain);
+  return g.length ? g[0].id : null;
+}
 function computeStats() {
   const all = summarize(LIVES);
   const by = DECISIONS.map((d, k) => d.opts.map((o, j) => summarize(LIVES.filter(l => l.c[k] === j))));
@@ -733,7 +1081,7 @@ function computeStats() {
   const sdW = Math.sqrt(mean(ashAll.map(v => (v - mean(ashAll)) ** 2)));
   const hAll = LIVES.map(l => l.avgH), sdH = Math.sqrt(mean(hAll.map(v => (v - mean(hAll)) ** 2)));
   const optAsh = by.map((opts, k) => opts.map((s, j) => { const v = sorted(LIVES.filter(l => l.c[k] === j && !isNaN(l.nw65)).map(l => ash(l.nw65))); return qt(v, 0.5); }));
-  const spread = by.map((opts, k) => {
+  const spread = ACT.map(k => { const opts = by[k];
     const nw = opts.map(s => s.nwMed), h = opts.map(s => s.hMean), lf = opts.map(s => s.lifeMean);
     const ix = a => ({ best: a.indexOf(Math.max(...a)), worst: a.indexOf(Math.min(...a)), gap: Math.max(...a) - Math.min(...a) });
     const score = opts.map((s, j) => (optAsh[k][j] - qt(sorted(ashAll), 0.5)) / sdW + (s.hMean - mean(hAll)) / sdH + 0.5 * (s.lifeMean - all.lifeMean) / 5);
@@ -762,6 +1110,7 @@ function computeStats() {
       happiest: byH[0].id, saddest: byH[byH.length - 1].id,
       book: book.length ? book[0].id : byNW[byNW.length - 1].id,
       ordinary: ord.id,
+      hooked: pickHooked(), crook: pickCrook(),
     },
   };
 }
@@ -772,7 +1121,8 @@ const sh = (k, j) => DECISIONS[k].short[j];
 function bio(l) {
   const c = l.c;
   let t = `Sam #${fmtInt(l.id + 1)} ${EDU[c[0]].verb}, ${c[1] === 0 ? 'moved to the big city' : 'stayed in the hometown'}, saved ${[5, 15, 25][c[3]]}% of their pay in ${sh(4, c[4])} and ${c[8] === 0 ? 'exercised regularly' : 'mostly sat on the couch'}.`;
-  const prio = { bad: 3, good: 3, home: 2, family: 2, retire: 2, career: 2, life: 1 };
+  if (VICE) t += ` ${c[10] ? `Their drug of choice was ${DECISIONS[10].short[c[10]]}` : 'They never touched drugs'}, and they ${['never broke the law', 'would break the law only if desperate', 'were open to petty crime', 'were willing to commit serious crime'][c[11]]}.`;
+  const prio = { drug: 4, crime: 4, bad: 3, good: 3, home: 2, family: 2, retire: 2, career: 2, life: 1 };
   // collapse repeats (crashes, jackpots, layoffs...) into one line with a count
   const keyOf = e => e.text.split(/[0-9$]/)[0];
   const seen = new Map(), ev = [];
@@ -784,7 +1134,7 @@ function bio(l) {
   }
   for (const e of ev) if (e.n > 1) { e.text += ` (the first of ${e.n} times)`; if (/crash/.test(e.text)) e.kind = 'life'; }
   const picked = ev.map((e, i) => ({ e, i, p: prio[e.kind] || 1 }))
-    .sort((a, b) => b.p - a.p || a.i - b.i).slice(0, 6).sort((a, b) => a.i - b.i).map(x => x.e);
+    .sort((a, b) => b.p - a.p || a.i - b.i).slice(0, VICE ? 8 : 6).sort((a, b) => a.i - b.i).map(x => x.e);
   const parts = picked.map(e => `At ${e.age}, they ${e.text}.`);
   if (parts.length) t += ' ' + parts.join(' ');
   const end = l.events.find(e => e.kind === 'end');
@@ -799,8 +1149,9 @@ function buildScript() {
 
   ch.push({ title: 'The experiment', paras: [
     P(`Meet Sam. Sam is 18 and just finished high school, with a whole life ahead. We let Sam live that life ${fmtInt(N)} times.`),
-    P(`In every life, Sam makes ten big decisions, each picked at random: ${joinList(D.map(d => d.noun))}. Everything else is left to chance: the talent Sam was born with, which years the stock market crashes, layoffs, illness, love and loss.`),
+    P(`In every life, Sam makes ${NUMW[ACT.length]} big decisions, each picked at random: ${joinList(ACT.map(k => D[k].noun))}. Everything else is left to chance: the talent Sam was born with, which years the stock market crashes, layoffs, illness, love and loss.`),
     P(`Because the choices were assigned at random, any difference between groups of Sams comes from the choice itself and not from the kind of person who makes it. At least, inside this world.`),
+    ...(VICE ? [P(`One warning before we start. Drugs and crime were handed out at random too, so this island has far more drug users and criminals than any real town. Compare groups of Sams with each other, and don't read the overall totals as real-world rates.`)] : []),
   ] });
 
   const nwS = A.nwS;
@@ -842,7 +1193,7 @@ function buildScript() {
     paras.push(P(`Here's the catch. Sams who chose ${sh(tens.k, tens.b)} ended up ${money(tens.gap)} richer at 65 than Sams who chose ${sh(tens.k, tens.j)}, yet they were less satisfied with life: ${o[tens.b].hMean.toFixed(2)} against ${o[tens.j].hMean.toFixed(2)}. More money did not buy more happiness here.`));
   }
   const hs = A.hS;
-  paras.push(P(`And no single choice came close to luck. The happiest tenth of Sams averaged ${mean(hs.slice(-Math.floor(hs.length / 10))).toFixed(1)}, the unhappiest tenth ${mean(hs.slice(0, Math.floor(hs.length / 10))).toFixed(1)}. Sam's built-in temperament, which Sam never chose, explained more of that gap than all ten decisions put together.`));
+  paras.push(P(`And no single choice came close to luck. The happiest tenth of Sams averaged ${mean(hs.slice(-Math.floor(hs.length / 10))).toFixed(1)}, the unhappiest tenth ${mean(hs.slice(0, Math.floor(hs.length / 10))).toFixed(1)}. Sam's built-in temperament, which Sam never chose, explained more of that gap than all ${NUMW[ACT.length]} decisions put together.`));
   ch.push({ title: 'What mattered for happiness', paras });
 
   // lifespan
@@ -871,10 +1222,12 @@ function buildScript() {
     P(`Loyal employees had a quiet advantage: a workplace pension. Only ${pct(cr[0].ran)}% of Sams who stayed with one employer ran out of money in retirement, compared with ${pct(cr[1].ran)}% of job-hoppers, even though the job-hoppers earned more along the way.`),
   ] });
 
+  if (VICE) ch.push(...viceChapters());
+
   // luck
   ch.push({ title: 'Luck versus choices', paras: [
-    P(`Put all ten decisions together and they explain about <b>${pct(S.r2w)}%</b> of the differences in how wealthy Sam ended up. Add the talent Sam was born with and that rises to ${pct(S.r2wT)}%. The rest is the luck of the draw: which years the market crashed, layoffs, divorces, illnesses and inheritances.`),
-    P(`For happiness, the ten choices explain only ${pct(S.r2h)}%. Add Sam's natural temperament and it jumps to ${pct(S.r2hT)}%. Choices shape a life, but much of how a life feels was decided before Sam made a single one.`),
+    P(`Put all ${NUMW[ACT.length]} decisions together and they explain about <b>${pct(S.r2w)}%</b> of the differences in how wealthy Sam ended up. Add the talent Sam was born with and that rises to ${pct(S.r2wT)}%. The rest is the luck of the draw: which years the market crashed, layoffs, divorces, illnesses and inheritances.`),
+    P(`For happiness, the ${NUMW[ACT.length]} choices explain only ${pct(S.r2h)}%. Add Sam's natural temperament and it jumps to ${pct(S.r2hT)}%. Choices shape a life, but much of how a life feels was decided before Sam made a single one.`),
   ] });
 
   // spotlights
@@ -884,7 +1237,9 @@ function buildScript() {
     ['The richest Sam', sp.richest], ['The happiest Sam', sp.happiest],
     ['The Sam who did everything by the book', sp.book], ['The most ordinary Sam', sp.ordinary], ['The unhappiest Sam', sp.saddest],
   ];
-  ch.push({ title: 'Five Sams up close', spots: spots.map(([tag, id]) => {
+  if (VICE && sp.hooked != null) spots.push(['The Sam who got hooked', sp.hooked]);
+  if (VICE && sp.crook != null) spots.push(['The Sam who chose crime', sp.crook]);
+  ch.push({ title: `${['', '', '', '', 'Four', 'Five', 'Six', 'Seven'][spots.length]} Sams up close`, spots: spots.map(([tag, id]) => {
     const l = L(id);
     let t = bio(l);
     if (tag.includes('by the book')) t = `This Sam saved 25% in index funds and exercised, which is the textbook advice, and still had the worst result of any Sam who did. ` + t;
@@ -899,6 +1254,55 @@ function buildScript() {
     P(`One caution. This is a model with rules written down from rough real-world numbers. It isn't a prediction about any real life, and different assumptions would change some of these conclusions. Run a new world with a different seed to see which findings hold up.`),
   ] });
   return ch;
+}
+
+function viceChapters() {
+  const P = (text) => ({ text });
+  const D = DECISIONS, out = [];
+  const g = (k, j) => LIVES.filter(l => l.c[k] === j);
+  const avg = a => mean(a);
+  const lifeOf = j => avg(g(10, j).map(l => l.life));
+  const drugDeath = l => ['smoking', 'alcohol', 'overdose', 'heart'].includes(l.cause);
+  const share = (a, f) => a.length ? a.filter(f).length / a.length : 0;
+  // --- drugs ---
+  const users = LIVES.filter(l => l.drugStart > 0);
+  const oc = {}; users.forEach(l => { oc[l.drugOrigin] = (oc[l.drugOrigin] || 0) + 1; });
+  const op = k => pct((oc[k] || 0) / Math.max(1, users.length));
+  const never = lifeOf(0);
+  const rows = [1, 2, 3, 4, 5, 6, 7].map(j => ({ j, life: lifeOf(j), lost: never - lifeOf(j), dd: share(g(10, j), drugDeath) })).sort((a, b) => b.lost - a.lost);
+  const worst = rows[0], cig = rows.find(r => r.j === 4), coke = rows.find(r => r.j === 5), meth = rows.find(r => r.j === 6);
+  const depR = j => { const u = g(10, j).filter(l => l.drugStart > 0); return pct(share(u, l => l.depEver)); };
+  const recR = j => { const d = g(10, j).filter(l => l.depEver); return pct(share(d, l => l.recovEver)); };
+  const dp = [
+    P(`Every Sam had one drug they would use if the chance came, and nearly all of them eventually tried it. No habit appeared out of nowhere. ${op('friend')}% started when a friend offered something at a party, ${op('curiosity')}% out of plain curiosity, ${op('family')}% through an older cousin, ${op('coworker')}% with coworkers after work and ${op('stress')}% to cope with a crisis like a layoff, a divorce or a diagnosis. A few heroin users started with a painkiller prescription after an injury.`),
+    P(`Sams who never used drugs lived ${never.toFixed(1)} years on average. Cannabis and mushroom Sams lived about as long, at ${lifeOf(1).toFixed(1)} and ${lifeOf(2).toFixed(1)}. The deadliest choice was <b>${D[10].short[worst.j]}</b>: ${worst.life.toFixed(1)} years on average, ${worst.lost.toFixed(1)} fewer, and ${pct(worst.dd)}% of those Sams died from it.`),
+  ];
+  if (cig.lost > coke.lost && cig.lost > meth.lost) dp.push(P(`The surprise was cigarettes. Smoking Sams lost ${cig.lost.toFixed(1)} years, more than Sams who chose cocaine (${coke.lost.toFixed(1)}) or meth (${meth.lost.toFixed(1)}). Cigarettes rarely kill quickly, but ${depR(4)}% of smokers got hooked, and decades of smoking add up. Those who quit before 40 got most of their years back.`));
+  dp.push(P(`How addictive each one was matched real research closely. ${depR(4)}% of Sams who started smoking became dependent, against ${depR(5)}% for cocaine, ${depR(3)}% for heavy drinking, ${depR(1)}% for cannabis and none for mushrooms. Most who got hooked eventually recovered (${recR(5)}% of cocaine addicts and ${recR(3)}% of problem drinkers), but opioid recovery was a cycle of relapses, and ${pct(share(g(10, 7).filter(l => l.depEver), l => l.cause === 'overdose'))}% of Sams addicted to opioids died of an overdose. Those who stayed on methadone were far safer.`));
+  out.push({ title: 'Drugs', paras: dp });
+  // --- crime ---
+  const st = j => g(11, j);
+  const ser = st(3), pet = st(2), hon = st(0), des = st(1);
+  const medNW = a => qt(sorted(a.map(l => l.nw65)), 0.5);
+  const crooks = LIVES.filter(l => l.crimeEver);
+  const cc = {}; crooks.forEach(l => { cc[l.crimeOrigin] = (cc[l.crimeOrigin] || 0) + 1; });
+  const cp = k => pct((cc[k] || 0) / Math.max(1, crooks.length));
+  const lifeGap = avg(hon.map(l => l.life)) - avg(ser.map(l => l.life));
+  out.push({ title: 'Crime and punishment', paras: [
+    P(`Does crime pay? Sams who went into serious crime took in ${money(avg(ser.map(l => l.crimeGain)))} on average over their criminal careers. Yet they reached 65 with a median of ${money(medNW(ser))}, against ${money(medNW(hon))} for Sams who stayed honest. ${pct(share(ser, l => l.prisonYrs > 0))}% of them went to prison, ${pct(share(ser, l => ['rival', 'robbery'].includes(l.cause)))}% were killed by a rival or during a robbery, and ${pct(share(ser, l => l.killedSomeone))}% killed someone. ${lifeGap > 0.3 ? `They lived ${lifeGap.toFixed(1)} fewer years than honest Sams.` : ''}`),
+    P(`Petty crime was a slower grind. ${pct(share(pet, l => l.arrests > 0))}% of petty criminals were arrested at least once, and most got probation and a criminal record rather than prison. Sams who only broke the law when desperate usually committed a crime or two after losing a job or running out of money, and ${pct(share(des, l => l.crimeEver))}% of them ever crossed that line.`),
+    P(`Like drug habits, criminal careers started somewhere: ${cp('friend')}% were brought in by a friend, ${cp('cousin')}% were recruited by an older cousin, ${cp('broke')}% were broke and saw a way out, ${cp('drugs')}% needed money for drugs, and ${cp('debt') + cp('jobloss')}% were desperate after debt or a layoff. Most criminals aged out of it by their mid-30s, especially once they had a partner, kids or a decent job.`),
+    P(`Crime also hurt the Sams who never committed any. ${pct(share(hon, l => l.violentVictim > 0))}% of honest Sams were assaulted at least once, and ${hon.filter(l => KILLED.includes(l.cause)).length} of them were murdered.`),
+  ] });
+  // --- police ---
+  if (POLCMP) {
+    const [Lp, , Hp] = POLCMP;
+    out.push({ title: 'The cops', paras: [
+      P(`To see what police do, we ran this exact world three times. Every Sam kept the same luck and the same choices, and only the amount of policing changed. Under heavy policing, ${pct(Hp.victim)}% of Sams were ever violently attacked, against ${pct(Lp.victim)}% under light policing, and the number of murdered Sams fell from ${Lp.murdered} to ${Hp.murdered}.`),
+      P(`It had a price. With heavy policing, ${pct(Hp.record)}% of Sams ended up with a criminal record, against ${pct(Lp.record)}% under light policing, and ${pct(Hp.possession)}% were charged or diverted for drug possession, against ${pct(Lp.possession)}%. That matches real research, which finds that more officers prevent homicides and serious crimes but also bring more arrests for minor offences. This world is set to ${['light', 'typical', 'heavy'][POL]} policing; change it at the top to rerun the story.`),
+    ] });
+  }
+  return out;
 }
 
 const strip = s => s.replace(/<[^>]+>/g, '');
@@ -958,14 +1362,19 @@ function placeTip(tip, box, px, py) {
 // ---------- scatter ----------
 const XT = [-500000, -100000, 0, 100000, 250000, 500000, 1e6, 2.5e6, 5e6, 1e7, 2.5e7];
 let scPts = [], scHover = -1;
-function fillHighlightControls(keep) {
-  const dsel = $('hiDec');
-  if (!dsel.options.length) {
-    DECISIONS.forEach((d, k) => { const o = document.createElement('option'); o.value = k; o.textContent = d.label; dsel.appendChild(o); });
-    dsel.value = 4;
+let hiBound = false;
+function fillHighlightControls() {
+  const dsel = $('hiDec'), prev = dsel.value, prevOpt = $('hiOpt').value;
+  dsel.innerHTML = '';
+  ACT.forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = DECISIONS[k].label; dsel.appendChild(o); });
+  if (!hiBound) {
+    hiBound = true;
     dsel.addEventListener('change', () => { fillOpts(); drawScatter(); });
     $('hiOpt').addEventListener('change', drawScatter);
-    fillOpts(); $('hiOpt').value = 2;
+    dsel.value = 4; fillOpts(); $('hiOpt').value = 2;
+  } else {
+    dsel.value = ACT.includes(+prev) ? prev : 4; fillOpts();
+    if (+dsel.value === +prev) $('hiOpt').value = prevOpt;
   }
 }
 function fillOpts() {
@@ -1060,18 +1469,18 @@ function renderFx() {
   $('fx').innerHTML = html;
   // table view
   let t = '<table><thead><tr><th>Choice</th><th>Sams</th><th>Median net worth at 65</th><th>Millionaire at 65</th><th>Avg life satisfaction</th><th>Avg lifespan</th><th>Ran out of savings</th></tr></thead><tbody>';
-  DECISIONS.forEach((d, k) => d.opts.forEach((o, j) => { const s = S.by[k][j]; t += `<tr><td>${d.label}: ${o}</td><td>${fmtInt(s.n)}</td><td>${money(s.nwMed)}</td><td>${pct(s.mill)}%</td><td>${s.hMean.toFixed(2)}</td><td>${s.lifeMean.toFixed(1)}</td><td>${pct(s.ran)}%</td></tr>`; }));
+  ACT.forEach(k => DECISIONS[k].opts.forEach((o, j) => { const d = DECISIONS[k]; const s = S.by[k][j]; t += `<tr><td>${d.label}: ${o}</td><td>${fmtInt(s.n)}</td><td>${money(s.nwMed)}</td><td>${pct(s.mill)}%</td><td>${s.hMean.toFixed(2)}</td><td>${s.lifeMean.toFixed(1)}</td><td>${pct(s.ran)}%</td></tr>`; }));
   $('fxTableBody').innerHTML = t + '</tbody></table>';
 }
 
 // ---------- life panel ----------
 let CUR = null, CURLIFE = null;
-const KIND = { bad: 'Setback', good: 'Windfall', home: 'Home', family: 'Family', retire: 'Retirement', career: 'Work', school: 'School', life: 'Life', end: 'End' };
+const KIND = { drug: 'Drugs', crime: 'Crime', bad: 'Setback', good: 'Windfall', home: 'Home', family: 'Family', retire: 'Retirement', career: 'Work', school: 'School', life: 'Life', end: 'End' };
 function openLife(spec, scroll) {
   CUR = spec;
   const l = reSim(spec); CURLIFE = l;
   $('lifeTitle').textContent = spec.kind === 'main' ? `Sam #${fmtInt(spec.i + 1)}` : 'A Sam on your path';
-  $('lifeChips').innerHTML = DECISIONS.map((d, k) => `<span>${d.opts[l.c[k]]}</span>`).join('');
+  $('lifeChips').innerHTML = ACT.map(k => `<span>${DECISIONS[k].opts[l.c[k]]}</span>`).join('');
   $('lifeStats').innerHTML = tile('Net worth at 65', isNaN(l.nw65) ? 'n/a' : money(l.nw65)) + tile('Satisfaction', l.avgH.toFixed(2)) + tile('Lived to', l.life);
   $('lifeBio').textContent = bio(l);
   $('lifeEvents').innerHTML = l.events.map(e => `<li><span class="a">${e.age}</span><span class="k ${e.kind}">${KIND[e.kind] || ''}</span><span>${e.text.charAt(0).toUpperCase() + e.text.slice(1)}</span></li>`).join('');
@@ -1135,7 +1544,7 @@ let PATH = null;
 (function buildPathGrid() {
   const g = $('pathGrid');
   DECISIONS.forEach((d, k) => {
-    const w = document.createElement('div');
+    const w = document.createElement('div'); w.id = 'pw' + k;
     w.innerHTML = `<label for="pd${k}">${d.label}</label><select id="pd${k}"><option value="-1">Leave it to chance</option>${d.opts.map((o, j) => `<option value="${j}">${o}</option>`).join('')}</select>`;
     g.appendChild(w);
   });
@@ -1145,12 +1554,12 @@ let PATH = null;
 $('pathReset').addEventListener('click', () => { DECISIONS.forEach((d, k) => { $('pd' + k).value = -1; }); });
 $('pathRun').addEventListener('click', runPath);
 function runPath() {
-  const fixed = DECISIONS.map((d, k) => +$('pd' + k).value);
+  const fixed = DECISIONS.map((d, k) => ACT.includes(k) ? +$('pd' + k).value : 0);
   const lives = [];
   for (let i = 0; i < PATHN; i++) {
     const rc = randomChoices(lifeRng(SEED, i, 4));
     const c = fixed.map((v, k) => v >= 0 ? v : rc[k]);
-    const l = simLife(lifeRng(SEED, i, 3), c, false); l.id = i; lives.push(l);
+    const l = simLife(lifeRng(SEED, i, 3), c, false, { police: POL }); l.id = i; lives.push(l);
   }
   PATH = { fixed, lives, s: summarize(lives) };
   $('pathOut').style.display = 'block';
@@ -1223,8 +1632,15 @@ $('pathLife').addEventListener('click', () => {
 });
 
 // ---------- controls ----------
+function syncVice() {
+  VICE = $('vice').checked; POL = +$('police').value; setAct();
+  $('police').disabled = !VICE;
+  DECISIONS.forEach((d, k) => { const w = $('pw' + k); if (w) w.style.display = ACT.includes(k) ? '' : 'none'; });
+}
+$('vice').addEventListener('change', () => { syncVice(); go(SEED); });
+$('police').addEventListener('change', () => { syncVice(); go(SEED); });
 function go(seed) {
-  $('status').textContent = 'Living 10,000 lives…';
+  $('status').textContent = VICE ? 'Living 30,000 lives…' : 'Living 10,000 lives…';
   $('run').disabled = true;
   setTimeout(() => {
     const t0 = performance.now();
@@ -1235,6 +1651,7 @@ function go(seed) {
 }
 $('run').addEventListener('click', () => { const s = (parseInt($('seed').value, 10) || 1); const next = s === SEED ? s + 1 : s; $('seed').value = next; go(next); });
 let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { drawScatter(); drawLifeCharts(); drawHist(); }, 120); });
+syncVice();
 runAll(1);
 runPath();
 $('status').textContent = '';
