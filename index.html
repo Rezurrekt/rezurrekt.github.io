@@ -39,6 +39,13 @@ header p { color: var(--ink-2); max-width: 56ch; font-size: 17px; margin: 16px 0
 .go { color: var(--hi); font-weight: 600; }
 .card.soon { border-style: dashed; background: transparent; pointer-events: none; }
 .card.soon .body { justify-content: center; align-items: center; text-align: center; min-height: 260px; color: var(--ink-3); }
+.mf-thumb { position: relative; background: #FAF8F3; padding: 16px 18px; display: grid; grid-template-columns: 1fr 34%; grid-auto-rows: min-content; gap: 8px 12px; }
+.mf-note { grid-column: 1; display: flex; flex-direction: column; gap: 5px; background: #fff; border: 1px solid rgba(100,80,50,.14); border-radius: 8px; padding: 8px 10px; }
+.mf-note i { width: 38px; height: 7px; border-radius: 9px; opacity: .55; }
+.mf-note b, .mf-side b { display: block; height: 6px; width: 100%; border-radius: 4px; background: #E3DDCF; }
+.mf-side { grid-column: 2; grid-row: 1 / 4; display: flex; flex-direction: column; gap: 7px; background: #F0E8DA; border-left: 3px solid #C8A882; border-radius: 8px; padding: 10px; }
+.mf-side b { background: #DCCBB2; }
+.note { font-size: 13px; color: var(--ink-3); margin: 12px 0 0; max-width: 70ch; }
 footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--ink-3); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
 footer a { color: var(--ink-2); }
 @media (prefers-reduced-motion: reduce) { .card { transition: none; } .card:hover { transform: none; } }
@@ -70,6 +77,27 @@ footer a { color: var(--ink-2); }
 
     <div class="card soon"><span class="body"><span>More worlds coming soon</span></span></div>
   </div>
+
+  <div class="label">Apps</div>
+  <div class="grid">
+    <a class="card" href="apps/mindflow/">
+      <span class="thumb mf-thumb" aria-hidden="true">
+        <span class="mf-note"><i style="background:#4CA85A"></i><b></b><b style="width:70%"></b></span>
+        <span class="mf-note"><i style="background:#5B86D6"></i><b style="width:85%"></b></span>
+        <span class="mf-note"><i style="background:#F07B2E"></i><b style="width:60%"></b><b style="width:40%"></b></span>
+        <span class="mf-side"><b style="width:80%"></b><b></b><b style="width:65%"></b></span>
+      </span>
+      <span class="body">
+        <h2>Mindflow</h2>
+        <p>A daily notebook for thoughts, tasks and ideas. AI sorts your notes, writes a summary of the day, pulls out action items and suggests calendar events from what you wrote.</p>
+        <span class="meta">
+          <span class="tags"><span>app</span><span>AI</span><span>productivity</span></span>
+          <span class="go">Open →</span>
+        </span>
+      </span>
+    </a>
+  </div>
+  <p class="note">Mindflow's AI features need your own Anthropic API key (Settings ⚙). It stays in your browser, and your notes never leave your device.</p>
 
   <footer>
     <span>Built by HN</span>
