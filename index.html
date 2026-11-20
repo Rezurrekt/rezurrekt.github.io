@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HN — Things I've Made</title>
+<meta name="description" content="Simulations and experiments, built and shared by HN.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #eceef1; --surface: #ffffff; --line: #d9dde3;
+  --ink: #15181d; --ink-2: #48505b; --ink-3: #6f7782;
+  --hi: #2a78d6; --dot: #b3b9c2;
+  --display: "Instrument Serif", Georgia, serif;
+  --ui: "Public Sans", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--ui); font-size: 16px; line-height: 1.55; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 72px 24px 56px; }
+header h1 { font-family: var(--display); font-weight: 400; font-size: clamp(48px, 8vw, 84px); line-height: .95; margin: 0; letter-spacing: -.01em; }
+header h1 em { color: var(--hi); }
+header p { color: var(--ink-2); max-width: 56ch; font-size: 17px; margin: 16px 0 0; }
+.label { font-size: 12.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-3); margin: 56px 0 14px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+.card { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; color: inherit; text-decoration: none; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+.card:hover { transform: translateY(-3px); box-shadow: 0 14px 34px rgba(21,24,29,.10); border-color: #c4cad2; }
+.card:focus-visible { outline: 2px solid var(--hi); outline-offset: 3px; }
+.thumb { height: 170px; background: #f4f5f7; border-bottom: 1px solid var(--line); display: block; }
+.thumb canvas { width: 100%; height: 100%; display: block; }
+.body { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.body h2 { font-family: var(--display); font-weight: 400; font-size: 30px; line-height: 1.05; margin: 0; }
+.body p { margin: 0; color: var(--ink-2); font-size: 15px; }
+.meta { margin-top: auto; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--ink-3); }
+.tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.tags span { font-family: var(--mono); font-size: 11.5px; background: #f4f5f7; border: 1px solid var(--line); border-radius: 99px; padding: 1px 8px; }
+.go { color: var(--hi); font-weight: 600; }
+.card.soon { border-style: dashed; background: transparent; pointer-events: none; }
+.card.soon .body { justify-content: center; align-items: center; text-align: center; min-height: 260px; color: var(--ink-3); }
+footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--ink-3); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+footer a { color: var(--ink-2); }
+@media (prefers-reduced-motion: reduce) { .card { transition: none; } .card:hover { transform: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Things I've <em>made</em></h1>
+    <p>Simulations, experiments and small tools I've built. Everything runs right in your browser, so click one and play with it.</p>
+  </header>
+
+  <div class="label">Simulations</div>
+  <div class="grid">
+
+    <!-- PROJECT CARD: copy this whole <a>…</a> block to add a new project -->
+    <a class="card" href="sims/10000-lives/">
+      <span class="thumb"><canvas data-thumb="lives" aria-hidden="true"></canvas></span>
+      <span class="body">
+        <h2>10,000 Lives</h2>
+        <p>One person, Sam, lives from 18 to the end, 10,000 times over, with ten big life choices picked at random. A narrator then works out which choices actually mattered for money, happiness and lifespan, and how much came down to luck.</p>
+        <span class="meta">
+          <span class="tags"><span>simulation</span><span>personal finance</span></span>
+          <span class="go">Open →</span>
+        </span>
+      </span>
+    </a>
+    <!-- END PROJECT CARD -->
+
+    <div class="card soon"><span class="body"><span>More worlds coming soon</span></span></div>
+  </div>
+
+  <footer>
+    <span>Built by HN</span>
+    <span>Hosted free on GitHub Pages</span>
+  </footer>
+</div>
+
+<script>
+// Draws the little dot-cloud preview on the 10,000 Lives card
+(function () {
+  const c = document.querySelector('canvas[data-thumb="lives"]');
+  if (!c) return;
+  let s = 7;
+  const R = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+  const g = () => { let u = 0; while (!u) u = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * R()); };
+  const pts = Array.from({ length: 1400 }, () => {
+    const w = g(), hi = R() < 0.18;
+    return { x: 0.5 + 0.17 * w + (hi ? 0.04 : 0), y: 0.52 - 0.11 * w * 0.35 + 0.15 * g(), hi };
+  });
+  function draw() {
+    const dpr = window.devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
+    c.width = w * dpr; c.height = h * dpr;
+    const x = c.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0);
+    x.clearRect(0, 0, w, h);
+    for (const p of pts) {
+      const px = p.x * w, py = p.y * h;
+      if (p.hi) { x.fillStyle = '#2a78d6'; x.globalAlpha = .8; x.beginPath(); x.arc(px, py, 1.8, 0, 7); x.fill(); }
+      else { x.fillStyle = '#b3b9c2'; x.globalAlpha = .55; x.fillRect(px - 1.2, py - 1.2, 2.4, 2.4); }
+    }
+  }
+  draw();
+  let t; window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(draw, 120); });
+})();
+</script>
+</body>
+</html>

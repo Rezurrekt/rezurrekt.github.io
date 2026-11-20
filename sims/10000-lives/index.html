@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10,000 Lives</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a long-form episode. Main column = narrator, the cloud of 10,000 lives, what mattered, your own path.
+   A sticky side column holds whichever single life you open. Single light theme by choice. */
+:root {
+  color-scheme: light;
+  --bg: #eceef1;
+  --surface: #ffffff;
+  --surface-2: #f4f5f7;
+  --line: #d9dde3;
+  --ink: #15181d;
+  --ink-2: #48505b;
+  --ink-3: #6f7782;
+  --hi: #2a78d6;
+  --hi-soft: #cde2fb;
+  --dot: #b3b9c2;
+  --bad: #c23b3a;
+  --good: #1b7f4b;
+  --font-display: "Instrument Serif", Georgia, serif;
+  --font-story: "Source Serif 4", Georgia, serif;
+  --font-ui: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 15px; line-height: 1.5; }
+body { padding: 28px max(16px, 3vw) 60px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(44px, 7vw, 76px); line-height: 0.95; letter-spacing: -0.01em; }
+h1 em { color: var(--hi); font-style: italic; }
+h2 { font-family: var(--font-display); font-weight: 400; font-size: 32px; line-height: 1.1; }
+h3 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+button, select, input { font: inherit; font-size: 14px; color: var(--ink); }
+button, select { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+button:hover, select:hover { border-color: var(--ink-3); }
+button.primary { background: var(--ink); color: #fff; border-color: var(--ink); font-weight: 600; }
+button.primary:hover { background: #2b313a; }
+button.link { border: 0; background: none; padding: 0; color: var(--hi); text-decoration: underline; text-underline-offset: 3px; font: inherit; cursor: pointer; }
+input[type=number] { width: 90px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; font-family: var(--font-mono); }
+:focus-visible { outline: 2px solid var(--hi); outline-offset: 2px; }
+
+header.top { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; margin-bottom: 22px; }
+.lede { max-width: 60ch; color: var(--ink-2); font-size: 16px; margin-top: 12px; }
+.runbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.runbar label { font-size: 13px; color: var(--ink-3); }
+#status { font-size: 13px; color: var(--ink-3); min-width: 120px; }
+
+.tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 22px; }
+@media (max-width: 900px) { .tiles { grid-template-columns: repeat(2, 1fr); } }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.tile .k { font-size: 12.5px; color: var(--ink-3); }
+.tile .v { font-family: var(--font-mono); font-size: 24px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.tile .s { font-size: 12px; color: var(--ink-3); }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 20px; align-items: start; }
+@media (max-width: 1100px) { .layout { grid-template-columns: 1fr; } }
+.main { display: grid; gap: 20px; min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; min-width: 0; }
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.hint { font-size: 13px; color: var(--ink-3); }
+
+/* narrator */
+.chapter { padding: 4px 0 18px; border-bottom: 1px solid var(--line); margin-bottom: 18px; }
+.chapter:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 0; }
+.chapter .ch { display: flex; gap: 10px; align-items: baseline; margin-bottom: 6px; }
+.chapter .ch span { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); }
+.chapter .ch h2 { font-size: 26px; }
+.chapter p { font-family: var(--font-story); font-size: 17.5px; line-height: 1.62; max-width: 66ch; margin: 8px 0; }
+.chapter p b { font-weight: 600; }
+.spot { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; padding: 12px 14px; background: var(--surface-2); border-radius: 10px; margin: 10px 0; }
+.spot .tag { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--hi); grid-column: 1 / 3; }
+.spot p { margin: 0; grid-column: 1 / 3; font-size: 16.5px; }
+.spot .act { grid-column: 1 / 3; }
+.copyrow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+#copyMsg { font-size: 13px; color: var(--ink-3); }
+#copyBox { display: none; width: 100%; height: 180px; margin-top: 10px; font-family: var(--font-mono); font-size: 12px; border: 1px solid var(--line); border-radius: 8px; padding: 8px; background: var(--surface-2); }
+
+/* scatter */
+.chart { position: relative; }
+.chart canvas { display: block; width: 100%; }
+.controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.controls label { font-size: 13px; color: var(--ink-3); }
+.legendline { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13.5px; color: var(--ink-2); margin-top: 10px; }
+.legendline span { display: inline-flex; gap: 7px; align-items: center; }
+.legendline i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.tip { position: absolute; pointer-events: none; display: none; background: #15181d; color: #f3f4f6; border-radius: 8px; padding: 8px 10px; font-size: 12.5px; min-width: 180px; z-index: 4; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
+.tip .h { color: #a8afb9; margin-bottom: 3px; }
+.tip .r { display: flex; justify-content: space-between; gap: 16px; }
+.tip .r b { font-family: var(--font-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+/* effects */
+.tabs { display: inline-flex; gap: 3px; background: var(--surface-2); border-radius: 9px; padding: 3px; }
+.tabs button { border: 0; background: transparent; padding: 5px 12px; font-size: 13.5px; color: var(--ink-2); }
+.tabs button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.fx { display: grid; grid-template-columns: minmax(150px, 230px) 1fr 84px; column-gap: 14px; }
+.fx .axis { grid-column: 2; position: relative; height: 22px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.fx .axis span { position: absolute; transform: translateX(-50%); font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); top: 0; white-space: nowrap; }
+.fx .grp { grid-column: 1 / 4; display: flex; justify-content: space-between; align-items: baseline; padding: 12px 0 4px; border-top: 1px solid var(--line); margin-top: 6px; }
+.fx .grp:first-of-type { border-top: 0; }
+.fx .grp b { font-size: 14px; }
+.fx .grp span { font-size: 12.5px; color: var(--ink-3); }
+.fx .lbl { font-size: 13.5px; color: var(--ink-2); padding: 4px 0; align-self: center; }
+.fx .lbl.best { color: var(--ink); font-weight: 600; }
+.fx .track { position: relative; height: 28px; }
+.fx .track .grid { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--surface-2); }
+.fx .track .iqr { position: absolute; top: 13px; height: 2px; background: var(--dot); border-radius: 2px; }
+.fx .track .pt { position: absolute; top: 7px; width: 14px; height: 14px; border-radius: 50%; background: #7d8592; border: 2px solid var(--surface); transform: translateX(-50%); }
+.fx .track .pt.best { background: var(--hi); }
+.fx .val { font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; text-align: right; align-self: center; color: var(--ink-2); }
+.fx .val.best { color: var(--ink); font-weight: 500; }
+@media (max-width: 560px) { .fx { grid-template-columns: 110px 1fr 66px; column-gap: 8px; } .fx .lbl { font-size: 12.5px; } }
+
+/* path builder */
+.pathgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px 14px; margin-bottom: 14px; }
+.pathgrid label { display: block; font-size: 12.5px; color: var(--ink-3); margin-bottom: 3px; }
+.pathgrid select { width: 100%; }
+.cmp { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin: 14px 0; }
+.cmp .tile .v { font-size: 20px; }
+.delta { font-size: 12px; font-family: var(--font-mono); }
+.delta.up { color: var(--good); } .delta.down { color: var(--bad); }
+#pathSay { font-family: var(--font-story); font-size: 17px; max-width: 66ch; }
+
+/* life panel */
+.side { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; }
+@media (max-width: 1100px) { .side { position: static; max-height: none; } }
+.side h2 { font-size: 30px; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0 12px; }
+.chips span { font-size: 12px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 99px; padding: 2px 9px; color: var(--ink-2); }
+.lifebio { font-family: var(--font-story); font-size: 16px; line-height: 1.55; margin: 0 0 12px; }
+.mini h3 { margin: 10px 0 2px; }
+.events { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 2px; }
+.events li { display: grid; grid-template-columns: 34px 74px 1fr; gap: 8px; font-size: 13.5px; padding: 5px 0; border-bottom: 1px solid var(--surface-2); align-items: baseline; }
+.events .a { font-family: var(--font-mono); color: var(--ink-3); font-size: 12.5px; }
+.events .k { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-3); }
+.events .k.bad { color: var(--bad); } .events .k.good { color: var(--good); } .events .k.family, .events .k.home { color: var(--hi); }
+.lifestats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.lifestats .tile { padding: 8px 10px; }
+.lifestats .tile .v { font-size: 17px; }
+
+.how { color: var(--ink-2); }
+.how p, .how li { max-width: 78ch; }
+.how ul { padding-left: 18px; }
+details summary { cursor: pointer; color: var(--ink-2); font-size: 13.5px; margin-top: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 8px; }
+th, td { text-align: right; padding: 4px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; white-space: normal; }
+td { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+th { font-weight: 500; color: var(--ink-3); }
+.tablewrap { overflow-x: auto; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div>
+    <h1>10,000 <em>Lives</em></h1>
+    <p class="lede">One person, Sam, lives from age 18 to the end, 10,000 times over. Each time, Sam makes ten big life choices at random, and luck handles the rest. Then the narrator goes through what actually mattered.</p>
+  </div>
+  <div class="runbar">
+    <label for="seed">World seed</label>
+    <input id="seed" type="number" value="1" min="1" max="999999">
+    <button class="primary" id="run" type="button">Live 10,000 new lives</button>
+    <span id="status" aria-live="polite"></span>
+  </div>
+</header>
+
+<div class="tiles" id="tiles"></div>
+
+<div class="layout">
+  <div class="main">
+    <section class="panel" aria-label="The narrator">
+      <div class="panel-head">
+        <h3>The narrator</h3>
+        <div class="copyrow"><button id="copy" type="button">Copy narration script</button><span id="copyMsg"></span></div>
+      </div>
+      <div id="story"></div>
+      <textarea id="copyBox" readonly aria-label="Narration script"></textarea>
+    </section>
+
+    <section class="panel" aria-label="Every life">
+      <div class="panel-head">
+        <h2>All 10,000 Sams</h2>
+        <div class="controls">
+          <label for="hiDec">Highlight Sams who chose</label>
+          <select id="hiDec"></select>
+          <select id="hiOpt" aria-label="Option to highlight"></select>
+        </div>
+      </div>
+      <p class="hint" style="margin:0 0 8px">Each dot is one life: how much Sam had at 65 against how satisfied they were with life overall. Click any dot to read that life.</p>
+      <div class="chart"><canvas id="scatter" height="440" aria-label="Scatter plot of net worth at 65 against average life satisfaction for every Sam who reached 65"></canvas><div class="tip" id="scTip"></div></div>
+      <div class="legendline" id="scLegend"></div>
+    </section>
+
+    <section class="panel" aria-label="Which choices mattered">
+      <div class="panel-head">
+        <h2>Which choices mattered</h2>
+        <div class="tabs" role="group" aria-label="Outcome">
+          <button type="button" data-m="nw" aria-pressed="true">Money at 65</button>
+          <button type="button" data-m="h" aria-pressed="false">Life satisfaction</button>
+          <button type="button" data-m="life" aria-pressed="false">Lifespan</button>
+        </div>
+      </div>
+      <p class="hint" id="fxHint" style="margin:0 0 10px"></p>
+      <div class="fx" id="fx"></div>
+      <details id="fxTable"><summary>Show as a table</summary><div class="tablewrap" id="fxTableBody"></div></details>
+    </section>
+
+    <section class="panel" aria-label="Live your own path">
+      <div class="panel-head">
+        <h2>Live your own path</h2>
+        <span class="hint">Pick some choices and leave the rest to chance</span>
+      </div>
+      <div class="pathgrid" id="pathGrid"></div>
+      <div class="copyrow"><button class="primary" id="pathRun" type="button">Live this path 2,000 times</button><button id="pathReset" type="button">Clear choices</button></div>
+      <div id="pathOut" style="display:none">
+        <div class="cmp" id="pathTiles"></div>
+        <p id="pathSay"></p>
+        <h3 style="margin-top:14px">Money at 65: your path vs all Sams</h3>
+        <div class="chart"><canvas id="hist" height="210" aria-label="Distribution of net worth at 65 for your path compared with all Sams"></canvas><div class="tip" id="hTip"></div></div>
+        <div class="legendline"><span><i style="background:var(--dot);border-radius:2px"></i>All 10,000 Sams</span><span><i style="background:var(--hi);border-radius:2px"></i>Your path</span><button class="link" id="pathLife" type="button">Read one of these lives</button></div>
+      </div>
+    </section>
+
+    <section class="panel how" aria-label="How the model works">
+      <h2>How Sam's world works</h2>
+      <p>Every life runs one year at a time from 18 until death. All money is in today's dollars, roughly Canadian. Each life gets its own luck: inborn talent, temperament and health genes, plus its own run of market years, recessions, house prices, layoffs, illness, divorce and inheritances.</p>
+      <ul>
+        <li><b>Income</b> depends on education, talent, the city (big city pays 30% more), years of experience and career style. Job-hoppers climb faster but get laid off more. Recessions triple layoff risk.</li>
+        <li><b>Spending</b> covers rent or a mortgage, kids, debt payments and living costs. Sam saves the chosen share of after-tax income only when the bills are covered. Debt that grows out of control ends in bankruptcy.</li>
+        <li><b>Investments:</b> a savings account earns 0.5% a year after inflation. Index funds average about 5% with occasional crashes. Stock picking and crypto swing wildly: rare jackpots, deeper crashes, and a typical result below the index.</li>
+        <li><b>Homes</b> can be bought once Sam has 12% of the price saved and the payments fit the budget. Big-city prices are higher and rise faster.</li>
+        <li><b>Retirement</b> is paid for from savings, government pensions from 65 (with a minimum income top-up, like GIS) and, for long-time employees, a workplace pension.</li>
+        <li><b>Life satisfaction</b> each year, on a 0 to 10 scale, adds up Sam's natural temperament, spending (with diminishing returns), marriage, divorce, young and grown children, job fit, layoffs, illness, money stress, commuting and retirement.</li>
+        <li><b>Lifespan</b> follows real-world death rates by age, adjusted for exercise, health genes, illness, marriage and poverty.</li>
+      </ul>
+      <p>The numbers are rough, chosen to look like the real world, but this is a model and not a forecast. It shows how these forces combine. It can't tell anyone what their own life will look like.</p>
+    </section>
+  </div>
+
+  <aside class="side panel" id="side" aria-label="One life up close">
+    <h3>One life up close</h3>
+    <h2 id="lifeTitle" style="margin-top:4px">Sam</h2>
+    <div class="chips" id="lifeChips"></div>
+    <div class="lifestats" id="lifeStats"></div>
+    <p class="lifebio" id="lifeBio" style="margin-top:12px"></p>
+    <div class="mini">
+      <h3>Net worth by age</h3>
+      <div class="chart"><canvas id="lifeNW" height="120" aria-label="Net worth over this life"></canvas><div class="tip" id="lnTip"></div></div>
+      <h3>Life satisfaction by age (0 to 10)</h3>
+      <div class="chart"><canvas id="lifeH" height="110" aria-label="Life satisfaction over this life"></canvas><div class="tip" id="lhTip"></div></div>
+    </div>
+    <h3 style="margin-top:14px">Everything that happened</h3>
+    <ul class="events" id="lifeEvents"></ul>
+  </aside>
+</div>
+
+<script>
+// ===== 10,000 Lives: simulation engine (all money in today's dollars) =====
+const DECISIONS = [
+  { key: 'edu', label: 'Education', noun: 'what to do after high school',
+    opts: ['University: STEM or business', 'University: arts', 'College diploma', 'Skilled trade', 'Straight to work'],
+    short: ['a STEM or business degree', 'an arts degree', 'a college diploma', 'a skilled trade', 'going straight to work'],
+    advice: ['get a STEM or business degree', 'study the arts', 'get a college diploma', 'learn a skilled trade', 'skip school and start working'] },
+  { key: 'city', label: 'Where to live', noun: 'where to live',
+    opts: ['Move to a big expensive city', 'Stay in the hometown'],
+    short: ['the big city', 'the hometown'],
+    advice: ['move to the big city', 'stay close to home'] },
+  { key: 'home', label: 'Housing', noun: 'whether to buy a home',
+    opts: ['Rent forever', 'Buy a starter home', 'Stretch for a big house'],
+    short: ['renting', 'a starter home', 'a big house'],
+    advice: ['keep renting', 'buy a modest home', 'stretch for the big house'] },
+  { key: 'save', label: 'Saving rate', noun: 'how much to save',
+    opts: ['Save 5% of income', 'Save 15% of income', 'Save 25% of income'],
+    short: ['saving 5%', 'saving 15%', 'saving 25%'],
+    advice: ['spend most of what you earn', 'save 15% of every paycheque', 'save a quarter of everything you earn'] },
+  { key: 'invest', label: 'Investing', noun: 'where to put savings',
+    opts: ['Savings account', 'Index funds', 'Stock picking & crypto'],
+    short: ['a savings account', 'index funds', 'stock picking and crypto'],
+    advice: ['keep savings in the bank', 'buy index funds and leave them alone', 'swing for the fences with stocks and crypto'] },
+  { key: 'partner', label: 'Partner', noun: 'marriage',
+    opts: ['Marry young (mid-20s)', 'Marry later (early 30s)', 'Stay single'],
+    short: ['marrying young', 'marrying later', 'staying single'],
+    advice: ['marry young', 'take your time and marry in your thirties', 'stay single'] },
+  { key: 'kids', label: 'Kids', noun: 'kids',
+    opts: ['No kids', 'One or two kids', 'Three kids'],
+    short: ['no kids', 'one or two kids', 'three kids'],
+    advice: ['skip kids', 'have one or two kids', 'have a big family'] },
+  { key: 'career', label: 'Career style', noun: 'career style',
+    opts: ['Stay with one employer', 'Switch jobs every few years', 'Start a business at 35'],
+    short: ['staying with one employer', 'switching jobs', 'starting a business'],
+    advice: ['find a good employer and stay', 'switch jobs every few years for raises', 'start your own business'] },
+  { key: 'health', label: 'Health habits', noun: 'exercise',
+    opts: ['Exercise regularly', 'Mostly sit on the couch'],
+    short: ['exercising', 'the couch'],
+    advice: ['exercise regularly', 'take it easy on the couch'] },
+  { key: 'retire', label: 'Retirement age', noun: 'when to retire',
+    opts: ['Retire at 55', 'Retire at 65', 'Work until 70'],
+    short: ['retiring at 55', 'retiring at 65', 'working until 70'],
+    advice: ['retire early at 55', 'retire at 65', 'keep working until 70'] },
+];
+const EDU = [
+  { years: 4, start: 60000, peak: 2.1, debt: 38000, verb: 'studied STEM/business at university' },
+  { years: 4, start: 44000, peak: 1.65, debt: 38000, verb: 'studied the arts at university' },
+  { years: 2, start: 46000, peak: 1.5, debt: 14000, verb: 'got a college diploma' },
+  { years: 4, start: 62000, peak: 1.35, debt: 0, apprentice: 34000, verb: 'apprenticed in a skilled trade' },
+  { years: 0, start: 33000, peak: 1.45, debt: 0, verb: 'went straight to work' },
+];
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function lifeRng(seed, i, salt) {
+  let h = Math.imul(seed ^ 0x9E3779B9, 0x85EBCA6B) ^ Math.imul(i + 1, 0xC2B2AE35) ^ Math.imul(salt || 0, 0x27D4EB2F);
+  h ^= h >>> 16; h = Math.imul(h, 0x7FEB352D); h ^= h >>> 15;
+  return mulberry32(h >>> 0);
+}
+function annuity(P, r, n) { return P * r / (1 - Math.pow(1 + r, -n)); }
+function money(v) {
+  const a = Math.abs(v), s = v < 0 ? '-' : '';
+  if (a >= 1e6) return s + '$' + (a / 1e6).toFixed(a >= 1e7 ? 0 : 1) + 'M';
+  if (a >= 1e3) return s + '$' + Math.round(a / 1e3) + 'k';
+  return s + '$' + Math.round(a);
+}
+function taxOn(inc) {
+  if (inc <= 15000) return 0;
+  return inc * (0.12 + 0.2 * Math.min(1, (inc - 15000) / 185000)) - 1800 * Math.max(0, 1 - (inc - 15000) / 20000);
+}
+
+function randomChoices(R) { return DECISIONS.map(d => Math.floor(R() * d.opts.length)); }
+
+// Simulate one life. c = array of option indices. rec = record events + yearly series.
+function simLife(R, c, rec) {
+  const gauss = () => { let u = 0; while (u === 0) u = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * R()); };
+  const talent = gauss(), sp = 6.85 + 0.75 * gauss(), hg = gauss();
+  const E = EDU[c[0]]; let big = c[1] === 0; const cs = 18 + E.years;
+  const retireAge = [55, 65, 70][c[9]];
+  const sRate = [0.05, 0.15, 0.25][c[3]];
+  const ev = [];
+  const say = (age, text, kind) => { if (rec) ev.push({ age, text, kind: kind || 'life' }); };
+  const S = rec ? { age: [], nw: [], h: [] } : null;
+
+  let port = 0, otherDebt = 0;
+  let sDebt = E.debt, sPay = E.debt ? annuity(E.debt, 0.05, 10) : 0;
+  let owns = false, homeVal = 0, mort = 0, mortPay = 0, everOwned = false, housingIdx = 1;
+  let married = false, partnerInc = 0, marriedAt = 0, divorcedAt = -99, everDivorced = false, divorceHit = 0;
+  const marryAge = c[5] === 0 ? 23 + Math.floor(R() * 4) : c[5] === 1 ? 31 + Math.floor(R() * 5) : 999;
+  const marryWorks = c[5] !== 2 && R() < (c[5] === 0 ? 0.9 : 0.85);
+  const nKids = c[6] === 0 ? 0 : c[6] === 1 ? (R() < 0.5 ? 1 : 2) : 3;
+  const kidStart = marryWorks ? Math.max(marryAge + 1, 26) : 31;
+  const kids = [];
+  let scar = 1, chronic = false, illHit = 0, yearsWorked = 0;
+  const biz = c[7] === 2 ? { out: '', mult: 1, state: 'none', stake: 0 } : null;
+  let wpPension = 0, lastInc = 0, jackpots = 0, rentMult = 1, stressYrs = 0, lastBk = -99;
+  let retired = false, outOfMoney = false, backToWork = false, retireCons = 0, lastCons = [];
+  let hSum = 0, years = 0, earn = 0, nw65 = NaN, millionAt = 0, peakNW = -1e12, lostHouse = false;
+  let lowCash = 0, died = 0, bizFailedYear = false;
+  const inheritAge = R() < 0.35 ? 50 + Math.floor(R() * 19) : 0;
+  const inheritAmt = Math.exp(Math.log(90000) + 0.9 * gauss());
+  const fixedLuck = { talent, sp, hg };
+
+  if (c[0] <= 2) say(18, `started ${c[0] <= 1 ? 'university' : 'college'}${c[0] === 0 ? ' in STEM/business' : c[0] === 1 ? ' in the arts' : ''}`, 'school');
+  else if (c[0] === 3) say(18, 'started a paid apprenticeship in a skilled trade', 'school');
+  else say(18, 'skipped school and got a full-time job', 'school');
+
+  for (let age = 18; age <= 105; age++) {
+    const recession = R() < 0.11;
+    let r;
+    if (c[4] === 0) r = 0.005;
+    else if (c[4] === 1) r = recession ? -0.18 + 0.15 * gauss() : 0.075 + 0.13 * gauss();
+    else { r = recession ? -0.35 + 0.25 * gauss() : 0.06 + 0.35 * gauss(); if (R() < 0.01 && !jackpots) { r = 1 + R() * 1.5; } }
+    r = Math.max(r, -0.85);
+    const hr = (big ? 0.018 + 0.07 * gauss() : 0.008 + 0.05 * gauss()) - (recession ? 0.06 : 0);
+    housingIdx *= Math.exp(hr);
+
+    if (age === cs && E.years > 0) {
+      if (c[0] === 3) say(age, 'finished the apprenticeship and became a licensed tradesperson', 'school');
+      else say(age, `graduated${E.debt ? ` with ${money(E.debt)} of student debt` : ''}`, 'school');
+      if (big) say(age, 'moved to the big city for work', 'life');
+    }
+    if (age === 18 && E.years === 0 && big) say(age, 'moved to the big city', 'life');
+
+    // partner
+    if (!married && marryWorks && age === marryAge && !everDivorced) {
+      married = true; marriedAt = age; partnerInc = 50000 * Math.exp(0.3 * gauss()) * (big ? 1.15 : 1);
+      say(age, 'got married', 'family');
+    } else if (!married && everDivorced && c[5] !== 2 && age - divorcedAt >= 2 && age < 62 && R() < 0.07) {
+      married = true; marriedAt = age; partnerInc = 48000 * Math.exp(0.3 * gauss()) * (big ? 1.15 : 1);
+      say(age, 'remarried', 'family');
+    }
+    // kids
+    if (kids.length < nKids && age <= 44) {
+      const next = kids.length === 0 ? kidStart : kids[kids.length - 1] + 2;
+      if (age >= next) { kids.push(age); say(age, kids.length === 1 ? (married ? 'had their first child' : 'had a child as a single parent') : `had child number ${kids.length}`, 'family'); }
+    }
+    const kidsU18 = kids.filter(b => age - b < 18).length, kidsU5 = kids.filter(b => age - b < 5).length;
+    const adultKids = kids.filter(b => age - b >= 18).length;
+
+    // retirement
+    if (!retired && age >= retireAge) {
+      retired = true;
+      const recent = lastCons.slice(-5);
+      retireCons = recent.length ? 0.7 * recent.reduce((a, b) => a + b, 0) / recent.length : 0;
+      // workplace pension: loyal employees often have a defined-benefit plan; job-hoppers get small matched plans
+      const rate = c[7] === 0 ? 0.012 : c[7] === 1 ? 0.004 : (biz && biz.state === 'closed' ? 0.004 : 0);
+      wpPension = rate * yearsWorked * lastInc;
+      say(age, `retired with ${money(port)} saved${wpPension > 2000 ? ` and a workplace pension of ${money(wpPension)} a year` : ''}`, 'retire');
+    }
+    if (backToWork && age >= 65) { backToWork = false; say(age, 'stopped working for good once government pensions started', 'retire'); }
+
+    // income
+    let inc = 0, working = false, laidOff = false;
+    bizFailedYear = false;
+    const bizActive = biz && age >= 35 && biz.state === 'running';
+    if (age < cs) {
+      if (c[0] === 3) { inc = E.apprentice * Math.exp(0.1 * talent); working = true; }
+      else inc = 9000;
+    } else if (backToWork) {
+      inc = 26000; working = true;
+    } else if (!retired) {
+      working = true;
+      const yrs = age - cs;
+      const peakAdj = c[7] === 1 ? 1.15 : c[7] === 0 ? 0.95 : 1;
+      let mult = 1 + (E.peak - 1) * peakAdj * Math.min(1, yrs / 25);
+      if (age > 58 && c[0] === 3) mult *= Math.pow(0.97, age - 58);
+      inc = E.start * Math.exp(0.22 * talent) * (big ? 1.3 : 1) * mult * scar * Math.exp(0.06 * gauss());
+      if (chronic) inc *= 0.85;
+      if (biz) {
+        if (age === 35) {
+          const pBig = Math.min(0.25, Math.max(0.03, 0.1 + 0.04 * talent));
+          const pFail = Math.min(0.75, Math.max(0.3, 0.5 - 0.06 * talent));
+          const u = R();
+          biz.out = u < pBig ? 'big' : u < 1 - pFail ? 'modest' : 'fail';
+          biz.mult = 2.5 + R() * 5;
+          biz.stake = Math.min(60000, Math.max(0, port * 0.5));
+          port -= biz.stake;
+          if (biz.stake < 30000) otherDebt += 30000 - biz.stake;
+          biz.state = 'running';
+          say(age, `quit their job and put ${money(Math.max(30000, biz.stake))} into starting a business`, 'career');
+        }
+        if (biz.state === 'running') {
+          if (age < 38) inc *= biz.out === 'big' ? 0.8 : 0.65;
+          else if (biz.out === 'fail') {
+            biz.state = 'closed'; scar *= 0.9; bizFailedYear = true;
+            say(age, 'closed the business after it failed and went back to a regular job', 'bad');
+          } else if (biz.out === 'modest') {
+            inc *= 1.05;
+            if (age === 38) say(age, 'got the business to pay a steady, ordinary living', 'career');
+          } else {
+            inc *= biz.mult * Math.min(1, 0.3 + (age - 37) / 6);
+            if (age === 40) say(age, 'watched the business take off', 'good');
+            if (age === 55) {
+              const sale = inc * 3;
+              port += sale * 0.75;
+              biz.state = 'sold';
+              say(age, `sold the company for ${money(sale)}`, 'good');
+            }
+          }
+        } else if (biz.state === 'sold') inc *= 1.3;
+      }
+      const lp = (c[7] === 0 ? 0.025 : c[7] === 1 ? 0.04 : 0.035) * (recession ? 3 : 1);
+      if (!(biz && biz.state === 'running') && R() < lp) {
+        inc *= 0.45; scar *= 0.97; laidOff = true;
+        say(age, recession ? 'were laid off during a recession' : 'lost their job', 'bad');
+      }
+    }
+    if (working) { yearsWorked++; earn += inc; if (age >= cs) lastInc = 0.7 * lastInc + 0.3 * inc; }
+
+    // household after-tax income
+    let T = inc - taxOn(inc);
+    const partnerWorking = married && age < Math.max(retireAge, 60) && age < 67;
+    if (married) T += partnerWorking ? partnerInc - taxOn(partnerInc) : 14000;
+    if (age >= 65 || (retireAge === 70 && age >= 70)) {
+      const start = retireAge === 70 ? 70 : 65;
+      if (age >= start) T += 8500 + 15500 * Math.min(1, yearsWorked / 39) * (retireAge === 70 ? 1.3 : retireAge === 55 ? 0.85 : 1);
+    }
+    if (retired && !backToWork && wpPension > 0) T += wpPension * (retireAge === 55 ? 0.7 : 1);
+    if (age >= 65 && T < (married ? 34000 : 22000)) T = married ? 34000 : 22000; // income-tested top-up (like GIS)
+    if (kidsU18 > 0) T += kidsU18 * 6500 * Math.max(0, 1 - Math.max(0, T - 35000) / 150000); // income-tested child benefit
+    if (inheritAge && age === inheritAge) { port += inheritAmt; say(age, `inherited ${money(inheritAmt)} from family`, 'good'); }
+
+    // costs
+    const atHome = (age < cs && c[0] !== 3) || (age < 21 && c[0] >= 3);
+    let living = atHome ? 9000 : 20000 * (big ? 1.25 : 1) * (married ? 1.6 : 1) * (retired && !backToWork ? 0.8 : 1);
+    const kidCost = kidsU18 * (big ? 13000 : 11000) * (married ? 1 : 1.2) + kidsU5 * 5000;
+    let housing = 0;
+    // buying
+    if (!owns && c[2] > 0 && !retired && age > cs && age < 60 && !atHome && !lostHouse && !laidOff) {
+      const base = c[2] === 1 ? (big ? 700000 : 320000) : (big ? 1200000 : 560000);
+      const price = base * housingIdx;
+      const pay = annuity(price * 0.9, 0.05, 25);
+      if (port >= price * 0.12 && pay + price * 0.018 <= T * (c[2] === 2 ? 0.6 : 0.5)) {
+        port -= price * 0.12; owns = true; everOwned = true; homeVal = price; mort = price * 0.9; mortPay = pay;
+        say(age, `bought ${c[2] === 1 ? 'a starter home' : 'a big house'} for ${money(price)}`, 'home');
+      }
+    }
+    if (owns) {
+      homeVal *= Math.exp(hr);
+      housing = homeVal * 0.018;
+      if (mort > 0) {
+        housing += mortPay;
+        const interest = mort * 0.05;
+        mort -= (mortPay - interest);
+        if (mort <= 0) { mort = 0; say(age, 'paid off the mortgage', 'home'); }
+      }
+    } else if (!atHome) {
+      housing = rentMult * (big ? 28000 : 16000) * Math.pow(housingIdx, 0.5) * (kidsU18 > 0 ? 1.3 : 1) * (married ? 1.1 : 1);
+    }
+    let debtPay = 0;
+    if (age >= cs && sDebt > 0) { const p = Math.min(sPay, sDebt * 1.05); debtPay += p; sDebt = sDebt * 1.05 - p; if (sDebt < 1) { sDebt = 0; } }
+    if (otherDebt > 0) { const p = Math.min(otherDebt * 1.07, Math.max(3000, otherDebt * 0.2)); debtPay += p; otherDebt = otherDebt * 1.07 - p; if (otherDebt < 1) otherDebt = 0; }
+
+    const D = T - housing - kidCost - debtPay;
+    if (!owns && !atHome && D < living * 0.9) stressYrs++; else stressYrs = 0;
+    if (stressYrs >= 2 && rentMult <= 0.6 && big && !retired) { big = false; rentMult = 1; stressYrs = 0; say(age, 'gave up on the big city and moved back to the hometown', 'life'); }
+    if (stressYrs >= 2 && rentMult > 0.6) { rentMult *= 0.75; stressYrs = 0; say(age, 'moved somewhere cheaper to cut the rent', 'life'); }
+    let C, Sv;
+    if (!retired || backToWork) {
+      const target = sRate * Math.max(0, T);
+      if (D - target >= living) { C = D - target; Sv = target; }
+      else if (D >= living) { C = living; Sv = D - living; }
+      else { C = Math.max(D, living * 0.6); Sv = D - C; }
+    } else {
+      C = Math.max(living, retireCons);
+      Sv = D - C;
+    }
+    port = port * (1 + r);
+    if (r < -0.25 && port > 50000 && c[4] > 0) say(age, `saw their investments drop ${Math.round(-r * 100)}% in a market crash`, 'bad');
+    if (r >= 1) jackpots++;
+    if (r >= 1 && port > 20000) say(age, `hit a jackpot when a bet went up ${Math.round(r * 100)}%`, 'good');
+    port += Sv;
+    if (port < 0) {
+      if (retired && !backToWork) {
+        // out of money in retirement: spend only what income covers
+        const deficit = -port; port = 0;
+        C = Math.max(0.4 * living, Math.min(C - deficit, Math.max(D, 0.4 * living)));
+        if (C > D) otherDebt += C - D;
+        if (!outOfMoney) {
+          outOfMoney = true;
+          if (age < 65) { backToWork = true; say(age, 'ran out of money and had to go back to work part-time', 'bad'); }
+          else say(age, 'ran out of savings and had to live on government pensions alone', 'bad');
+        }
+      } else { otherDebt += -port; port = 0; }
+    }
+    if (!retired || backToWork) lastCons.push(C);
+    let bankrupt = false;
+    if (!owns && otherDebt > Math.max(50000, 1.5 * T) && age - lastBk >= 7) {
+      lastBk = age;
+      otherDebt = 0; port = 0; bankrupt = true;
+      say(age, 'declared bankruptcy to escape debts they could not repay', 'bad');
+    }
+
+    // forced sale / downsizing
+    if (owns) {
+      if (port <= 0 && otherDebt > 0.25 * Math.max(T, 1)) lowCash++; else lowCash = 0;
+      const equity = homeVal * 0.94 - mort;
+      if (lowCash >= 2) {
+        owns = false; lostHouse = true; port += Math.max(0, equity); if (equity < 0) otherDebt -= equity; homeVal = 0; mort = 0;
+        say(age, 'couldn’t keep up with the payments and had to sell the house', 'bad');
+      } else if (retired && age >= 70 && port < 2 * living) {
+        owns = false; port += equity; homeVal = 0; mort = 0; outOfMoney = false;
+        say(age, `sold the house to fund retirement`, 'home');
+      }
+    }
+    // divorce
+    if (married) {
+      const ym = age - marriedAt;
+      let hz = (c[5] === 0 || everDivorced) ? (ym < 10 ? 0.02 : 0.008) : (ym < 10 ? 0.011 : 0.005);
+      if (otherDebt > 0 || laidOff) hz *= 1.6;
+      if (R() < hz) {
+        married = false; everDivorced = true; divorcedAt = age; divorceHit = 2.0;
+        port *= 0.5;
+        if (owns) { port += (homeVal * 0.94 - mort) * 0.5; owns = false; homeVal = 0; mort = 0; }
+        say(age, 'went through a divorce and split everything in half', 'bad');
+      }
+    }
+    // health
+    const habit = c[8] === 0 ? 0.75 : 1.3;
+    if (!chronic && R() < 0.0004 * Math.exp(0.065 * (age - 18)) * habit * Math.exp(0.25 * hg)) {
+      chronic = true; illHit = 1.6; say(age, 'were diagnosed with a serious long-term illness', 'bad');
+    }
+
+    // happiness (0-10)
+    const ceq = Math.max(1000, C) / ((married ? 1.5 : 1) * (1 + 0.3 * kidsU18));
+    let h = sp + Math.max(-1.5, Math.min(1.1, 0.55 * Math.log(ceq / 28000)));
+    if (married) h += 0.35 + (age - marriedAt < 2 ? 0.4 : 0); else if (age > 32) h -= 0.1;
+    h -= divorceHit; divorceHit = Math.max(0, divorceHit - 0.6);
+    if (kidsU5 > 0) h -= 0.3;
+    if (adultKids > 0) h += 0.25 + 0.05 * adultKids;
+    h += big ? -0.12 : 0.12;
+    if (working && !retired && age >= cs) {
+      h += [0.05, 0.25, 0, 0.15, -0.15][c[0]];
+      if (c[7] === 1) h += 0.05;
+      if (biz && biz.state === 'running' && age >= 35) h += age < 38 ? -0.3 : 0.35;
+    }
+    if (laidOff) h -= 1.3;
+    if (bankrupt) h -= 1.5;
+    if (bizFailedYear) h -= 1.5;
+    if (chronic) h -= 0.55;
+    h -= illHit; illHit = 0;
+    if (c[8] === 0) h += 0.25;
+    if (owns) { h += 0.15; if (housing > 0.45 * T) h -= 0.6; }
+    if (!retired && port < 0.25 * (living + housing)) h -= 0.35;
+    if (otherDebt > 0) h -= 0.3;
+    if (retired && !backToWork) h += outOfMoney ? -1.1 : (age - retireAge < 5 ? 0.5 : 0.2);
+    if (backToWork) h -= 0.5;
+    h -= 0.25 * Math.exp(-Math.pow((age - 48) / 10, 2));
+    h += 0.35 * gauss();
+    h = Math.max(0, Math.min(10, h));
+    hSum += h; years++;
+
+    const nw = port + (owns ? homeVal - mort : 0) - sDebt - otherDebt;
+    if (nw > peakNW) peakNW = nw;
+    if (!millionAt && nw >= 1e6) { millionAt = age; say(age, 'became a millionaire on paper', 'good'); }
+    if (age === 65) nw65 = nw;
+    if (S) { S.age.push(age); S.nw.push(nw); S.h.push(h); }
+
+    // mortality
+    let q = 0.000026 * Math.exp(0.092 * age) * (c[8] === 0 ? 0.8 : 1.2) * Math.exp(0.3 * hg) * (chronic ? 1.8 : 1) * (married ? 0.9 : 1) * (outOfMoney ? 1.2 : 1) + (age < 45 ? 0.0005 : 0);
+    if (R() < q || age === 105) {
+      died = age;
+      say(age, `died at ${age}${nw > 0 ? `, leaving ${money(nw)}` : ''}`, 'end');
+      break;
+    }
+  }
+  return {
+    c, nw65, life: died, avgH: hSum / years, earn, ran: outOfMoney, divorced: everDivorced, ill: chronic,
+    biz: biz ? biz.out : '', millionAt, everOwned, lostHouse, peakNW, luck: fixedLuck,
+    events: rec ? ev : null, series: S,
+  };
+}
+
+if (typeof module !== 'undefined') module.exports = { DECISIONS, EDU, simLife, lifeRng, randomChoices, money, mulberry32 };
+
+</script>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const N = 10000;
+let SEED = 1, LIVES = [], STATS = null, SCRIPT = [];
+
+// ---------- stats helpers ----------
+const sorted = a => a.filter(x => !isNaN(x)).sort((x, y) => x - y);
+const qt = (s, p) => s.length ? s[Math.min(s.length - 1, Math.floor(s.length * p))] : NaN;
+const mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : NaN;
+const pct = x => Math.round(x * 100);
+const fmtInt = n => Math.round(n).toLocaleString('en-US');
+const ash = v => Math.asinh(v / 100000);
+
+function summarize(g) {
+  const nw = sorted(g.map(l => l.nw65));
+  const life = sorted(g.map(l => l.life));
+  return {
+    n: g.length,
+    nwMed: qt(nw, 0.5), nwP25: qt(nw, 0.25), nwP75: qt(nw, 0.75), nwP10: qt(nw, 0.1), nwP90: qt(nw, 0.9),
+    hMean: mean(g.map(l => l.avgH)), hS: sorted(g.map(l => l.avgH)),
+    lifeMean: mean(life), lifeMed: qt(life, 0.5), lifeS: life,
+    mill: nw.length ? nw.filter(v => v >= 1e6).length / nw.length : 0,
+    ran: g.filter(l => l.ran).length / Math.max(1, g.length),
+    pre65: g.filter(l => l.life < 65).length / Math.max(1, g.length),
+    nwS: nw,
+  };
+}
+
+// ordinary least squares on one-hot choices, returns R^2
+function r2(lives, yf, extra) {
+  const rows = [], ys = [];
+  for (const l of lives) {
+    const y = yf(l); if (isNaN(y)) continue;
+    const x = [1];
+    DECISIONS.forEach((d, k) => { for (let j = 1; j < d.opts.length; j++) x.push(l.c[k] === j ? 1 : 0); });
+    if (extra) x.push(...extra(l));
+    rows.push(x); ys.push(y);
+  }
+  const p = rows[0].length;
+  const A = Array.from({ length: p }, () => new Float64Array(p + 1));
+  rows.forEach((x, n) => { for (let i = 0; i < p; i++) { A[i][p] += x[i] * ys[n]; for (let j = 0; j < p; j++) A[i][j] += x[i] * x[j]; } });
+  for (let i = 0; i < p; i++) A[i][i] += 1e-6;
+  for (let i = 0; i < p; i++) {
+    let m = i; for (let k = i + 1; k < p; k++) if (Math.abs(A[k][i]) > Math.abs(A[m][i])) m = k;
+    [A[i], A[m]] = [A[m], A[i]];
+    for (let k = 0; k < p; k++) if (k !== i) { const f = A[k][i] / A[i][i]; for (let j = i; j <= p; j++) A[k][j] -= f * A[i][j]; }
+  }
+  const b = A.map((row, i) => row[p] / row[i]);
+  const ym = mean(ys);
+  let ssr = 0, sst = 0;
+  rows.forEach((x, n) => { let f = 0; for (let i = 0; i < p; i++) f += b[i] * x[i]; ssr += (ys[n] - f) ** 2; sst += (ys[n] - ym) ** 2; });
+  return 1 - ssr / sst;
+}
+
+// ---------- run ----------
+function runAll(seed) {
+  SEED = seed;
+  LIVES = new Array(N);
+  for (let i = 0; i < N; i++) {
+    const c = randomChoices(lifeRng(seed, i, 1));
+    const l = simLife(lifeRng(seed, i, 2), c, false);
+    l.id = i;
+    LIVES[i] = l;
+  }
+  computeStats();
+  SCRIPT = buildScript();
+  renderTiles(); renderStory(); fillHighlightControls(false); drawScatter(); renderFx();
+  openLife({ kind: 'main', i: STATS.spot.ordinary });
+  if ($('pathOut').style.display !== 'none') runPath();
+}
+function reSim(spec) {
+  if (spec.kind === 'main') {
+    const c = randomChoices(lifeRng(SEED, spec.i, 1));
+    const l = simLife(lifeRng(SEED, spec.i, 2), c, true); l.id = spec.i; return l;
+  }
+  const l = simLife(lifeRng(SEED, spec.i, 3), spec.c, true); l.id = spec.i; return l;
+}
+
+function computeStats() {
+  const all = summarize(LIVES);
+  const by = DECISIONS.map((d, k) => d.opts.map((o, j) => summarize(LIVES.filter(l => l.c[k] === j))));
+  const alive65 = LIVES.filter(l => !isNaN(l.nw65));
+  const ashAll = alive65.map(l => ash(l.nw65));
+  const sdW = Math.sqrt(mean(ashAll.map(v => (v - mean(ashAll)) ** 2)));
+  const hAll = LIVES.map(l => l.avgH), sdH = Math.sqrt(mean(hAll.map(v => (v - mean(hAll)) ** 2)));
+  const optAsh = by.map((opts, k) => opts.map((s, j) => { const v = sorted(LIVES.filter(l => l.c[k] === j && !isNaN(l.nw65)).map(l => ash(l.nw65))); return qt(v, 0.5); }));
+  const spread = by.map((opts, k) => {
+    const nw = opts.map(s => s.nwMed), h = opts.map(s => s.hMean), lf = opts.map(s => s.lifeMean);
+    const ix = a => ({ best: a.indexOf(Math.max(...a)), worst: a.indexOf(Math.min(...a)), gap: Math.max(...a) - Math.min(...a) });
+    const score = opts.map((s, j) => (optAsh[k][j] - qt(sorted(ashAll), 0.5)) / sdW + (s.hMean - mean(hAll)) / sdH + 0.5 * (s.lifeMean - all.lifeMean) / 5);
+    return { k, nw: ix(nw), h: ix(h), life: ix(lf), score: ix(score), scoreArr: score };
+  });
+  // spotlights
+  const byNW = alive65.slice().sort((a, b) => b.nw65 - a.nw65);
+  const byH = LIVES.slice().sort((a, b) => b.avgH - a.avgH);
+  const book = alive65.filter(l => l.c[3] === 2 && l.c[4] === 1 && l.c[8] === 0).sort((a, b) => a.nw65 - b.nw65);
+  const nwMedA = all.nwMed, hMedA = qt(all.hS, 0.5), lifeMedA = all.lifeMed;
+  let ord = alive65[0], best = 1e9;
+  for (const l of alive65) {
+    const d = Math.abs(ash(l.nw65) - ash(nwMedA)) / sdW + Math.abs(l.avgH - hMedA) / sdH + Math.abs(l.life - lifeMedA) / 8;
+    if (d < best) { best = d; ord = l; }
+  }
+  const top1 = byNW.slice(0, Math.max(1, Math.floor(alive65.length * 0.01)));
+  STATS = {
+    all, by, spread, sdW, sdH,
+    r2w: r2(LIVES, l => isNaN(l.nw65) ? NaN : ash(l.nw65)),
+    r2h: r2(LIVES, l => l.avgH),
+    r2hT: r2(LIVES, l => l.avgH, l => [l.luck.sp]),
+    r2wT: r2(LIVES, l => isNaN(l.nw65) ? NaN : ash(l.nw65), l => [l.luck.talent]),
+    top1,
+    spot: {
+      richest: byNW[0].id, poorest: byNW[byNW.length - 1].id,
+      happiest: byH[0].id, saddest: byH[byH.length - 1].id,
+      book: book.length ? book[0].id : byNW[byNW.length - 1].id,
+      ordinary: ord.id,
+    },
+  };
+}
+
+// ---------- narrator ----------
+function joinList(a) { return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]; }
+const sh = (k, j) => DECISIONS[k].short[j];
+function bio(l) {
+  const c = l.c;
+  let t = `Sam #${fmtInt(l.id + 1)} ${EDU[c[0]].verb}, ${c[1] === 0 ? 'moved to the big city' : 'stayed in the hometown'}, saved ${[5, 15, 25][c[3]]}% of their pay in ${sh(4, c[4])} and ${c[8] === 0 ? 'exercised regularly' : 'mostly sat on the couch'}.`;
+  const prio = { bad: 3, good: 3, home: 2, family: 2, retire: 2, career: 2, life: 1 };
+  // collapse repeats (crashes, jackpots, layoffs...) into one line with a count
+  const keyOf = e => e.text.split(/[0-9$]/)[0];
+  const seen = new Map(), ev = [];
+  for (const e of l.events) {
+    if (e.kind === 'school' || e.kind === 'end') continue;
+    const k = keyOf(e);
+    if (seen.has(k)) { seen.get(k).n++; continue; }
+    const x = { ...e, n: 1 }; seen.set(k, x); ev.push(x);
+  }
+  for (const e of ev) if (e.n > 1) { e.text += ` (the first of ${e.n} times)`; if (/crash/.test(e.text)) e.kind = 'life'; }
+  const picked = ev.map((e, i) => ({ e, i, p: prio[e.kind] || 1 }))
+    .sort((a, b) => b.p - a.p || a.i - b.i).slice(0, 6).sort((a, b) => a.i - b.i).map(x => x.e);
+  const parts = picked.map(e => `At ${e.age}, they ${e.text}.`);
+  if (parts.length) t += ' ' + parts.join(' ');
+  const end = l.events.find(e => e.kind === 'end');
+  if (end) t += ' They ' + end.text + '.';
+  return t;
+}
+
+function buildScript() {
+  const S = STATS, A = S.all, D = DECISIONS;
+  const ch = [];
+  const P = (text, life) => ({ text, life });
+
+  ch.push({ title: 'The experiment', paras: [
+    P(`Meet Sam. Sam is 18 and just finished high school, with a whole life ahead. We let Sam live that life ${fmtInt(N)} times.`),
+    P(`In every life, Sam makes ten big decisions, each picked at random: ${joinList(D.map(d => d.noun))}. Everything else is left to chance: the talent Sam was born with, which years the stock market crashes, layoffs, illness, love and loss.`),
+    P(`Because the choices were assigned at random, any difference between groups of Sams comes from the choice itself and not from the kind of person who makes it. At least, inside this world.`),
+  ] });
+
+  const nwS = A.nwS;
+  ch.push({ title: 'How the lives turned out', paras: [
+    P(`${pct(A.pre65)}% of Sams never saw 65. Of those who did, the typical Sam had <b>${money(A.nwMed)}</b> to their name, counting home equity, and ${pct(A.mill)}% were millionaires. ${A.nwP10 < 0 ? `The bottom tenth were at least ${money(-A.nwP10)} in debt` : `The bottom tenth had ${money(A.nwP10)} or less`}, and the top tenth had at least ${money(A.nwP90)}.`),
+    P(`The richest Sam of all reached 65 with ${money(nwS[nwS.length - 1])}. The poorest was ${money(Math.abs(nwS[0]))} ${nwS[0] < 0 ? 'in the hole' : 'to their name'}. Same person, same starting point.`),
+    P(`Across all ${fmtInt(N)} lives, Sam rated life a ${A.hMean.toFixed(1)} out of 10 on average. Half of all Sams lived past ${A.lifeMed}. And ${pct(A.ran)}% ran out of savings at some point in retirement and had to live on government pensions alone.`),
+  ] });
+
+  // money
+  const rk = key => S.spread.slice().sort((a, b) => b[key].gap - a[key].gap);
+  const mw = rk('nw');
+  const by = (k, j) => S.by[k][j];
+  const w0 = mw[0], w1 = mw[1], w2 = mw[2], wl = mw[mw.length - 1];
+  ch.push({ title: 'What mattered for money', paras: [
+    P(`The single biggest money decision was <b>${D[w0.k].noun}</b>. Sams who chose ${sh(w0.k, w0.nw.best)} reached 65 with a median of ${money(by(w0.k, w0.nw.best).nwMed)}. Sams who chose ${sh(w0.k, w0.nw.worst)} had ${money(by(w0.k, w0.nw.worst).nwMed)}. That one choice was worth ${money(w0.nw.gap)}.`),
+    P(`Next came ${D[w1.k].noun}, where ${sh(w1.k, w1.nw.best)} beat ${sh(w1.k, w1.nw.worst)} by ${money(w1.nw.gap)}, and ${D[w2.k].noun}, where ${sh(w2.k, w2.nw.best)} beat ${sh(w2.k, w2.nw.worst)} by ${money(w2.nw.gap)}.`),
+    P(`The decision that mattered least for money was ${D[wl.k].noun}. Whatever Sam picked, the typical result at 65 moved by only ${money(wl.nw.gap)}.`),
+  ] });
+
+  // happiness
+  const mh = rk('h');
+  const h0 = mh[0], h1 = mh[1];
+  const paras = [
+    P(`Happiness tells a different story. The choice that moved life satisfaction most was <b>${D[h0.k].noun}</b>: Sams who chose ${sh(h0.k, h0.h.best)} averaged ${by(h0.k, h0.h.best).hMean.toFixed(2)} out of 10, against ${by(h0.k, h0.h.worst).hMean.toFixed(2)} for ${sh(h0.k, h0.h.worst)}. Close behind was ${D[h1.k].noun}, where ${sh(h1.k, h1.h.best)} came out ${(h1.h.gap).toFixed(2)} points ahead of ${sh(h1.k, h1.h.worst)}.`),
+  ];
+  // tension: richer option but less happy
+  let tens = null;
+  for (const s of S.spread) {
+    const b = s.nw.best, opts = S.by[s.k];
+    const happier = opts.map((o, j) => j).filter(j => j !== b && opts[j].hMean > opts[b].hMean + 0.06);
+    if (!happier.length) continue;
+    const j = happier.sort((x, y) => opts[y].hMean - opts[x].hMean)[0];
+    const gap = opts[b].nwMed - opts[j].nwMed;
+    if (gap > 20000 && (!tens || gap > tens.gap)) tens = { k: s.k, b, j, gap };
+  }
+  if (tens) {
+    const o = S.by[tens.k];
+    paras.push(P(`Here's the catch. Sams who chose ${sh(tens.k, tens.b)} ended up ${money(tens.gap)} richer at 65 than Sams who chose ${sh(tens.k, tens.j)}, yet they were less satisfied with life: ${o[tens.b].hMean.toFixed(2)} against ${o[tens.j].hMean.toFixed(2)}. More money did not buy more happiness here.`));
+  }
+  const hs = A.hS;
+  paras.push(P(`And no single choice came close to luck. The happiest tenth of Sams averaged ${mean(hs.slice(-Math.floor(hs.length / 10))).toFixed(1)}, the unhappiest tenth ${mean(hs.slice(0, Math.floor(hs.length / 10))).toFixed(1)}. Sam's built-in temperament, which Sam never chose, explained more of that gap than all ten decisions put together.`));
+  ch.push({ title: 'What mattered for happiness', paras });
+
+  // lifespan
+  const ml = rk('life')[0];
+  const lp = [P(`For a long life, one choice towered over the rest: <b>${D[ml.k].noun}</b>. Sams who chose ${sh(ml.k, ml.life.best)} lived ${by(ml.k, ml.life.best).lifeMean.toFixed(1)} years on average, ${ml.life.gap.toFixed(1)} years longer than Sams who chose ${sh(ml.k, ml.life.worst)}.`)];
+  const ex = S.by[8];
+  if (ex[1].ran < ex[0].ran - 0.04) lp.push(P(`There's a dark twist. Couch Sams were less likely to run out of money in retirement (${pct(ex[1].ran)}% against ${pct(ex[0].ran)}% for Sams who exercised), simply because fewer of them lived long enough to spend it all. A longer life is a more expensive one.`));
+  ch.push({ title: 'What mattered for a long life', paras: lp });
+
+  // gamblers
+  const inv = S.by[4], idxMed = inv[1].nwMed;
+  const pickers = LIVES.filter(l => l.c[4] === 2 && !isNaN(l.nw65));
+  const beat = pickers.filter(l => l.nw65 > idxMed).length / Math.max(1, pickers.length);
+  const top1 = S.top1, topPick = top1.filter(l => l.c[4] === 2).length / top1.length, topBiz = top1.filter(l => l.c[7] === 2).length / top1.length;
+  const bz = LIVES.filter(l => l.c[7] === 2 && l.life >= 38);
+  const bzF = bz.filter(l => l.biz === 'fail').length / bz.length, bzM = bz.filter(l => l.biz === 'modest').length / bz.length, bzB = bz.filter(l => l.biz === 'big').length / bz.length;
+  ch.push({ title: 'The gamblers', paras: [
+    P(`About a third of Sams put their savings into stock picking and crypto. A lucky few hit jackpots, and stock pickers make up ${pct(topPick)}% of the richest 1% of all Sams. But the typical stock picker reached 65 with ${money(inv[2].nwMed)}, against ${money(idxMed)} for the typical index-fund Sam. Only ${pct(beat)}% of stock pickers did better than that.`),
+    P(`Another third quit their jobs at 35 to start a business. ${pct(bzF)}% of those businesses failed within three years and ${pct(bzM)}% paid an ordinary living. Just ${pct(bzB)}% hit it big. That small group was enough to make founders ${pct(topBiz)}% of the richest 1%, which is why business success stories feel more common than they are.`),
+  ] });
+
+  // retirement
+  const rt = S.by[9], cr = S.by[7];
+  ch.push({ title: 'Retirement', paras: [
+    P(`Retiring at 55 sounds like the dream. ${pct(rt[0].ran)}% of the Sams who tried it ran out of savings, against ${pct(rt[1].ran)}% of those who retired at 65 and ${pct(rt[2].ran)}% of those who worked until 70.`),
+    P(`Loyal employees had a quiet advantage: a workplace pension. Only ${pct(cr[0].ran)}% of Sams who stayed with one employer ran out of money in retirement, compared with ${pct(cr[1].ran)}% of job-hoppers, even though the job-hoppers earned more along the way.`),
+  ] });
+
+  // luck
+  ch.push({ title: 'Luck versus choices', paras: [
+    P(`Put all ten decisions together and they explain about <b>${pct(S.r2w)}%</b> of the differences in how wealthy Sam ended up. Add the talent Sam was born with and that rises to ${pct(S.r2wT)}%. The rest is the luck of the draw: which years the market crashed, layoffs, divorces, illnesses and inheritances.`),
+    P(`For happiness, the ten choices explain only ${pct(S.r2h)}%. Add Sam's natural temperament and it jumps to ${pct(S.r2hT)}%. Choices shape a life, but much of how a life feels was decided before Sam made a single one.`),
+  ] });
+
+  // spotlights
+  const sp = S.spot;
+  const L = id => reSim({ kind: 'main', i: id });
+  const spots = [
+    ['The richest Sam', sp.richest], ['The happiest Sam', sp.happiest],
+    ['The Sam who did everything by the book', sp.book], ['The most ordinary Sam', sp.ordinary], ['The unhappiest Sam', sp.saddest],
+  ];
+  ch.push({ title: 'Five Sams up close', spots: spots.map(([tag, id]) => {
+    const l = L(id);
+    let t = bio(l);
+    if (tag.includes('by the book')) t = `This Sam saved 25% in index funds and exercised, which is the textbook advice, and still had the worst result of any Sam who did. ` + t;
+    return { tag, id, text: t };
+  }) });
+
+  // advice
+  const adv = S.spread.slice().sort((a, b) => b.score.gap - a.score.gap);
+  const a1 = adv[0], a2 = adv[1];
+  ch.push({ title: 'What Sam’s other selves would say', paras: [
+    P(`Weigh money, happiness and lifespan together, and two choices stand out. If Sam could hear from all ${fmtInt(N)} of their other selves, the advice would be simple: <b>${D[a1.k].advice[a1.score.best]}</b>, and <b>${D[a2.k].advice[a2.score.best]}</b>. After that, accept that a lot of life is luck.`),
+    P(`One caution. This is a model with rules written down from rough real-world numbers. It isn't a prediction about any real life, and different assumptions would change some of these conclusions. Run a new world with a different seed to see which findings hold up.`),
+  ] });
+  return ch;
+}
+
+const strip = s => s.replace(/<[^>]+>/g, '');
+function renderStory() {
+  const el = $('story'); el.innerHTML = '';
+  SCRIPT.forEach((c, n) => {
+    const d = document.createElement('div'); d.className = 'chapter';
+    d.innerHTML = `<div class="ch"><span>${String(n + 1).padStart(2, '0')}</span><h2></h2></div>`;
+    d.querySelector('h2').textContent = c.title;
+    (c.paras || []).forEach(p => { const e = document.createElement('p'); e.innerHTML = p.text; d.appendChild(e); });
+    (c.spots || []).forEach(s => {
+      const b = document.createElement('div'); b.className = 'spot';
+      b.innerHTML = `<div class="tag"></div><p></p><div class="act"><button class="link" type="button">Open this life</button></div>`;
+      b.querySelector('.tag').textContent = s.tag;
+      b.querySelector('p').textContent = s.text;
+      b.querySelector('button').addEventListener('click', () => openLife({ kind: 'main', i: s.id }, true));
+      d.appendChild(b);
+    });
+    el.appendChild(d);
+  });
+}
+$('copy').addEventListener('click', () => {
+  const txt = `10,000 LIVES (world seed ${SEED})\n\n` + SCRIPT.map((c, n) => `${n + 1}. ${c.title.toUpperCase()}\n\n` +
+    (c.paras || []).map(p => strip(p.text)).join('\n\n') + (c.spots || []).map(s => `${s.tag}.\n${s.text}`).join('\n\n')).join('\n\n\n');
+  const fb = () => { const b = $('copyBox'); b.style.display = 'block'; b.value = txt; b.select(); $('copyMsg').textContent = 'Select all and copy the text below.'; };
+  try { navigator.clipboard.writeText(txt).then(() => { $('copyMsg').textContent = 'Copied.'; }, fb); } catch (e) { fb(); }
+});
+
+// ---------- tiles ----------
+function tile(k, v, s) { return `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div>${s ? `<div class="s">${s}</div>` : ''}</div>`; }
+function renderTiles() {
+  const A = STATS.all;
+  $('tiles').innerHTML =
+    tile('Typical net worth at 65', money(A.nwMed), `middle half: ${money(A.nwP25)} to ${money(A.nwP75)}`) +
+    tile('Millionaires by 65', pct(A.mill) + '%', 'of Sams alive at 65') +
+    tile('Average life satisfaction', A.hMean.toFixed(1), 'out of 10') +
+    tile('Typical lifespan', A.lifeMed + ' yrs', `${pct(A.pre65)}% died before 65`) +
+    tile('Ran out of savings', pct(A.ran) + '%', 'at some point in retirement');
+}
+
+// ---------- canvas helpers ----------
+function setup(c) {
+  const dpr = window.devicePixelRatio || 1;
+  if (!c._h) c._h = parseInt(c.getAttribute('height'), 10);
+  const w = c.clientWidth, h = c._h;
+  c.style.height = h + 'px'; c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, w, h };
+}
+const INK3 = '#6f7782', GRID = '#eceef1', SURF = '#ffffff', HI = '#2a78d6', DOT = '#b3b9c2';
+function placeTip(tip, box, px, py) {
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  tip.style.left = (px + tw + 18 > box.width ? px - tw - 12 : px + 14) + 'px';
+  tip.style.top = Math.max(0, Math.min(box.height - th, py - th / 2)) + 'px';
+}
+
+// ---------- scatter ----------
+const XT = [-500000, -100000, 0, 100000, 250000, 500000, 1e6, 2.5e6, 5e6, 1e7, 2.5e7];
+let scPts = [], scHover = -1;
+function fillHighlightControls(keep) {
+  const dsel = $('hiDec');
+  if (!dsel.options.length) {
+    DECISIONS.forEach((d, k) => { const o = document.createElement('option'); o.value = k; o.textContent = d.label; dsel.appendChild(o); });
+    dsel.value = 4;
+    dsel.addEventListener('change', () => { fillOpts(); drawScatter(); });
+    $('hiOpt').addEventListener('change', drawScatter);
+    fillOpts(); $('hiOpt').value = 2;
+  }
+}
+function fillOpts() {
+  const k = +$('hiDec').value, s = $('hiOpt'); s.innerHTML = '';
+  DECISIONS[k].opts.forEach((o, j) => { const e = document.createElement('option'); e.value = j; e.textContent = o; s.appendChild(e); });
+}
+function drawScatter() {
+  const c = $('scatter'); const { ctx, w, h } = setup(c);
+  const pad = { l: 44, r: 16, t: 10, b: 34 };
+  const pw = w - pad.l - pad.r, ph = h - pad.t - pad.b;
+  const alive = LIVES.filter(l => !isNaN(l.nw65));
+  const xs = sorted(alive.map(l => ash(l.nw65)));
+  const x0 = Math.min(ash(-150000), qt(xs, 0.002)), x1 = qt(xs, 0.999) + 0.2;
+  const hs = sorted(LIVES.map(l => l.avgH));
+  const y0 = Math.floor(qt(hs, 0.001) * 2) / 2, y1 = Math.ceil(qt(hs, 0.999) * 2) / 2;
+  const X = v => pad.l + (Math.max(x0, Math.min(x1, ash(v))) - x0) / (x1 - x0) * pw;
+  const Y = v => pad.t + ph - (v - y0) / (y1 - y0) * ph;
+  ctx.clearRect(0, 0, w, h);
+  ctx.font = '11px "JetBrains Mono", monospace'; ctx.fillStyle = INK3; ctx.strokeStyle = GRID; ctx.lineWidth = 1;
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let v = Math.ceil(y0); v <= y1; v++) { const y = Math.round(Y(v)) + 0.5; ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + pw, y); ctx.stroke(); ctx.fillText(v, pad.l - 8, y); }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const v of XT) { const a = ash(v); if (a < x0 || a > x1) continue; const x = Math.round(X(v)) + 0.5; ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + ph); ctx.strokeStyle = v === 0 ? '#c9ced6' : GRID; ctx.stroke(); ctx.fillText(money(v), x, pad.t + ph + 8); }
+  ctx.save(); ctx.translate(12, pad.t + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.font = '12px "Public Sans", sans-serif'; ctx.fillText('Average life satisfaction (0 to 10)', 0, 0); ctx.restore();
+  const k = +$('hiDec').value, j = +$('hiOpt').value;
+  scPts = [];
+  const others = [], his = [];
+  for (const l of alive) (l.c[k] === j ? his : others).push(l);
+  ctx.fillStyle = DOT; ctx.globalAlpha = 0.45;
+  for (const l of others) { const x = X(l.nw65), y = Y(l.avgH); ctx.fillRect(x - 1.5, y - 1.5, 3, 3); scPts.push([x, y, l.id]); }
+  ctx.globalAlpha = 0.75; ctx.fillStyle = HI;
+  for (const l of his) { const x = X(l.nw65), y = Y(l.avgH); ctx.beginPath(); ctx.arc(x, y, 2.2, 0, 7); ctx.fill(); scPts.push([x, y, l.id]); }
+  ctx.globalAlpha = 1;
+  if (scHover >= 0) { const l = LIVES[scHover]; ctx.beginPath(); ctx.arc(X(l.nw65), Y(l.avgH), 6, 0, 7); ctx.strokeStyle = '#15181d'; ctx.lineWidth = 2; ctx.stroke(); }
+  if (CUR && CUR.kind === 'main' && !isNaN(LIVES[CUR.i].nw65)) { const l = LIVES[CUR.i]; ctx.beginPath(); ctx.arc(X(l.nw65), Y(l.avgH), 7, 0, 7); ctx.strokeStyle = '#15181d'; ctx.lineWidth = 2.5; ctx.stroke(); }
+  const a = summarize(his), b = summarize(others);
+  $('scLegend').innerHTML = `<span><i style="background:${HI}"></i>${DECISIONS[k].opts[j]}: ${fmtInt(his.length)} Sams, typical ${money(a.nwMed)}, satisfaction ${a.hMean.toFixed(2)}</span><span><i style="background:${DOT}"></i>Everyone else: typical ${money(b.nwMed)}, satisfaction ${b.hMean.toFixed(2)}</span><span style="color:var(--ink-3)">${fmtInt(N - alive.length)} Sams who died before 65 aren't shown</span>`;
+}
+(function bindScatter() {
+  const c = $('scatter'), tip = $('scTip');
+  c.addEventListener('mousemove', e => {
+    const r = c.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+    let best = -1, bd = 64;
+    for (const p of scPts) { const d = (p[0] - px) ** 2 + (p[1] - py) ** 2; if (d < bd) { bd = d; best = p[2]; } }
+    if (best !== scHover) { scHover = best; drawScatter(); }
+    if (best < 0) { tip.style.display = 'none'; c.style.cursor = 'default'; return; }
+    c.style.cursor = 'pointer';
+    const l = LIVES[best];
+    tip.innerHTML = `<div class="h">Sam #${fmtInt(best + 1)}</div><div class="r"><span>Net worth at 65</span><b>${money(l.nw65)}</b></div><div class="r"><span>Life satisfaction</span><b>${l.avgH.toFixed(2)}</b></div><div class="r"><span>Lived to</span><b>${l.life}</b></div><div class="h" style="margin-top:4px">Click to read this life</div>`;
+    tip.style.display = 'block'; placeTip(tip, r, px, py);
+  });
+  c.addEventListener('mouseleave', () => { scHover = -1; tip.style.display = 'none'; drawScatter(); });
+  c.addEventListener('click', () => { if (scHover >= 0) openLife({ kind: 'main', i: scHover }, true); });
+})();
+
+// ---------- effects ----------
+let fxMetric = 'nw';
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
+  fxMetric = b.dataset.m;
+  document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+  renderFx();
+}));
+function renderFx() {
+  const m = fxMetric, S = STATS;
+  const get = s => m === 'nw' ? [s.nwMed, s.nwP25, s.nwP75] : m === 'h' ? [s.hMean, qt(s.hS, 0.25), qt(s.hS, 0.75)] : [s.lifeMean, qt(s.lifeS, 0.25), qt(s.lifeS, 0.75)];
+  const fmtV = v => m === 'nw' ? money(v) : m === 'h' ? v.toFixed(2) : v.toFixed(1);
+  const gapF = g => m === 'nw' ? money(g) : m === 'h' ? g.toFixed(2) + ' pts' : g.toFixed(1) + ' yrs';
+  $('fxHint').textContent = m === 'nw'
+    ? 'Dot: the typical (median) net worth at 65 for Sams who made that choice. Line: the middle half of those Sams. Decisions are sorted by how much they moved the result.'
+    : m === 'h' ? 'Dot: average life satisfaction over the whole life, 0 to 10. Line: the middle half of those Sams. Note how narrow the differences are compared with the spread inside each group.'
+    : 'Dot: average age at death. Line: the middle half of those Sams.';
+  const order = S.spread.slice().sort((a, b) => b[m].gap - a[m].gap);
+  let lo = Infinity, hi = -Infinity;
+  for (const s of order) for (const o of S.by[s.k]) { const [, a, b] = get(o); lo = Math.min(lo, a); hi = Math.max(hi, b); }
+  if (m === 'nw') { lo = Math.min(0, lo); }
+  const span = hi - lo; lo -= span * 0.03; hi += span * 0.03;
+  const P = v => ((v - lo) / (hi - lo) * 100).toFixed(2) + '%';
+  const ticks = [];
+  const stepRaw = (hi - lo) / 5, mag = Math.pow(10, Math.floor(Math.log10(stepRaw)));
+  const step = [1, 2, 2.5, 5, 10].map(x => x * mag).find(x => x >= stepRaw);
+  for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) ticks.push(v);
+  let html = `<div></div><div class="axis">${ticks.map(v => `<span style="left:${P(v)}">${m === 'nw' ? money(v) : m === 'h' ? v.toFixed(1) : Math.round(v)}</span>`).join('')}</div><div></div>`;
+  for (const s of order) {
+    const d = DECISIONS[s.k];
+    html += `<div class="grp"><b>${d.label}</b><span>gap between best and worst: ${gapF(s[m].gap)}</span></div>`;
+    d.opts.forEach((o, j) => {
+      const [v, a, b] = get(S.by[s.k][j]);
+      const best = j === s[m].best ? ' best' : '';
+      html += `<div class="lbl${best}">${o}</div><div class="track">${ticks.map(t => `<span class="grid" style="left:${P(t)}"></span>`).join('')}<span class="iqr" style="left:${P(a)};width:calc(${P(b)} - ${P(a)})"></span><span class="pt${best}" style="left:${P(v)}" title="${o}: ${fmtV(v)}"></span></div><div class="val${best}">${fmtV(v)}</div>`;
+    });
+  }
+  $('fx').innerHTML = html;
+  // table view
+  let t = '<table><thead><tr><th>Choice</th><th>Sams</th><th>Median net worth at 65</th><th>Millionaire at 65</th><th>Avg life satisfaction</th><th>Avg lifespan</th><th>Ran out of savings</th></tr></thead><tbody>';
+  DECISIONS.forEach((d, k) => d.opts.forEach((o, j) => { const s = S.by[k][j]; t += `<tr><td>${d.label}: ${o}</td><td>${fmtInt(s.n)}</td><td>${money(s.nwMed)}</td><td>${pct(s.mill)}%</td><td>${s.hMean.toFixed(2)}</td><td>${s.lifeMean.toFixed(1)}</td><td>${pct(s.ran)}%</td></tr>`; }));
+  $('fxTableBody').innerHTML = t + '</tbody></table>';
+}
+
+// ---------- life panel ----------
+let CUR = null, CURLIFE = null;
+const KIND = { bad: 'Setback', good: 'Windfall', home: 'Home', family: 'Family', retire: 'Retirement', career: 'Work', school: 'School', life: 'Life', end: 'End' };
+function openLife(spec, scroll) {
+  CUR = spec;
+  const l = reSim(spec); CURLIFE = l;
+  $('lifeTitle').textContent = spec.kind === 'main' ? `Sam #${fmtInt(spec.i + 1)}` : 'A Sam on your path';
+  $('lifeChips').innerHTML = DECISIONS.map((d, k) => `<span>${d.opts[l.c[k]]}</span>`).join('');
+  $('lifeStats').innerHTML = tile('Net worth at 65', isNaN(l.nw65) ? 'n/a' : money(l.nw65)) + tile('Satisfaction', l.avgH.toFixed(2)) + tile('Lived to', l.life);
+  $('lifeBio').textContent = bio(l);
+  $('lifeEvents').innerHTML = l.events.map(e => `<li><span class="a">${e.age}</span><span class="k ${e.kind}">${KIND[e.kind] || ''}</span><span>${e.text.charAt(0).toUpperCase() + e.text.slice(1)}</span></li>`).join('');
+  drawLifeCharts();
+  if (LIVES.length) drawScatter();
+  if (scroll && window.matchMedia('(max-width: 1100px)').matches) $('side').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  $('side').scrollTop = 0;
+}
+let lifeHover = { nw: null, h: null };
+function drawLine(id, key, vals, ages, color, fmt, fixed) {
+  const c = $(id); const { ctx, w, h } = setup(c);
+  const pad = { l: 46, r: 10, t: 8, b: 20 };
+  const pw = w - pad.l - pad.r, ph = h - pad.t - pad.b;
+  let lo = fixed ? fixed[0] : Math.min(0, ...vals), hi = fixed ? fixed[1] : Math.max(1, ...vals);
+  if (!fixed) { const m = Math.pow(10, Math.floor(Math.log10(Math.max(Math.abs(lo), hi)))); hi = Math.ceil(hi / m) * m; lo = lo < 0 ? Math.floor(lo / m) * m : 0; }
+  const a0 = 18, a1 = Math.max(60, ages[ages.length - 1]);
+  const X = a => pad.l + (a - a0) / (a1 - a0) * pw, Y = v => pad.t + ph - (v - lo) / (hi - lo) * ph;
+  ctx.clearRect(0, 0, w, h);
+  ctx.font = '10.5px "JetBrains Mono", monospace'; ctx.fillStyle = INK3; ctx.strokeStyle = GRID; ctx.lineWidth = 1;
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  const yt = fixed ? [0, 5, 10] : [lo, lo + (hi - lo) / 2, hi];
+  if (!fixed && lo < 0) { if (-lo < (hi - lo) * 0.2) { yt.length = 0; yt.push(0, hi / 2, hi); } else yt.splice(1, 0, 0); }
+  for (const v of yt) { const y = Math.round(Y(v)) + 0.5; ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + pw, y); ctx.strokeStyle = v === 0 && !fixed ? '#c9ced6' : GRID; ctx.stroke(); ctx.fillText(fmt(v), pad.l - 6, y); }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let a = 20; a <= a1; a += 20) ctx.fillText(a, X(a), pad.t + ph + 5);
+  ctx.beginPath(); ages.forEach((a, i) => { const x = X(a), y = Y(vals[i]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+  ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+  const hv = lifeHover[key];
+  if (hv != null) {
+    const i = ages.indexOf(hv);
+    if (i >= 0) { ctx.strokeStyle = '#15181d'; ctx.globalAlpha = .5; ctx.beginPath(); ctx.moveTo(Math.round(X(hv)) + .5, pad.t); ctx.lineTo(Math.round(X(hv)) + .5, pad.t + ph); ctx.stroke(); ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(X(hv), Y(vals[i]), 4, 0, 7); ctx.fillStyle = color; ctx.fill(); ctx.strokeStyle = SURF; ctx.lineWidth = 2; ctx.stroke(); }
+  }
+  c._map = { X, pad, a0, a1, pw };
+}
+function drawLifeCharts() {
+  const l = CURLIFE; if (!l) return;
+  drawLine('lifeNW', 'nw', l.series.nw, l.series.age, HI, v => money(v), null);
+  drawLine('lifeH', 'h', l.series.h, l.series.age, '#15181d', v => String(v), [0, 10]);
+}
+function bindLife(id, tipId, key, fmt) {
+  const c = $(id), tip = $(tipId);
+  c.addEventListener('mousemove', e => {
+    const l = CURLIFE; if (!l || !c._map) return;
+    const r = c.getBoundingClientRect(), px = e.clientX - r.left, m = c._map;
+    const a = Math.round(m.a0 + (px - m.pad.l) / m.pw * (m.a1 - m.a0));
+    const i = l.series.age.indexOf(a);
+    if (i < 0) { lifeHover[key] = null; tip.style.display = 'none'; drawLifeCharts(); return; }
+    lifeHover[key] = a; drawLifeCharts();
+    const evs = l.events.filter(x => x.age === a).map(x => x.text);
+    tip.innerHTML = `<div class="h">Age ${a}</div><div class="r"><span>${key === 'nw' ? 'Net worth' : 'Satisfaction'}</span><b>${fmt(l.series[key][i])}</b></div>${evs.length ? `<div style="margin-top:4px;max-width:220px">${evs.join('; ')}</div>` : ''}`;
+    tip.style.display = 'block'; placeTip(tip, r, px, 30);
+  });
+  c.addEventListener('mouseleave', () => { lifeHover[key] = null; tip.style.display = 'none'; drawLifeCharts(); });
+}
+bindLife('lifeNW', 'lnTip', 'nw', v => money(v));
+bindLife('lifeH', 'lhTip', 'h', v => v.toFixed(1));
+
+// ---------- path builder ----------
+const PATHN = 2000;
+let PATH = null;
+(function buildPathGrid() {
+  const g = $('pathGrid');
+  DECISIONS.forEach((d, k) => {
+    const w = document.createElement('div');
+    w.innerHTML = `<label for="pd${k}">${d.label}</label><select id="pd${k}"><option value="-1">Leave it to chance</option>${d.opts.map((o, j) => `<option value="${j}">${o}</option>`).join('')}</select>`;
+    g.appendChild(w);
+  });
+  // a sensible starting example
+  $('pd3').value = 2; $('pd4').value = 1; $('pd8').value = 0;
+})();
+$('pathReset').addEventListener('click', () => { DECISIONS.forEach((d, k) => { $('pd' + k).value = -1; }); });
+$('pathRun').addEventListener('click', runPath);
+function runPath() {
+  const fixed = DECISIONS.map((d, k) => +$('pd' + k).value);
+  const lives = [];
+  for (let i = 0; i < PATHN; i++) {
+    const rc = randomChoices(lifeRng(SEED, i, 4));
+    const c = fixed.map((v, k) => v >= 0 ? v : rc[k]);
+    const l = simLife(lifeRng(SEED, i, 3), c, false); l.id = i; lives.push(l);
+  }
+  PATH = { fixed, lives, s: summarize(lives) };
+  $('pathOut').style.display = 'block';
+  const a = PATH.s, b = STATS.all;
+  const dl = (x, y, f, up) => { const d = x - y; if (Math.abs(d) < 1e-9) return '<span class="delta">same as all Sams</span>'; const good = up ? d > 0 : d < 0; return `<span class="delta ${good ? 'up' : 'down'}">${d > 0 ? '+' : '−'}${f(Math.abs(d))} vs all Sams</span>`; };
+  $('pathTiles').innerHTML =
+    tile('Typical net worth at 65', money(a.nwMed), dl(a.nwMed, b.nwMed, money, true)) +
+    tile('Unlucky 10% / lucky 10%', `${money(a.nwP10)} / ${money(a.nwP90)}`, 'net worth at 65') +
+    tile('Millionaire by 65', pct(a.mill) + '%', dl(a.mill * 100, b.mill * 100, v => Math.round(v) + ' pts', true)) +
+    tile('Life satisfaction', a.hMean.toFixed(2), dl(a.hMean, b.hMean, v => v.toFixed(2), true)) +
+    tile('Average lifespan', a.lifeMean.toFixed(1), dl(a.lifeMean, b.lifeMean, v => v.toFixed(1) + ' yrs', true)) +
+    tile('Ran out of savings', pct(a.ran) + '%', dl(a.ran * 100, b.ran * 100, v => Math.round(v) + ' pts', false));
+  const picks = fixed.map((v, k) => v >= 0 ? DECISIONS[k].short[v] : null).filter(Boolean);
+  $('pathSay').textContent = picks.length
+    ? `Living ${picks.length === 1 ? 'this choice' : 'these choices'} (${joinList(picks)}) ${fmtInt(PATHN)} times: half of these Sams reach 65 with more than ${money(a.nwMed)}, and one in ten ends up ${a.nwP10 < 0 ? `at least ${money(-a.nwP10)} in debt` : `with less than ${money(a.nwP10)}`}, because luck still deals the rest of the hand. ${a.ran > b.ran + 0.03 ? `${pct(a.ran)}% of them run out of savings in retirement, more than the average Sam.` : a.ran < b.ran - 0.03 ? `Only ${pct(a.ran)}% of them ever run out of savings in retirement.` : ''}`
+    : `With every choice left to chance, this is just another ${fmtInt(PATHN)} random Sams, so the results should look like everyone else's. Pick a few choices above to see how they change the odds.`;
+  drawHist();
+}
+let histHover = -1, HB = null;
+function drawHist() {
+  if (!PATH) return;
+  const c = $('hist'); const { ctx, w, h } = setup(c);
+  const pad = { l: 44, r: 12, t: 8, b: 30 };
+  const pw = w - pad.l - pad.r, ph = h - pad.t - pad.b;
+  const lo = ash(-200000), hi = ash(1e7), nb = 36, bw = (hi - lo) / nb;
+  const bin = v => Math.max(0, Math.min(nb - 1, Math.floor((ash(v) - lo) / bw)));
+  const A = new Array(nb).fill(0), B = new Array(nb).fill(0);
+  const all = LIVES.filter(l => !isNaN(l.nw65)), mine = PATH.lives.filter(l => !isNaN(l.nw65));
+  all.forEach(l => A[bin(l.nw65)]++); mine.forEach(l => B[bin(l.nw65)]++);
+  const a = A.map(x => x / all.length), b = B.map(x => x / Math.max(1, mine.length));
+  const ym = Math.max(...a, ...b) * 1.1;
+  const X = i => pad.l + i / nb * pw, Y = v => pad.t + ph - v / ym * ph;
+  ctx.clearRect(0, 0, w, h);
+  ctx.font = '11px "JetBrains Mono", monospace'; ctx.fillStyle = INK3; ctx.strokeStyle = GRID;
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  const step = ym > 0.2 ? 0.1 : ym > 0.1 ? 0.05 : 0.02;
+  for (let v = 0; v <= ym; v += step) { const y = Math.round(Y(v)) + 0.5; ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + pw, y); ctx.stroke(); ctx.fillText(Math.round(v * 100) + '%', pad.l - 6, y); }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const v of [-100000, 0, 100000, 500000, 1e6, 2.5e6, 1e7]) { const x = pad.l + (ash(v) - lo) / (hi - lo) * pw; ctx.fillText(money(v) + (v === 1e7 ? '+' : ''), x, pad.t + ph + 8); }
+  const bwPx = pw / nb;
+  for (let i = 0; i < nb; i++) {
+    ctx.fillStyle = DOT; ctx.globalAlpha = histHover === i ? 1 : 0.7;
+    if (a[i] > 0) ctx.fillRect(X(i) + 1, Y(a[i]), bwPx - 2, pad.t + ph - Y(a[i]));
+  }
+  ctx.globalAlpha = 1;
+  ctx.beginPath(); ctx.moveTo(X(0), Y(0));
+  for (let i = 0; i < nb; i++) { ctx.lineTo(X(i), Y(b[i])); ctx.lineTo(X(i + 1), Y(b[i])); }
+  ctx.lineTo(X(nb), Y(0));
+  ctx.strokeStyle = HI; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+  HB = { a, b, nb, lo, bw, X, pad, pw };
+}
+(function bindHist() {
+  const c = $('hist'), tip = $('hTip');
+  c.addEventListener('mousemove', e => {
+    if (!HB) return;
+    const r = c.getBoundingClientRect(), px = e.clientX - r.left;
+    const i = Math.floor((px - HB.pad.l) / HB.pw * HB.nb);
+    if (i < 0 || i >= HB.nb) { histHover = -1; tip.style.display = 'none'; drawHist(); return; }
+    histHover = i; drawHist();
+    const f = v => money(Math.sinh(v) * 100000);
+    tip.innerHTML = `<div class="h">${f(HB.lo + i * HB.bw)} to ${f(HB.lo + (i + 1) * HB.bw)}</div><div class="r"><span>All Sams</span><b>${(HB.a[i] * 100).toFixed(1)}%</b></div><div class="r"><span>Your path</span><b>${(HB.b[i] * 100).toFixed(1)}%</b></div>`;
+    tip.style.display = 'block'; placeTip(tip, r, px, 40);
+  });
+  c.addEventListener('mouseleave', () => { histHover = -1; tip.style.display = 'none'; drawHist(); });
+})();
+$('pathLife').addEventListener('click', () => {
+  if (!PATH) return;
+  const l = PATH.lives[Math.floor(Math.random() * PATH.lives.length)];
+  openLife({ kind: 'path', i: l.id, c: l.c }, true);
+});
+
+// ---------- controls ----------
+function go(seed) {
+  $('status').textContent = 'Living 10,000 lives…';
+  $('run').disabled = true;
+  setTimeout(() => {
+    const t0 = performance.now();
+    runAll(seed);
+    $('status').textContent = `Done in ${((performance.now() - t0) / 1000).toFixed(1)}s`;
+    $('run').disabled = false;
+  }, 30);
+}
+$('run').addEventListener('click', () => { const s = (parseInt($('seed').value, 10) || 1); const next = s === SEED ? s + 1 : s; $('seed').value = next; go(next); });
+let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { drawScatter(); drawLifeCharts(); drawHist(); }, 120); });
+runAll(1);
+runPath();
+$('status').textContent = '';
+})();
+</script>
+</body>
+</html>
