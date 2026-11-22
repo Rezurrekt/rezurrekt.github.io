@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>HN — Things I've Made</title>
-<meta name="description" content="Simulations and experiments, built and shared by HN.">
+<meta name="description" content="Games, simulations and small tools, built and shared by HN.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -39,13 +39,6 @@ header p { color: var(--ink-2); max-width: 56ch; font-size: 17px; margin: 16px 0
 .go { color: var(--hi); font-weight: 600; }
 .card.soon { border-style: dashed; background: transparent; pointer-events: none; }
 .card.soon .body { justify-content: center; align-items: center; text-align: center; min-height: 260px; color: var(--ink-3); }
-.mf-thumb { position: relative; background: #FAF8F3; padding: 16px 18px; display: grid; grid-template-columns: 1fr 34%; grid-auto-rows: min-content; gap: 8px 12px; }
-.mf-note { grid-column: 1; display: flex; flex-direction: column; gap: 5px; background: #fff; border: 1px solid rgba(100,80,50,.14); border-radius: 8px; padding: 8px 10px; }
-.mf-note i { width: 38px; height: 7px; border-radius: 9px; opacity: .55; }
-.mf-note b, .mf-side b { display: block; height: 6px; width: 100%; border-radius: 4px; background: #E3DDCF; }
-.mf-side { grid-column: 2; grid-row: 1 / 4; display: flex; flex-direction: column; gap: 7px; background: #F0E8DA; border-left: 3px solid #C8A882; border-radius: 8px; padding: 10px; }
-.mf-side b { background: #DCCBB2; }
-.note { font-size: 13px; color: var(--ink-3); margin: 12px 0 0; max-width: 70ch; }
 footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--ink-3); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
 footer a { color: var(--ink-2); }
 @media (prefers-reduced-motion: reduce) { .card { transition: none; } .card:hover { transform: none; } }
@@ -55,8 +48,45 @@ footer a { color: var(--ink-2); }
 <div class="wrap">
   <header>
     <h1>Things I've <em>made</em></h1>
-    <p>Simulations, experiments and small tools I've built. Everything runs right in your browser, so click one and play with it.</p>
+    <p>Games, simulations and small tools I've built. Everything runs right in your browser, so click one and play with it.</p>
   </header>
+
+  <div class="label">Games</div>
+  <div class="grid">
+    <a class="card" href="games/saltmere/">
+      <span class="thumb"><canvas data-thumb="saltmere" aria-hidden="true"></canvas></span>
+      <span class="body">
+        <h2>Saltmere: The Drowning Bell</h2>
+        <p>A hard mystery RPG. The lighthouse keeper is gone and the sea rises every day. You have 14 days to find the thief, the lookout and the hidden stone, while the guilty lie, evidence gets planted and some puzzles lead nowhere. Every game is a new mystery.</p>
+        <span class="meta">
+          <span class="tags"><span>rpg</span><span>deduction</span></span>
+          <span class="go">Open →</span>
+        </span>
+      </span>
+    </a>
+    <a class="card" href="games/hearthvale/">
+      <span class="thumb"><canvas data-thumb="hearthvale" aria-hidden="true"></canvas></span>
+      <span class="body">
+        <h2>Hearthvale: Heir</h2>
+        <p>A cozy story RPG. You inherit Gran's farm with 14 days until the Spring Fair. Plan a garden, fix the mill, crack Gran's cipher box, win over the village, and find out what the land company really wants.</p>
+        <span class="meta">
+          <span class="tags"><span>rpg</span><span>puzzles</span></span>
+          <span class="go">Open →</span>
+        </span>
+      </span>
+    </a>
+    <a class="card" href="games/cheaters-and-cooperators/">
+      <span class="thumb"><canvas data-thumb="trust" aria-hidden="true"></canvas></span>
+      <span class="body">
+        <h2>Cheaters &amp; Cooperators</h2>
+        <p>About 3,000 villagers on an island each choose whether to share food with their neighbours or steal it, using one of six strategies they pass on to their children. Trigger droughts or land a boat of Cheaters, and a narrator tells the story of who takes over.</p>
+        <span class="meta">
+          <span class="tags"><span>game theory</span><span>evolution</span></span>
+          <span class="go">Open →</span>
+        </span>
+      </span>
+    </a>
+  </div>
 
   <div class="label">Simulations</div>
   <div class="grid">
@@ -75,29 +105,67 @@ footer a { color: var(--ink-2); }
     </a>
     <!-- END PROJECT CARD -->
 
+    <a class="card" href="sims/tiny-island/">
+      <span class="thumb"><canvas data-thumb="island" aria-hidden="true"></canvas></span>
+      <span class="body">
+        <h2>Tiny Island</h2>
+        <p>Hares and foxes on a little island, with seasons, snow and real genes for speed, hearing and winter coats. Watch boom-and-bust cycles and evolution happen, with a narrator that picks out the chases and close escapes.</p>
+        <span class="meta">
+          <span class="tags"><span>simulation</span><span>evolution</span></span>
+          <span class="go">Open →</span>
+        </span>
+      </span>
+    </a>
+    <a class="card" href="sims/little-kingdoms/">
+      <span class="thumb"><canvas data-thumb="kingdoms" aria-hidden="true"></canvas></span>
+      <span class="body">
+        <h2>Little Kingdoms</h2>
+        <p>A civilization chronicle. Villages grow into kingdoms and empires on a generated continent, with rulers, wars, plagues, faiths and hordes, and a narrator who tells the story century by century.</p>
+        <span class="meta">
+          <span class="tags"><span>simulation</span><span>history</span></span>
+          <span class="go">Open →</span>
+        </span>
+      </span>
+    </a>
+    <a class="card" href="sims/the-pit/">
+      <span class="thumb"><canvas data-thumb="pit" aria-hidden="true"></canvas></span>
+      <span class="body">
+        <h2>The Pit</h2>
+        <p>A trading floor in miniature: market makers, momentum and value funds, options dealers and 800 prop accounts fight over one NQ-style order book. Watch stop cascades, gamma regimes and who blows up.</p>
+        <span class="meta">
+          <span class="tags"><span>simulation</span><span>markets</span></span>
+          <span class="go">Open →</span>
+        </span>
+      </span>
+    </a>
+    <a class="card" href="sims/coinville/">
+      <span class="thumb"><canvas data-thumb="coinville" aria-hidden="true"></canvas></span>
+      <span class="body">
+        <h2>Coinville: A Living Town</h2>
+        <p>A town of people living month by month on real stock-market and inflation history. Homes, jobs, businesses, panics and inheritances all emerge on their own, and a panel shows what actually mattered for getting rich.</p>
+        <span class="meta">
+          <span class="tags"><span>simulation</span><span>personal finance</span></span>
+          <span class="go">Open →</span>
+        </span>
+      </span>
+    </a>
     <div class="card soon"><span class="body"><span>More worlds coming soon</span></span></div>
   </div>
 
-  <div class="label">Apps</div>
+  <div class="label">Tools</div>
   <div class="grid">
-    <a class="card" href="apps/mindflow/">
-      <span class="thumb mf-thumb" aria-hidden="true">
-        <span class="mf-note"><i style="background:#4CA85A"></i><b></b><b style="width:70%"></b></span>
-        <span class="mf-note"><i style="background:#5B86D6"></i><b style="width:85%"></b></span>
-        <span class="mf-note"><i style="background:#F07B2E"></i><b style="width:60%"></b><b style="width:40%"></b></span>
-        <span class="mf-side"><b style="width:80%"></b><b></b><b style="width:65%"></b></span>
-      </span>
+    <a class="card" href="mindflow/">
+      <span class="thumb"><canvas data-thumb="mindflow" aria-hidden="true"></canvas></span>
       <span class="body">
         <h2>Mindflow</h2>
-        <p>A daily notebook for thoughts, tasks and ideas. AI sorts your notes, writes a summary of the day, pulls out action items and suggests calendar events from what you wrote.</p>
+        <p>An AI-powered note-capture and calendar app. Jot things down and let it sort them into notes and plans.</p>
         <span class="meta">
-          <span class="tags"><span>app</span><span>AI</span><span>productivity</span></span>
+          <span class="tags"><span>tool</span><span>AI</span></span>
           <span class="go">Open →</span>
         </span>
       </span>
     </a>
   </div>
-  <p class="note">Mindflow's AI features need your own Anthropic API key (Settings ⚙). It stays in your browser, and your notes never leave your device.</p>
 
   <footer>
     <span>Built by HN</span>
@@ -106,30 +174,101 @@ footer a { color: var(--ink-2); }
 </div>
 
 <script>
-// Draws the little dot-cloud preview on the 10,000 Lives card
+// Small preview drawings for each card, in the page's grey + blue palette
 (function () {
-  const c = document.querySelector('canvas[data-thumb="lives"]');
-  if (!c) return;
-  let s = 7;
-  const R = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
-  const g = () => { let u = 0; while (!u) u = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * R()); };
-  const pts = Array.from({ length: 1400 }, () => {
-    const w = g(), hi = R() < 0.18;
-    return { x: 0.5 + 0.17 * w + (hi ? 0.04 : 0), y: 0.52 - 0.11 * w * 0.35 + 0.15 * g(), hi };
-  });
-  function draw() {
-    const dpr = window.devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
-    c.width = w * dpr; c.height = h * dpr;
-    const x = c.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0);
-    x.clearRect(0, 0, w, h);
-    for (const p of pts) {
-      const px = p.x * w, py = p.y * h;
-      if (p.hi) { x.fillStyle = '#2a78d6'; x.globalAlpha = .8; x.beginPath(); x.arc(px, py, 1.8, 0, 7); x.fill(); }
-      else { x.fillStyle = '#b3b9c2'; x.globalAlpha = .55; x.fillRect(px - 1.2, py - 1.2, 2.4, 2.4); }
+  const GREY = '#b3b9c2', BLUE = '#2a78d6', INK = '#6f7782';
+  function rng(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return s / 2147483647; }; }
+  const T = {
+    lives(x, w, h) {
+      const R = rng(7), g = () => { let u = 0; while (!u) u = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * R()); };
+      for (let i = 0; i < 1400; i++) {
+        const v = g(), hi = R() < 0.18, px = (0.5 + 0.17 * v + (hi ? 0.04 : 0)) * w, py = (0.52 - 0.0385 * v + 0.15 * g()) * h;
+        if (hi) { x.fillStyle = BLUE; x.globalAlpha = .8; x.beginPath(); x.arc(px, py, 1.8, 0, 7); x.fill(); }
+        else { x.fillStyle = GREY; x.globalAlpha = .55; x.fillRect(px - 1.2, py - 1.2, 2.4, 2.4); }
+      }
+    },
+    saltmere(x, w, h) {
+      // rising tide lines
+      for (let i = 0; i < 9; i++) { x.strokeStyle = GREY; x.globalAlpha = .25 + i * .06; x.beginPath();
+        for (let px = 0; px <= w; px += 6) x.lineTo(px, h * (.62 + i * .05) + Math.sin(px / 22 + i) * 3); x.stroke(); }
+      // lighthouse + beam
+      const lx = w * .3, ly = h * .62;
+      x.globalAlpha = .18; x.fillStyle = BLUE; x.beginPath(); x.moveTo(lx, ly - 70); x.lineTo(w, h * .05); x.lineTo(w, h * .42); x.fill();
+      x.globalAlpha = 1;
+      for (let i = 0; i < 5; i++) { x.fillStyle = i % 2 ? '#ffffff' : BLUE; x.fillRect(lx - 7, ly - 14 - i * 12, 14, 12); }
+      x.fillStyle = INK; x.fillRect(lx - 9, ly - 78, 18, 8); x.fillStyle = '#ffd166'; x.fillRect(lx - 5, ly - 76, 10, 5);
+      x.strokeStyle = INK; x.strokeRect(lx - 7.5, ly - 74.5, 15, 74);
+    },
+    hearthvale(x, w, h) {
+      const R = rng(11), cw = 34, gap = 8, cols = 5, rows = 3, ox = (w - (cols * cw + (cols - 1) * gap)) / 2, oy = (h - (rows * cw + (rows - 1) * gap)) / 2;
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        const X = ox + c * (cw + gap), Y = oy + r * (cw + gap), on = R() < .35;
+        x.globalAlpha = 1; x.fillStyle = on ? BLUE : '#e4e7eb'; x.fillRect(X, Y, cw, cw);
+        if (!on) { x.fillStyle = GREY; for (let k = 0; k < 3; k++) { x.beginPath(); x.arc(X + 9 + k * 8, Y + cw / 2 + (k % 2 ? -4 : 4), 2.6, 0, 7); x.fill(); } }
+        else { x.fillStyle = '#fff'; x.globalAlpha = .9; x.beginPath(); x.arc(X + cw / 2, Y + cw / 2, 5, 0, 7); x.fill(); }
+      }
+    },
+    island(x, w, h) {
+      // hare and fox population cycles
+      const line = (col, amp, base, lag, a) => { x.strokeStyle = col; x.globalAlpha = a; x.lineWidth = 2; x.beginPath();
+        for (let px = 0; px <= w; px += 3) { const t = px / w * Math.PI * 5 - lag; x.lineTo(px, h * base - amp * h * (Math.sin(t) * .5 + .5) * (1 + .2 * Math.sin(t * .37))); } x.stroke(); };
+      line(GREY, .55, .85, 0, .9); line(BLUE, .3, .85, .9, 1);
+      x.lineWidth = 1; x.globalAlpha = 1; x.fillStyle = INK; x.font = '11px Public Sans, sans-serif';
+      x.fillText('hares', 10, 16); x.fillStyle = BLUE; x.fillText('foxes', 52, 16);
+    },
+    kingdoms(x, w, h) {
+      const R = rng(5), seeds = Array.from({ length: 11 }, () => [R() * w, R() * h]);
+      for (let px = 4; px < w; px += 8) for (let py = 4; py < h; py += 8) {
+        let b = 0, bd = 1e9; seeds.forEach((s, i) => { const d = (s[0] - px) ** 2 + (s[1] - py) ** 2; if (d < bd) { bd = d; b = i; } });
+        const big = b < 3; x.globalAlpha = big ? .75 : .2 + (b % 4) * .1; x.fillStyle = big ? BLUE : GREY;
+        x.fillRect(px - 2, py - 2, 4, 4);
+      }
+      x.globalAlpha = 1; x.fillStyle = INK; seeds.forEach(s => x.fillRect(s[0] - 3, s[1] - 3, 6, 6));
+    },
+    pit(x, w, h) {
+      const R = rng(3), mid = w * .5;
+      for (let i = 0; i < 14; i++) { const y = 18 + i * 10, d = (16 - i) * 6 + R() * 30;
+        x.globalAlpha = .5; x.fillStyle = GREY; x.fillRect(mid - d, y, d, 6);
+        x.globalAlpha = .55; x.fillStyle = BLUE; x.fillRect(mid + 4, y, (i + 2) * 6 + R() * 30, 6); }
+      x.globalAlpha = 1; x.strokeStyle = INK; x.lineWidth = 1.5; x.beginPath(); let p = h * .5;
+      for (let px = 0; px <= w; px += 4) { p += (R() - .5) * 9; p = Math.max(15, Math.min(h - 15, p)); x.lineTo(px, p); } x.stroke(); x.lineWidth = 1;
+    },
+    coinville(x, w, h) {
+      const R = rng(9), n = 16, bw = (w - 40) / n;
+      for (let i = 0; i < n; i++) { const bh = 20 + R() * 70 + i * 2.5, X = 20 + i * bw, Y = h - 22 - bh, hi = R() < .25;
+        x.globalAlpha = hi ? .85 : .45; x.fillStyle = hi ? BLUE : GREY; x.fillRect(X + 2, Y, bw - 5, bh);
+        x.beginPath(); x.moveTo(X, Y); x.lineTo(X + bw / 2 - 0.5, Y - 8); x.lineTo(X + bw - 1, Y); x.fill(); }
+      x.globalAlpha = 1; x.fillStyle = INK; x.fillRect(12, h - 22, w - 24, 1.5);
+    },
+    trust(x, w, h) {
+      // patches of sharers (blue) and cheaters (grey) spreading across a grid
+      const R = rng(21), seeds = Array.from({ length: 9 }, (_, i) => [R() * w, R() * h, i % 3 === 0]);
+      for (let px = 5; px < w; px += 10) for (let py = 5; py < h; py += 10) {
+        let b = seeds[0], bd = 1e9; for (const s of seeds) { const d = (s[0] - px) ** 2 + (s[1] - py) ** 2 + R() * 900; if (d < bd) { bd = d; b = s; } }
+        x.globalAlpha = b[2] ? .55 : .8; x.fillStyle = b[2] ? GREY : BLUE;
+        x.beginPath(); x.arc(px, py, 3.4, 0, 7); x.fill();
+      }
+    },
+    mindflow(x, w, h) {
+      const R = rng(4), cols = 7, rows = 4, cw = 30, ch = 26, gap = 6, ox = (w - (cols * cw + (cols - 1) * gap)) / 2, oy = (h - (rows * ch + (rows - 1) * gap)) / 2;
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) { const X = ox + c * (cw + gap), Y = oy + r * (ch + gap);
+        x.globalAlpha = 1; x.fillStyle = '#fff'; x.fillRect(X, Y, cw, ch); x.strokeStyle = '#d9dde3'; x.strokeRect(X + .5, Y + .5, cw - 1, ch - 1);
+        const k = R(); if (k < .3) { x.fillStyle = BLUE; x.globalAlpha = .8; x.fillRect(X + 4, Y + 6, cw - 8, 5); }
+        if (k > .75) { x.fillStyle = GREY; x.globalAlpha = .8; x.fillRect(X + 4, Y + 14, cw - 12, 4); } }
+    }
+  };
+  const cvs = [...document.querySelectorAll('canvas[data-thumb]')];
+  function drawAll() {
+    for (const c of cvs) {
+      const f = T[c.dataset.thumb]; if (!f) continue;
+      const dpr = window.devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
+      c.width = w * dpr; c.height = h * dpr;
+      const x = c.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, w, h);
+      f(x, w, h); x.globalAlpha = 1;
     }
   }
-  draw();
-  let t; window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(draw, 120); });
+  drawAll();
+  let t; window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(drawAll, 120); });
 })();
 </script>
 </body>

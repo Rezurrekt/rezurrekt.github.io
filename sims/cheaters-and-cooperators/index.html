@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cheaters &amp; Cooperators</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a night-time island. Map + narrator side by side, the history charts underneath. Single dark theme by choice. */
+:root {
+  color-scheme: dark;
+  --bg: #121312;
+  --surface: #1a1a19;
+  --surface-2: #232321;
+  --line: #34332f;
+  --ink: #f0efec;
+  --ink-2: #c3c2b7;
+  --ink-3: #8f8e86;
+  --accent: #9085e9;
+  --warn: #e66767;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #0ca30c;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45; }
+body { padding: 20px max(16px, 3vw) 48px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(26px, 4vw, 38px); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 17px; font-weight: 700; }
+.sub { color: var(--ink-2); max-width: 70ch; margin: 6px 0 0; }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+header { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 16px; }
+.controls .group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.controls .sep { width: 1px; align-self: stretch; background: var(--line); }
+label { color: var(--ink-2); font-size: 13px; }
+button, select, input[type=number] {
+  font: inherit; font-size: 14px; color: var(--ink); background: var(--surface-2);
+  border: 1px solid var(--line); border-radius: 7px; padding: 6px 11px; cursor: pointer;
+}
+input[type=number] { width: 84px; cursor: text; font-family: var(--font-mono); }
+button:hover, select:hover { border-color: var(--ink-3); }
+button:focus-visible, select:focus-visible, input:focus-visible, canvas:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.primary { background: var(--accent); color: #14121f; border-color: var(--accent); font-weight: 600; min-width: 78px; }
+button.event { font-size: 13px; padding: 5px 10px; }
+input[type=range] { accent-color: var(--accent); width: 110px; }
+.check { display: flex; gap: 6px; align-items: center; }
+
+.top { display: grid; grid-template-columns: minmax(280px, 540px) minmax(280px, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 880px) { .top { grid-template-columns: 1fr; } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+@media (max-width: 460px) { .tiles { grid-template-columns: repeat(2, 1fr); } }
+.tile { background: var(--surface-2); border-radius: 8px; padding: 8px 10px; }
+.tile .k { font-size: 12px; color: var(--ink-3); }
+.tile .v { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 20px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile .v.small { font-family: var(--font-body); font-size: 16px; font-weight: 600; padding-top: 3px; }
+
+.tabs { display: flex; gap: 4px; background: var(--surface-2); padding: 3px; border-radius: 8px; }
+.tabs button { border: 0; background: transparent; padding: 4px 10px; font-size: 13px; color: var(--ink-2); }
+.tabs button[aria-pressed="true"] { background: var(--line); color: var(--ink); }
+.mapwrap { position: relative; }
+#map { width: 100%; aspect-ratio: 1; display: block; border-radius: 6px; background: var(--surface-2); cursor: crosshair; }
+.maplegend { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--ink-3); margin-top: 8px; min-height: 18px; }
+.ramp { height: 8px; width: 140px; border-radius: 4px; }
+
+.strats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px; }
+@media (max-width: 460px) { .strats { grid-template-columns: 1fr; } }
+.strat { display: grid; grid-template-columns: 12px 1fr auto; gap: 4px 8px; align-items: start; background: var(--surface-2); border-radius: 8px; padding: 8px 10px; }
+.sw { width: 12px; height: 12px; border-radius: 3px; margin-top: 4px; position: relative; }
+.sw.mark::after { content: ""; position: absolute; inset: 3.5px; background: #1a1a19; border-radius: 1px; }
+.strat .nm { font-weight: 600; }
+.strat .ct { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink-2); font-size: 13px; text-align: right; }
+.strat .ds { grid-column: 2 / 4; color: var(--ink-3); font-size: 12.5px; line-height: 1.35; }
+.strat.gone .nm { color: var(--ink-3); text-decoration: line-through; }
+
+#story { height: 640px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 6px; scroll-behavior: smooth; }
+@media (max-width: 880px) { #story { height: 420px; } }
+.line { display: grid; grid-template-columns: 64px 1fr; gap: 10px; padding: 8px 10px 8px 12px; border-left: 3px solid var(--line); background: var(--surface-2); border-radius: 0 8px 8px 0; }
+.line .yr { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); padding-top: 2px; }
+.line .tx { font-size: 15px; line-height: 1.5; max-width: 68ch; }
+.line.event { border-left-color: var(--accent); }
+.line.alarm { border-left-color: var(--warn); }
+.line.intro .tx, .line.summary .tx { color: var(--ink-2); }
+.line.summary { background: transparent; border-left-style: dashed; }
+.story-foot { display: flex; gap: 8px; align-items: center; margin-top: 10px; color: var(--ink-3); font-size: 12.5px; flex-wrap: wrap; }
+#copied { color: var(--ink-2); }
+
+.charts { display: grid; gap: 16px; margin-top: 16px; }
+.charts .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 760px) { .charts .row2 { grid-template-columns: 1fr; } }
+.chart { position: relative; }
+.chart canvas { width: 100%; display: block; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--ink-2); }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.tip { position: absolute; pointer-events: none; background: #0d0d0c; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; color: var(--ink); min-width: 150px; display: none; z-index: 5; box-shadow: 0 6px 20px rgba(0,0,0,.45); }
+.tip .h { color: var(--ink-3); font-size: 12px; margin-bottom: 4px; }
+.tip .r { display: flex; justify-content: space-between; gap: 14px; align-items: center; }
+.tip .r b { font-weight: 500; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.tip .r span { display: inline-flex; gap: 6px; align-items: center; }
+.tip i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+
+details { margin-top: 10px; }
+summary { cursor: pointer; color: var(--ink-2); font-size: 13px; }
+.tablewrap { overflow-x: auto; margin-top: 8px; max-height: 320px; overflow-y: auto; }
+table { border-collapse: collapse; font-size: 13px; width: 100%; }
+th, td { padding: 4px 10px; text-align: right; border-bottom: 1px solid var(--line); font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+th { font-family: var(--font-body); color: var(--ink-3); font-weight: 500; position: sticky; top: 0; background: var(--surface); }
+.how { margin-top: 16px; color: var(--ink-2); font-size: 14px; }
+.how p { max-width: 75ch; margin: 6px 0; }
+.payoff { display: inline-grid; grid-template-columns: auto auto auto; gap: 2px; font-size: 13px; margin: 6px 0; }
+.payoff div { background: var(--surface-2); padding: 4px 10px; }
+.payoff .h { color: var(--ink-3); background: transparent; }
+#copybox { display: none; margin-top: 8px; }
+#copybox textarea { width: 100%; height: 160px; background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; font-family: var(--font-mono); font-size: 12px; padding: 8px; }
+@media (prefers-reduced-motion: reduce) { #story { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Cheaters &amp; Cooperators</h1>
+  <p class="sub">An island of villagers who meet their neighbours every year and choose to share food or steal it. Each one follows a fixed strategy and passes it on to their children. Strategies that feed their owners spread, and the rest die out. The narrator reports what happens as it happens.</p>
+</header>
+
+<div class="controls" role="toolbar" aria-label="Simulation controls">
+  <div class="group">
+    <button id="play" class="primary" type="button">Pause</button>
+    <button id="stepBtn" type="button">+1 year</button>
+    <label for="speed">Speed</label>
+    <select id="speed">
+      <option value="2">Slow</option>
+      <option value="6" selected>Normal</option>
+      <option value="15">Fast</option>
+      <option value="40">Very fast</option>
+    </select>
+  </div>
+  <div class="sep"></div>
+  <div class="group">
+    <label for="preset">Starting village</label>
+    <select id="preset">
+      <option value="mixed">Even mix of all six</option>
+      <option value="saints">Saints with a few Cheaters</option>
+      <option value="cheaters">Cheater town, a few Copycats</option>
+      <option value="duel">Copycats vs Cheaters</option>
+      <option value="nice">Only nice strategies, no Cheaters</option>
+    </select>
+    <label for="seed">Seed</label>
+    <input id="seed" type="number" value="7" min="1" max="999999">
+    <button id="reset" type="button">Restart</button>
+    <button id="newseed" type="button">New island</button>
+  </div>
+  <div class="sep"></div>
+  <div class="group">
+    <label for="noise">Mistakes</label>
+    <input id="noise" type="range" min="0" max="0.1" step="0.005" value="0.02">
+    <span id="noiseV" class="num" style="font-size:13px;color:var(--ink-2)">2%</span>
+    <label for="mut">Mutation</label>
+    <input id="mut" type="range" min="0" max="0.05" step="0.0025" value="0.01">
+    <span id="mutV" class="num" style="font-size:13px;color:var(--ink-2)">1%</span>
+    <span class="check"><input id="autoEvents" type="checkbox" checked><label for="autoEvents">Random events</label></span>
+    <span class="check"><input id="immig" type="checkbox" checked><label for="immig">Newcomers</label></span>
+  </div>
+  <div class="sep"></div>
+  <div class="group">
+    <span style="font-size:13px;color:var(--ink-3)">Trigger:</span>
+    <button class="event" id="evDrought" type="button">Drought</button>
+    <button class="event" id="evHarvest" type="button">Big harvest</button>
+    <button class="event" id="evCheaters" type="button">Cheaters land</button>
+    <button class="event" id="evSneaks" type="button">Sneaks land</button>
+  </div>
+</div>
+
+<div class="top">
+  <section class="panel" aria-label="Island map">
+    <div class="tiles">
+      <div class="tile"><div class="k">Year</div><div class="v" id="tYear">0</div></div>
+      <div class="tile"><div class="k">Villagers</div><div class="v" id="tPop">0</div></div>
+      <div class="tile"><div class="k">Moves that share</div><div class="v" id="tTrust">0%</div></div>
+      <div class="tile"><div class="k">Most common</div><div class="v small" id="tLead">–</div></div>
+    </div>
+    <div class="panel-head">
+      <h2>The island</h2>
+      <div class="tabs" role="group" aria-label="Map view">
+        <button type="button" data-mode="strat" aria-pressed="true">Strategy</button>
+        <button type="button" data-mode="energy" aria-pressed="false">Food stored</button>
+        <button type="button" data-mode="trust" aria-pressed="false">Treated fairly</button>
+      </div>
+    </div>
+    <div class="mapwrap">
+      <canvas id="map" width="1024" height="1024" tabindex="0" aria-label="Map of the island. Hover over a villager to see details."></canvas>
+      <div class="tip" id="mapTip"></div>
+    </div>
+    <div class="maplegend" id="mapLegend"></div>
+    <div class="strats" id="strats"></div>
+  </section>
+
+  <section class="panel" aria-label="Narrator">
+    <div class="panel-head">
+      <h2>The narrator</h2>
+      <span style="font-size:12.5px;color:var(--ink-3)">Written from this run's events</span>
+    </div>
+    <div id="story" aria-live="polite"></div>
+    <div class="story-foot">
+      <button id="copyScript" type="button">Copy narration script</button>
+      <span id="copied"></span>
+    </div>
+    <div id="copybox"><textarea id="copyText" readonly aria-label="Narration script"></textarea></div>
+  </section>
+</div>
+
+<div class="charts">
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Share of the island by strategy</h2>
+      <div class="legend" id="areaLegend"></div>
+    </div>
+    <div class="chart"><canvas id="area" height="300" aria-label="Stacked area chart of each strategy's share of the population over time"></canvas><div class="tip" id="areaTip"></div></div>
+    <details id="tableDetails">
+      <summary>Show as a table (every 25 years)</summary>
+      <div class="tablewrap"><table id="histTable"></table></div>
+    </details>
+  </section>
+  <div class="row2">
+    <section class="panel">
+      <div class="panel-head"><h2>Villagers alive</h2><span style="font-size:12.5px;color:var(--ink-3)">Shaded: droughts</span></div>
+      <div class="chart"><canvas id="popChart" height="170" aria-label="Population over time"></canvas><div class="tip" id="popTip"></div></div>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><h2>Moves that share</h2><span style="font-size:12.5px;color:var(--ink-3)">% of all moves each year</span></div>
+      <div class="chart"><canvas id="trustChart" height="170" aria-label="Share of moves that were sharing over time"></canvas><div class="tip" id="trustTip"></div></div>
+    </section>
+  </div>
+</div>
+
+<section class="panel how">
+  <h2>How the island works</h2>
+  <p>Every year each villager plays ten rounds against each of its eight neighbours. In each round both sides secretly choose to share or steal, and food is paid out like this (your food, their food):</p>
+  <div class="payoff">
+    <div class="h"></div><div class="h">They share</div><div class="h">They steal</div>
+    <div class="h">You share</div><div class="num">3, 3</div><div class="num">0, 5</div>
+    <div class="h">You steal</div><div class="num">5, 0</div><div class="num">1, 1</div>
+  </div>
+  <p>Staying alive costs food every year. A villager surrounded by people who share easily covers that cost. One surrounded by thieves starves. When a patch of land opens up, a well-fed neighbour has a child there (the better a villager ate this year, the better its odds), and the child usually inherits the parent's strategy (the mutation slider sets how often it doesn't). Villagers die of old age between 25 and 45. <b>Mistakes</b> is the chance any single move comes out the opposite of what was intended, which is what breaks strategies that never forgive. <b>Newcomers</b> occasionally wash ashore with a random strategy.</p>
+  <p>The same seed and settings always give the same story, so you can replay a run you liked and record it.</p>
+</section>
+
+<script>
+(() => {
+'use strict';
+// ---------- Strategies ----------
+const STRATS = [
+  { name: 'Saint',    plural: 'Saints',    color: '#3987e5', desc: 'Always shares, no matter what.' },
+  { name: 'Cheater',  plural: 'Cheaters',  color: '#d95926', desc: 'Always steals.' },
+  { name: 'Copycat',  plural: 'Copycats',  color: '#199e70', desc: 'Shares first, then does whatever you did last round.' },
+  { name: 'Grudger',  plural: 'Grudgers',  color: '#c98500', desc: 'Shares until you steal once, then never shares with you again.' },
+  { name: 'Forgiver', plural: 'Forgivers', color: '#d55181', desc: 'Like Copycat, but lets one theft in three slide.' },
+  { name: 'Sneak',    plural: 'Sneaks',    color: '#0ca30c', desc: 'Plays like Copycat, but steals one time in ten to see if it gets away with it.' },
+];
+const NS = STRATS.length;
+const PRESETS = {
+  mixed:    [1, 1, 1, 1, 1, 1],
+  saints:   [97, 3, 0, 0, 0, 0],
+  cheaters: [0, 90, 10, 0, 0, 0],
+  duel:     [0, 1, 1, 0, 0, 0],
+  nice:     [1, 0, 1, 1, 1, 0],
+};
+
+// ---------- World constants ----------
+const G = 64, N = G * G, K = 10;
+const FORAGE = 1, WEIGHT = 0.25, UPKEEP = 3.5, BIRTH = 10, CAP = 20;
+const OFF4 = [[1, 0], [0, 1], [1, 1], [-1, 1]];
+const OFF8 = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]];
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+let W = null;
+let R = Math.random, T = Math.random;
+const settings = { noise: 0.02, mut: 0.01, autoEvents: true, immig: true };
+
+function pickWeighted(w) {
+  const tot = w.reduce((a, b) => a + b, 0);
+  let r = R() * tot;
+  for (let i = 0; i < w.length; i++) { r -= w[i]; if (r < 0) return i; }
+  return w.length - 1;
+}
+
+function newFamily(strat) {
+  const id = W.famFounder.length;
+  W.famFounder.push({ strat, born: W.gen });
+  return id;
+}
+
+function placeAgent(i, s, energy, fam) {
+  W.strat[i] = s; W.energy[i] = energy; W.age[i] = 0;
+  W.maxAge[i] = 25 + Math.floor(R() * 21);
+  W.fam[i] = fam;
+}
+
+function newWorld(seed, preset) {
+  R = mulberry32(seed);
+  T = mulberry32(seed * 7919 + 17);
+  W = {
+    gen: 0, preset, seed,
+    strat: new Int8Array(N).fill(-1), energy: new Float32Array(N), age: new Int16Array(N), maxAge: new Int16Array(N),
+    fam: new Int32Array(N), food: new Float32Array(N), recvC: new Uint16Array(N), recvT: new Uint16Array(N),
+    famFounder: [], famSize: new Map(),
+    droughtLeft: 0, harvestLeft: 0, droughtLen: 0,
+    hist: [], script: [], lastCoop: 1,
+  };
+  const mix = PRESETS[preset];
+  for (let i = 0; i < N; i++) {
+    if (R() < 0.7) {
+      const s = pickWeighted(mix);
+      placeAgent(i, s, 4 + R() * 4, newFamily(s));
+      W.age[i] = Math.floor(R() * W.maxAge[i] * 0.6);
+    }
+  }
+  if (preset === 'saints') {
+    // keep the few cheaters as a tight group of arrivals so the story has a clear invader
+  }
+  initNarrator();
+  record();
+  narrateIntro();
+}
+
+// ---------- One match: K rounds between strategies a and b ----------
+let pa = 0, pb = 0, ca = 0, cb = 0;
+function decide(s, r, oppLast, grudge) {
+  switch (s) {
+    case 0: return 1;
+    case 1: return 0;
+    case 2: return r === 0 ? 1 : oppLast;
+    case 3: return grudge ? 0 : 1;
+    case 4: return (r === 0 || oppLast) ? 1 : (R() < 0.33 ? 1 : 0);
+    case 5: { const b = r === 0 ? 1 : oppLast; return (b && R() < 0.1) ? 0 : b; }
+  }
+  return 1;
+}
+function play(a, b) {
+  pa = pb = ca = cb = 0;
+  let lastA = 1, lastB = 1, ga = false, gb = false;
+  const noise = settings.noise;
+  for (let r = 0; r < K; r++) {
+    let ma = decide(a, r, lastB, ga), mb = decide(b, r, lastA, gb);
+    if (noise > 0) { if (R() < noise) ma ^= 1; if (R() < noise) mb ^= 1; }
+    if (ma) { ca++; if (mb) { cb++; pa += 3; pb += 3; } else { pb += 5; } }
+    else { if (mb) { cb++; pa += 5; } else { pa += 1; pb += 1; } }
+    if (!mb) ga = true;
+    if (!ma) gb = true;
+    lastA = ma; lastB = mb;
+  }
+}
+
+const idx = (x, y) => ((y + G) % G) * G + ((x + G) % G);
+
+function step() {
+  const { strat, energy, food, recvC, recvT, age, maxAge } = W;
+  food.fill(0); recvC.fill(0); recvT.fill(0);
+  let cMoves = 0, tMoves = 0;
+  for (let y = 0; y < G; y++) for (let x = 0; x < G; x++) {
+    const i = y * G + x, s = strat[i];
+    if (s < 0) continue;
+    for (let o = 0; o < 4; o++) {
+      const j = idx(x + OFF4[o][0], y + OFF4[o][1]), t = strat[j];
+      if (t < 0) continue;
+      play(s, t);
+      food[i] += pa / K; food[j] += pb / K;
+      recvC[i] += cb; recvT[i] += K; recvC[j] += ca; recvT[j] += K;
+      cMoves += ca + cb; tMoves += 2 * K;
+    }
+  }
+  const upkeep = UPKEEP + (W.droughtLeft > 0 ? 2.2 : 0) - (W.harvestLeft > 0 ? 1.0 : 0);
+  let starve = 0, old = 0;
+  const occ = [];
+  for (let i = 0; i < N; i++) {
+    if (strat[i] < 0) continue;
+    energy[i] = Math.min(CAP, energy[i] + FORAGE + WEIGHT * food[i] - upkeep);
+    age[i]++;
+    if (energy[i] < 0) { strat[i] = -1; starve++; }
+    else if (age[i] > maxAge[i]) { strat[i] = -1; old++; }
+    else occ.push(i);
+  }
+  // births: each open patch of land goes to a well-fed neighbour, weighted by how much they earned this year
+  const empties = [];
+  for (let i = 0; i < N; i++) if (strat[i] < 0) empties.push(i);
+  for (let k = empties.length - 1; k > 0; k--) { const r = Math.floor(R() * (k + 1)); const t = empties[k]; empties[k] = empties[r]; empties[r] = t; }
+  const bred = W.bred || (W.bred = new Uint8Array(N)); bred.fill(0);
+  let births = 0;
+  const cand = [], wts = [];
+  for (const j of empties) {
+    if (strat[j] >= 0) continue;
+    const x = j % G, y = (j / G) | 0;
+    cand.length = 0; wts.length = 0; let tot = 0;
+    for (const [dx, dy] of OFF8) {
+      const i = idx(x + dx, y + dy);
+      if (strat[i] < 0 || bred[i] || energy[i] < BIRTH || age[i] === 0) continue;
+      const net = FORAGE + WEIGHT * food[i] - upkeep;
+      if (net <= 0) continue;
+      cand.push(i); wts.push(net * net); tot += net * net;
+    }
+    if (!cand.length) continue;
+    let r = R() * tot, p = cand[0];
+    for (let k = 0; k < cand.length; k++) { r -= wts[k]; if (r < 0) { p = cand[k]; break; } }
+    let s = strat[p];
+    if (R() < settings.mut) s = Math.floor(R() * NS);
+    const half = energy[p] / 2;
+    energy[p] = half; bred[p] = 1;
+    placeAgent(j, s, half, s === strat[p] ? W.fam[p] : newFamily(s));
+    births++;
+  }
+  // newcomers
+  if (settings.immig && R() < 0.15) {
+    for (let tries = 0; tries < 30; tries++) {
+      const j = Math.floor(R() * N);
+      if (strat[j] < 0) { const s = Math.floor(R() * NS); placeAgent(j, s, 6, newFamily(s)); break; }
+    }
+  }
+  // events
+  const startedEvents = [];
+  if (W.droughtLeft > 0) { W.droughtLeft--; if (W.droughtLeft === 0) startedEvents.push(['droughtEnd']); }
+  if (W.harvestLeft > 0) { W.harvestLeft--; }
+  W.gen++;
+  if (settings.autoEvents) {
+    if (W.droughtLeft === 0 && W.gen > 15 && R() < 1 / 150) startedEvents.push(['drought', triggerDrought(true)]);
+    else if (W.gen > 25 && R() < 1 / 140) startedEvents.push(['invasion', triggerInvasion(R() < 0.6 ? 1 : 5, true)]);
+    else if (W.harvestLeft === 0 && W.gen > 15 && R() < 1 / 170) startedEvents.push(['harvest', triggerHarvest(true)]);
+  }
+  W.lastCoop = tMoves ? cMoves / tMoves : W.lastCoop;
+  record({ starve, old, births });
+  for (const ev of startedEvents) narrateEvent(ev[0], ev[1]);
+  narrate();
+}
+
+function triggerDrought(silent) {
+  const len = 8 + Math.floor(R() * 10);
+  W.droughtLeft = len; W.droughtLen = len;
+  if (!silent) narrateEvent('drought', len);
+  return len;
+}
+function triggerHarvest(silent) {
+  const len = 10;
+  W.harvestLeft = len;
+  if (!silent) narrateEvent('harvest', len);
+  return len;
+}
+function triggerInvasion(s, silent) {
+  const cx = Math.floor(R() * G), cy = Math.floor(R() * G);
+  const fam = newFamily(s);
+  for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+    const j = idx(cx + dx, cy + dy);
+    placeAgent(j, s, 8, fam);
+  }
+  const info = { s, cx, cy, fam };
+  if (!silent) narrateEvent('invasion', info);
+  return info;
+}
+
+// ---------- Stats ----------
+function record(extra) {
+  const counts = new Array(NS).fill(0);
+  const fs = W.famSize; fs.clear();
+  let pop = 0;
+  for (let i = 0; i < N; i++) {
+    const s = W.strat[i]; if (s < 0) continue;
+    counts[s]++; pop++;
+    fs.set(W.fam[i], (fs.get(W.fam[i]) || 0) + 1);
+  }
+  let big = { id: -1, size: 0 };
+  for (const [id, size] of fs) if (size > big.size) big = { id, size };
+  W.hist.push({
+    gen: W.gen, pop, counts, coop: W.lastCoop,
+    drought: W.droughtLeft > 0, harvest: W.harvestLeft > 0,
+    big, starve: extra ? extra.starve : 0, old: extra ? extra.old : 0, births: extra ? extra.births : 0,
+  });
+}
+
+// ---------- Narrator ----------
+let NR;
+function initNarrator() {
+  NR = {
+    leader: -1, cand: -1, candYears: 0, lastLeaderMsg: -99,
+    alive: new Array(NS).fill(false), extinct: new Array(NS).fill(false),
+    riseArmed: new Array(NS).fill(false), monoArmed: new Array(NS).fill(true),
+    trustDownArmed: true, trustUpArmed: false,
+    lastCrash: -99, famLevel: 0, famId: -1, lastSpoke: 0, peakSince: new Array(NS).fill(0),
+    landings: [], droughtStartPop: 0,
+  };
+}
+const pick = arr => arr[Math.floor(T() * arr.length)];
+const pct = x => Math.round(x * 100);
+const fmt = n => n.toLocaleString('en-US');
+
+function say(text, kind) {
+  const line = { year: W.gen, text, kind: kind || 'note' };
+  W.script.push(line);
+  if (line.kind !== 'summary' && NR) NR.lastSpoke = W.gen;
+  appendLine(line);
+}
+function leaderOf(h) {
+  let best = 0; for (let s = 1; s < NS; s++) if (h.counts[s] > h.counts[best]) best = s; return best;
+}
+function compass(x, y) {
+  const ns = y < G / 3 ? 'north' : y > 2 * G / 3 ? 'south' : '';
+  const ew = x < G / 3 ? 'west' : x > 2 * G / 3 ? 'east' : '';
+  if (ns && ew) return ns + '-' + ew;
+  return ns || ew || 'central';
+}
+function mixPhrase(h) {
+  const parts = [];
+  const order = [...Array(NS).keys()].filter(s => h.counts[s] > 0).sort((a, b) => h.counts[b] - h.counts[a]);
+  if (order.length === 1) return `Every one of them is a ${STRATS[order[0]].name}`;
+  if (order.length >= 5 && Math.max(...h.counts) < h.pop * 0.25) return 'All six ways of living are here in roughly equal numbers';
+  for (const s of order) parts.push(`${fmt(h.counts[s])} ${h.counts[s] === 1 ? STRATS[s].name : STRATS[s].plural}`);
+  return parts.length > 1 ? parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1] : parts[0];
+}
+
+function narrateIntro() {
+  const h = W.hist[0];
+  for (let s = 0; s < NS; s++) { NR.alive[s] = h.counts[s] > 0; NR.riseArmed[s] = h.counts[s] / h.pop < 0.1; }
+  NR.leader = leaderOf(h);
+  say(`${fmt(h.pop)} villagers wake up on a small island. ${mixPhrase(h)}. Every year, each of them sits down with their neighbours and makes the same choice again and again: share food, or steal it.`, 'intro');
+  say(pick([
+    'The rules are simple. Two people who share both eat well. A thief who robs a sharer eats best of all. And when everyone steals, everyone goes hungry. Let’s see what happens.',
+    'Here’s the catch: stealing from someone who trusts you is the best meal on the island. But a village of thieves starves. Let’s see which way this goes.',
+  ]), 'intro');
+}
+
+function narrateEvent(type, info) {
+  if (type === 'drought') {
+    NR.droughtStartPop = W.hist[W.hist.length - 1].pop;
+    say(pick([
+      `A drought hits the island. For about ${info} years, staying alive costs more food, and every bad neighbour hurts twice as much.`,
+      `The rain stops. A drought settles in for roughly ${info} years, and the villagers with the fewest friends will feel it first.`,
+    ]), 'event');
+  } else if (type === 'droughtEnd') {
+    const now = W.hist[W.hist.length - 1].pop, before = NR.droughtStartPop || now;
+    const lost = before - now;
+    let t;
+    if (lost > before * 0.15) t = `The rains finally return, but the island has lost ${fmt(lost)} villagers. Only ${fmt(now)} made it through.`;
+    else if (lost >= 20) t = pick([`The drought breaks. The island got through it with ${fmt(lost)} fewer villagers than before.`, `The rains return. ${fmt(lost)} villagers didn\u2019t make it, but the island held together.`]);
+    else t = 'The drought breaks, and the island barely noticed. Neighbours who share can get through almost anything.';
+    say(t, 'event');
+  } else if (type === 'harvest') {
+    say(pick([
+      'A bumper harvest. For the next ten years food is easy, and even bad neighbours can get by.',
+      'The island has its best harvest in memory. For a decade, nobody needs a good neighbour to survive.',
+    ]), 'event');
+  } else if (type === 'invasion') {
+    const S = STRATS[info.s];
+    const where = compass(info.cx, info.cy);
+    const tail = info.s === 1
+      ? ' They don’t share, and they’re hungry.'
+      : ' They look friendly. Mostly.';
+    NR.landings.push({ fam: info.fam, s: info.s, year: W.gen, where });
+    say(`A boat lands on the ${where} ${where === 'central' ? 'plain' : 'shore'} carrying 25 ${S.plural}.${tail}`, 'event');
+  }
+}
+
+const EXTINCT_WHY = [
+  'Kindness with no defence couldn’t survive the thieves.',
+  'With nobody left to rob, the thieves starved each other out.',
+  'Hitting back wasn’t enough this time.',
+  'Holding a grudge forever turned out to be too costly, since one honest mistake ended a friendship for good.',
+  'Forgiveness, it turns out, can be exploited.',
+  'Their neighbours learned to see through the tricks.',
+];
+const LEADER_HINT = [
+  ' With no thieves nearby, the gentlest villagers do best.',
+  ' Stealing is paying, for now.',
+  ' Their rule is simple: be nice first, but always hit back.',
+  ' Steal from a Grudger once and you lose a friend for life.',
+  ' They hit back, but they don’t hold grudges.',
+  ' A little cheating, it seems, goes a long way.',
+];
+
+function narrate() {
+  const H = W.hist, h = H[H.length - 1], y = h.gen;
+  const share = s => h.pop ? h.counts[s] / h.pop : 0;
+  let spoke = false;
+
+  if (h.pop === 0) {
+    if (!NR.dead) { NR.dead = true; say(`Year ${y}. The last villager dies. The island is silent.${settings.immig ? ' Maybe a boat will come.' : ''}`, 'alarm'); }
+    return;
+  }
+  if (NR.dead) { NR.dead = false; say('Someone has washed ashore on the empty island. Life starts again.', 'event'); }
+
+  // extinctions and comebacks
+  for (let s = 0; s < NS; s++) {
+    NR.peakSince[s] = Math.max(NR.peakSince[s], h.counts[s]);
+    if (NR.alive[s] && h.counts[s] === 0) {
+      NR.alive[s] = false; NR.monoArmed[s] = true;
+      if (NR.peakSince[s] >= 20) {
+        NR.extinct[s] = true;
+        say(`The last ${STRATS[s].name} dies. ${EXTINCT_WHY[s]}`, 'alarm'); spoke = true;
+      }
+      NR.peakSince[s] = 0;
+    } else if (!NR.alive[s] && h.counts[s] > 0) {
+      NR.alive[s] = true;
+      if (h.counts[s] >= 1 && NR.extinct[s]) NR.extinct[s] = 'returning';
+    }
+    if (NR.extinct[s] === 'returning' && h.counts[s] >= 25) {
+      NR.extinct[s] = false;
+      say(`The ${STRATS[s].plural} are back. A lucky mutation or a stranger off a boat started a new line, and there are now ${fmt(h.counts[s])} of them.`, 'note'); spoke = true;
+    }
+  }
+
+  // rise from obscurity
+  for (let s = 0; s < NS; s++) {
+    const sh = share(s);
+    if (sh < 0.08) NR.riseArmed[s] = true;
+    if (NR.riseArmed[s] && sh > 0.25 && y > 3) {
+      NR.riseArmed[s] = false;
+      const prevLow = Math.min(...H.slice(-60).map(e => e.pop ? e.counts[s] / e.pop : 0));
+      say(pick([
+        `The ${STRATS[s].plural} are on the rise. Not long ago they were ${pct(prevLow)}% of the island. Now they’re ${pct(sh)}%.`,
+        `Watch the ${STRATS[s].plural}. They’ve gone from ${pct(prevLow)}% to ${pct(sh)}% of the island, and they’re still spreading.`,
+      ]), 'note'); spoke = true;
+    }
+  }
+
+  // leader changes (debounced)
+  const L = leaderOf(h);
+  if (L !== NR.leader) {
+    if (L === NR.cand) NR.candYears++; else { NR.cand = L; NR.candYears = 1; }
+    if (NR.candYears >= 4 && y - NR.lastLeaderMsg >= 10) {
+      const old = NR.leader;
+      NR.leader = L; NR.lastLeaderMsg = y;
+      say(pick([
+        `The balance tips. There are now more ${STRATS[L].plural} than ${STRATS[old].plural} on the island.`,
+        `The ${STRATS[L].plural} overtake the ${STRATS[old].plural} as the most common villagers.`,
+      ]) + LEADER_HINT[L], 'note'); spoke = true;
+    }
+  } else { NR.cand = -1; NR.candYears = 0; }
+
+  // monoculture
+  for (let s = 0; s < NS; s++) {
+    const sh = share(s);
+    if (sh < 0.6) NR.monoArmed[s] = true;
+    if (NR.monoArmed[s] && sh > 0.8 && y > 5) {
+      NR.monoArmed[s] = false;
+      let t = `${pct(sh)}% of the island now lives as ${STRATS[s].plural}.`;
+      if (s === 0) t += ' It’s a paradise, and a fragile one. A single thief born here would feast.';
+      else if (s === 1) t += ' It’s a land of thieves, and thieves make terrible neighbours for each other.';
+      else if (s === 3 || s === 2) t += ` It’s peaceful, as long as nobody makes a mistake${s === 3 ? ', because a Grudger never forgets one' : ''}.`;
+      else if (s === 5) t += ' Everyone is a little bit dishonest, and everyone knows it.';
+      else t += ' Mercy rules the island.';
+      say(t, 'note'); spoke = true;
+    }
+  }
+
+  // trust swings
+  if (h.coop > 0.6) NR.trustDownArmed = true;
+  if (h.coop < 0.5) NR.trustUpArmed = true;
+  if (NR.trustDownArmed && h.coop < 0.4 && y > 2) {
+    NR.trustDownArmed = false;
+    say(pick([
+      `Trust collapses. Only ${pct(h.coop)}% of moves on the island are acts of sharing now.`,
+      `Nobody trusts anybody any more. Just ${pct(h.coop)}% of moves are shares.`,
+    ]), 'alarm'); spoke = true;
+  }
+  if (NR.trustUpArmed && h.coop > 0.7 && y > 2) {
+    NR.trustUpArmed = false;
+    say(pick([
+      `Trust comes back to the island. ${pct(h.coop)}% of all moves are now acts of sharing.`,
+      `Something has healed. ${pct(h.coop)}% of moves are shares again.`,
+    ]), 'note'); spoke = true;
+  }
+
+  // population crash
+  const recent = H.slice(-15);
+  const peak = recent.reduce((m, e) => e.pop > m.pop ? e : m, recent[0]);
+  if (h.pop < peak.pop * 0.72 && y - NR.lastCrash > 20 && peak.pop > 200) {
+    NR.lastCrash = y;
+    let cause = '';
+    const cheatShare = peak.pop ? peak.counts[1] / peak.pop : 0;
+    if (h.drought) cause = ' The drought is taking the neighbourhoods with the least trust first.';
+    else if (cheatShare > 0.25) cause = ' The Cheaters have robbed their neighbours bare, and now they only have each other.';
+    else if ((peak.counts[5] / peak.pop) > 0.3) cause = ' All that sneaking has poisoned the friendships the Sneaks depended on.';
+    say(`Famine. The population falls from ${fmt(peak.pop)} to ${fmt(h.pop)} in ${y - peak.gen} years.${cause}`, 'alarm'); spoke = true;
+  }
+
+  // dominant family
+  if (h.big.size >= 50 && h.pop >= 300) {
+    const fsh = h.big.size / h.pop;
+    if (h.big.id !== NR.famId) { NR.famId = h.big.id; NR.famLevel = 0; }
+    const levels = [0.1, 0.25, 0.5];
+    if (NR.famLevel < levels.length && fsh > levels[NR.famLevel] && y > 10) {
+      const f = W.famFounder[h.big.id];
+      NR.famLevel++;
+      say(`One family now makes up ${pct(fsh)}% of the island: ${fmt(h.big.size)} descendants of a single ${STRATS[f.strat].name} ${f.born === 0 ? 'who was here on day one' : `born in year ${f.born}`}.`, 'note'); spoke = true;
+    }
+  }
+
+  // what became of the boat people
+  for (const L of NR.landings) {
+    if (L.done || y - L.year < 15) continue;
+    L.done = true;
+    const n = W.famSize.get(L.fam) || 0, S = STRATS[L.s];
+    let t;
+    if (n === 0) t = `Remember the 25 ${S.plural} who landed on the ${L.where} shore in year ${L.year}? Every one of them is gone, and so are their children. ${L.s === 1 ? 'Their neighbours simply stopped sharing with them.' : 'The island saw through them.'}`;
+    else if (n <= 40) t = `Of the ${S.plural} who landed in year ${L.year}, ${fmt(n)} are still alive${L.s === 1 ? ', clinging on at the edges of the trusting neighbourhoods they rob' : ''}.`;
+    else t = `The 25 ${S.plural} who landed in year ${L.year} have become a clan of ${fmt(n)}. ${L.s === 1 ? 'They found neighbours trusting enough to rob.' : 'Their small cheats are paying off.'}`;
+    say(t, n > 25 ? 'alarm' : 'note'); spoke = true;
+  }
+
+  // a quiet stretch: report the slow change hiding under the surface
+  if (!spoke && y - NR.lastSpoke >= 50 && H.length > 45) {
+    const then = H[H.length - 41];
+    let best = -1, bestD = 0;
+    for (let s = 0; s < NS; s++) {
+      const d = (then.pop ? h.counts[s] / h.pop - then.counts[s] / then.pop : 0);
+      if (Math.abs(d) > Math.abs(bestD)) { bestD = d; best = s; }
+    }
+    if (best >= 0 && Math.abs(bestD) >= 0.03) {
+      const a = pct(then.counts[best] / then.pop), b = pct(h.counts[best] / h.pop);
+      say(bestD > 0
+        ? `Forty quiet years. But something is shifting underneath: the ${STRATS[best].plural} have crept from ${a}% to ${b}% of the island.`
+        : `Forty quiet years. Look closer, though. The ${STRATS[best].plural} are slowly fading, from ${a}% to ${b}% of the island.`, 'note');
+    } else {
+      const order = [...Array(NS).keys()].filter(s => h.counts[s] > 0).sort((a, b) => h.counts[b] - h.counts[a]).slice(0, 3);
+      const mix = order.map(s => `${STRATS[s].plural} ${pct(h.counts[s] / h.pop)}%`).join(', ');
+      say(pick([
+        `Forty years pass with nothing to report. The island has settled into a balance (${mix}), and nobody is gaining ground.`,
+        `Peace. For four decades the map has barely changed: ${mix}. It would take a shock to break this.`,
+        `A long, uneventful stretch. Children are born and the old die, but the island stays the same: ${mix}. Try triggering a drought or a boat of Cheaters to see if it holds.`,
+      ]), 'note');
+    }
+  }
+
+  // centennial summaries
+  if (y % 100 === 0 && y > 0) {
+    const Ld = leaderOf(h);
+    say(`Year ${y}. ${fmt(h.pop)} villagers. ${STRATS[Ld].plural} make up ${pct(share(Ld))}% of the island, and ${pct(h.coop)}% of moves are shares.`, 'summary');
+  }
+}
+
+// ---------- Rendering ----------
+const $ = id => document.getElementById(id);
+const story = $('story');
+let stickBottom = true;
+story.addEventListener('scroll', () => { stickBottom = story.scrollHeight - story.scrollTop - story.clientHeight < 40; });
+function appendLine(line) {
+  const d = document.createElement('div');
+  d.className = 'line ' + line.kind;
+  d.innerHTML = `<div class="yr">Year ${line.year}</div><div class="tx"></div>`;
+  d.querySelector('.tx').textContent = line.text;
+  story.appendChild(d);
+  if (stickBottom) story.scrollTop = story.scrollHeight;
+}
+
+// strategy cards
+const stratsEl = $('strats');
+STRATS.forEach((s, i) => {
+  const d = document.createElement('div');
+  d.className = 'strat'; d.id = 'sc' + i;
+  d.innerHTML = `<span class="sw${i === 1 ? ' mark' : ''}" style="background:${s.color}"></span><span class="nm">${s.name}</span><span class="ct" id="ct${i}">0</span><span class="ds">${s.desc}</span>`;
+  stratsEl.appendChild(d);
+});
+$('areaLegend').innerHTML = STRATS.map(s => `<span><i style="background:${s.color}"></i>${s.plural}</span>`).join('');
+
+let mapMode = 'strat';
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
+  mapMode = b.dataset.mode;
+  document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+  drawMap(); drawMapLegend();
+}));
+
+function lerpHex(a, b, t) {
+  const pa = [1, 3, 5].map(k => parseInt(a.slice(k, k + 2), 16)), pb = [1, 3, 5].map(k => parseInt(b.slice(k, k + 2), 16));
+  return 'rgb(' + pa.map((v, k) => Math.round(v + (pb[k] - v) * t)).join(',') + ')';
+}
+const ENERGY_STOPS = ['#0d366b', '#1c5cab', '#3987e5', '#86b6ef', '#cde2fb'];
+const TRUST_STOPS = ['#4a1f0c', '#8f3a15', '#d95926', '#f0a07c', '#fbd9c8'];
+function ramp(stops, t) {
+  t = Math.max(0, Math.min(1, t));
+  const f = t * (stops.length - 1), i = Math.min(stops.length - 2, Math.floor(f));
+  return lerpHex(stops[i], stops[i + 1], f - i);
+}
+function drawMapLegend() {
+  const el = $('mapLegend');
+  if (mapMode === 'strat') el.innerHTML = 'Each square is one villager. Cheaters carry a dark centre mark. Empty squares are open land.';
+  else if (mapMode === 'energy') el.innerHTML = `<span>Starving</span><span class="ramp" style="background:linear-gradient(90deg,${ENERGY_STOPS.join(',')})"></span><span>Well fed</span>`;
+  else el.innerHTML = `<span>Robbed by neighbours</span><span class="ramp" style="background:linear-gradient(90deg,${TRUST_STOPS.join(',')})"></span><span>Neighbours always share</span>`;
+}
+const map = $('map'), mctx = map.getContext('2d');
+function drawMap() {
+  const sz = map.width / G;
+  mctx.fillStyle = '#1a1a19';
+  mctx.fillRect(0, 0, map.width, map.height);
+  for (let i = 0; i < N; i++) {
+    const x = (i % G) * sz, y = ((i / G) | 0) * sz, s = W.strat[i];
+    if (s < 0) { mctx.fillStyle = '#21211f'; mctx.fillRect(x + 1, y + 1, sz - 2, sz - 2); continue; }
+    if (mapMode === 'strat') mctx.fillStyle = STRATS[s].color;
+    else if (mapMode === 'energy') mctx.fillStyle = ramp(ENERGY_STOPS, W.energy[i] / 14);
+    else mctx.fillStyle = W.recvT[i] ? ramp(TRUST_STOPS, W.recvC[i] / W.recvT[i]) : '#2a2a28';
+    mctx.fillRect(x + 1, y + 1, sz - 2, sz - 2);
+    if (mapMode === 'strat' && s === 1) { mctx.fillStyle = '#1a1a19'; const m = sz * 0.32; mctx.fillRect(x + m, y + m, sz - 2 * m, sz - 2 * m); }
+  }
+}
+
+// map hover
+const mapTip = $('mapTip');
+let mapHover = -1;
+function showMapTip() {
+  if (mapHover < 0) { mapTip.style.display = 'none'; return; }
+  const i = mapHover, s = W.strat[i];
+  let html;
+  if (s < 0) html = '<div class="h">Open land</div><div>Nobody lives here right now.</div>';
+  else {
+    const fam = W.famSize.get(W.fam[i]) || 1, f = W.famFounder[W.fam[i]];
+    const fair = W.recvT[i] ? pct(W.recvC[i] / W.recvT[i]) + '%' : 'no neighbours';
+    html = `<div class="h">Villager</div>
+      <div class="r"><span><i style="background:${STRATS[s].color}"></i>${STRATS[s].name}</span><b>age ${W.age[i]}</b></div>
+      <div class="r"><span>Food stored</span><b>${W.energy[i].toFixed(1)}</b></div>
+      <div class="r"><span>Neighbours shared</span><b>${fair}</b></div>
+      <div class="r"><span>Family size</span><b>${fmt(fam)}</b></div>
+      <div style="color:var(--ink-3);margin-top:4px">Family founded ${f.born === 0 ? 'on day one' : 'in year ' + f.born} by a ${STRATS[f.strat].name}</div>`;
+  }
+  mapTip.innerHTML = html; mapTip.style.display = 'block';
+}
+map.addEventListener('mousemove', e => {
+  const r = map.getBoundingClientRect();
+  const cx = Math.floor((e.clientX - r.left) / r.width * G), cy = Math.floor((e.clientY - r.top) / r.height * G);
+  if (cx < 0 || cy < 0 || cx >= G || cy >= G) { mapHover = -1; showMapTip(); return; }
+  mapHover = cy * G + cx; showMapTip();
+  const px = e.clientX - r.left, py = e.clientY - r.top;
+  const tw = mapTip.offsetWidth, th = mapTip.offsetHeight;
+  mapTip.style.left = Math.min(r.width - tw - 4, px + 14) + 'px';
+  mapTip.style.top = (py + th + 20 > r.height ? py - th - 12 : py + 14) + 'px';
+});
+map.addEventListener('mouseleave', () => { mapHover = -1; showMapTip(); });
+
+// ---------- Charts ----------
+function setupCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = c.clientWidth, h = parseInt(c.getAttribute('height'), 10);
+  if (!c._h) c._h = h;
+  c.style.height = c._h + 'px';
+  c.width = Math.round(w * dpr); c.height = Math.round(c._h * dpr);
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, w, h: c._h };
+}
+const PAD = { l: 44, r: 110, t: 10, b: 26 };
+const PAD2 = { l: 44, r: 14, t: 10, b: 26 };
+const hoverYear = { area: null, pop: null, trust: null };
+
+function xTicks(maxG) {
+  const steps = [10, 25, 50, 100, 200, 250, 500, 1000, 2000];
+  let st = steps.find(s => maxG / s <= 6) || 5000;
+  const out = []; for (let g = 0; g <= maxG; g += st) out.push(g); return out;
+}
+function drawAxes(ctx, w, h, pad, maxG, yTicks, yFmt, yMax) {
+  ctx.font = '11px "IBM Plex Mono", monospace';
+  ctx.fillStyle = '#8f8e86'; ctx.strokeStyle = '#2b2b28'; ctx.lineWidth = 1;
+  const pw = w - pad.l - pad.r, ph = h - pad.t - pad.b;
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (const v of yTicks) {
+    const y = pad.t + ph - (v / yMax) * ph;
+    ctx.beginPath(); ctx.moveTo(pad.l, Math.round(y) + 0.5); ctx.lineTo(pad.l + pw, Math.round(y) + 0.5); ctx.stroke();
+    ctx.fillText(yFmt(v), pad.l - 6, y);
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const g of xTicks(maxG)) {
+    const x = pad.l + (maxG ? g / maxG : 0) * pw;
+    ctx.fillText(g, x, pad.t + ph + 7);
+  }
+  return { pw, ph };
+}
+
+function drawArea() {
+  const c = $('area'); const { ctx, w, h } = setupCanvas(c);
+  ctx.clearRect(0, 0, w, h);
+  const H = W.hist, maxG = Math.max(20, H[H.length - 1].gen);
+  const { pw, ph } = drawAxes(ctx, w, h, PAD, maxG, [0, 25, 50, 75, 100], v => v + '%', 100);
+  const X = g => PAD.l + g / maxG * pw, Y = v => PAD.t + ph - v * ph;
+  const n = H.length;
+  const stepN = Math.max(1, Math.floor(n / pw));
+  const pts = [];
+  for (let k = 0; k < n; k += stepN) pts.push(H[k]);
+  if (pts[pts.length - 1] !== H[n - 1]) pts.push(H[n - 1]);
+  const cum = pts.map(() => 0);
+  const bounds = [];
+  for (let s = 0; s < NS; s++) {
+    const lower = cum.slice();
+    pts.forEach((e, k) => { cum[k] += e.pop ? e.counts[s] / e.pop : 0; });
+    bounds.push(cum.slice());
+    ctx.beginPath();
+    pts.forEach((e, k) => { const x = X(e.gen), y = Y(cum[k]); k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    for (let k = pts.length - 1; k >= 0; k--) ctx.lineTo(X(pts[k].gen), Y(lower[k]));
+    ctx.closePath(); ctx.fillStyle = STRATS[s].color; ctx.fill();
+  }
+  // surface separators between bands
+  ctx.strokeStyle = '#1a1a19'; ctx.lineWidth = 1.5;
+  for (let s = 0; s < NS - 1; s++) {
+    ctx.beginPath();
+    pts.forEach((e, k) => { const x = X(e.gen), y = Y(bounds[s][k]); k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.stroke();
+  }
+  // direct labels at the right end, only for bands thick enough
+  ctx.font = '12px "IBM Plex Sans", sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  const last = H[n - 1]; let low = 0; let lastY = -99;
+  for (let s = 0; s < NS; s++) {
+    const sh = last.pop ? last.counts[s] / last.pop : 0;
+    const mid = low + sh / 2; low += sh;
+    if (sh < 0.06) continue;
+    let y = Y(mid); if (y - lastY < 14) y = lastY + 14; lastY = y;
+    ctx.fillStyle = STRATS[s].color; ctx.fillRect(PAD.l + pw + 6, y - 4, 8, 8);
+    ctx.fillStyle = '#c3c2b7'; ctx.fillText(`${STRATS[s].name} ${pct(sh)}%`, PAD.l + pw + 18, y);
+  }
+  if (hoverYear.area != null) crosshair(ctx, X(hoverYear.area), PAD.t, ph);
+}
+function crosshair(ctx, x, top, ph) {
+  ctx.strokeStyle = '#f0efec'; ctx.globalAlpha = 0.6; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(Math.round(x) + 0.5, top); ctx.lineTo(Math.round(x) + 0.5, top + ph); ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+function niceMax(v) { const p = Math.pow(10, Math.floor(Math.log10(v || 1))); for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= v) return m * p; return 10 * p; }
+function drawLine(id, key, getter, color, yMaxFixed, yFmt, shadeDrought) {
+  const c = $(id); const { ctx, w, h } = setupCanvas(c);
+  ctx.clearRect(0, 0, w, h);
+  const H = W.hist, maxG = Math.max(20, H[H.length - 1].gen);
+  const yMax = yMaxFixed || niceMax(Math.max(...H.map(getter)) * 1.1);
+  const ticks = [0, yMax / 4, yMax / 2, yMax * 3 / 4, yMax];
+  const pw = w - PAD2.l - PAD2.r, ph = h - PAD2.t - PAD2.b;
+  const X = g => PAD2.l + g / maxG * pw, Y = v => PAD2.t + ph - v / yMax * ph;
+  if (shadeDrought) {
+    ctx.fillStyle = 'rgba(230,103,103,0.12)';
+    let start = null;
+    for (const e of H) {
+      if (e.drought && start === null) start = e.gen;
+      if (!e.drought && start !== null) { ctx.fillRect(X(start), PAD2.t, X(e.gen) - X(start), ph); start = null; }
+    }
+    if (start !== null) ctx.fillRect(X(start), PAD2.t, X(H[H.length - 1].gen) - X(start) + 1, ph);
+  }
+  drawAxes(ctx, w, h, PAD2, maxG, ticks, yFmt, yMax);
+  const n = H.length, stepN = Math.max(1, Math.floor(n / pw));
+  ctx.beginPath();
+  let first = true, lastE = null;
+  for (let k = 0; k < n; k += stepN) { const e = H[k]; const x = X(e.gen), y = Y(getter(e)); first ? ctx.moveTo(x, y) : ctx.lineTo(x, y); first = false; lastE = e; }
+  const e = H[n - 1]; ctx.lineTo(X(e.gen), Y(getter(e)));
+  ctx.lineTo(X(e.gen), Y(0)); ctx.lineTo(X(0), Y(0)); ctx.closePath();
+  ctx.fillStyle = color + '22'; ctx.fill();
+  ctx.beginPath(); first = true;
+  for (let k = 0; k < n; k += stepN) { const q = H[k]; const x = X(q.gen), y = Y(getter(q)); first ? ctx.moveTo(x, y) : ctx.lineTo(x, y); first = false; }
+  ctx.lineTo(X(e.gen), Y(getter(e)));
+  ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+  ctx.beginPath(); ctx.arc(X(e.gen), Y(getter(e)), 4, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = '#1a1a19'; ctx.stroke();
+  if (hoverYear[key] != null) {
+    crosshair(ctx, X(hoverYear[key]), PAD2.t, ph);
+    const q = H[Math.min(H.length - 1, hoverYear[key])];
+    ctx.beginPath(); ctx.arc(X(q.gen), Y(getter(q)), 4, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill(); ctx.strokeStyle = '#1a1a19'; ctx.stroke();
+  }
+}
+
+function bindHover(canvasId, tipId, key, pad, render, tipHtml) {
+  const c = $(canvasId), tip = $(tipId);
+  c.addEventListener('mousemove', ev => {
+    const r = c.getBoundingClientRect();
+    const H = W.hist, maxG = Math.max(20, H[H.length - 1].gen);
+    const pw = r.width - pad.l - pad.r;
+    const g = Math.round((ev.clientX - r.left - pad.l) / pw * maxG);
+    if (g < 0 || g > H[H.length - 1].gen) { hoverYear[key] = null; tip.style.display = 'none'; render(); return; }
+    hoverYear[key] = g; render();
+    tip.innerHTML = tipHtml(H[g]); tip.style.display = 'block';
+    const px = ev.clientX - r.left, tw = tip.offsetWidth;
+    tip.style.left = (px + tw + 20 > r.width ? px - tw - 12 : px + 12) + 'px';
+    tip.style.top = '8px';
+  });
+  c.addEventListener('mouseleave', () => { hoverYear[key] = null; tip.style.display = 'none'; render(); });
+}
+const eventTag = e => e.drought ? ' · drought' : e.harvest ? ' · harvest' : '';
+bindHover('area', 'areaTip', 'area', PAD, drawArea, e => {
+  let rows = '';
+  for (let s = NS - 1; s >= 0; s--) rows += `<div class="r"><span><i style="background:${STRATS[s].color}"></i>${STRATS[s].plural}</span><b>${e.pop ? pct(e.counts[s] / e.pop) : 0}%</b></div>`;
+  return `<div class="h">Year ${e.gen}${eventTag(e)}</div>${rows}`;
+});
+bindHover('popChart', 'popTip', 'pop', PAD2, drawPop, e => `<div class="h">Year ${e.gen}${eventTag(e)}</div><div class="r"><span>Villagers</span><b>${fmt(e.pop)}</b></div><div class="r"><span>Born</span><b>${fmt(e.births)}</b></div><div class="r"><span>Starved</span><b>${fmt(e.starve)}</b></div><div class="r"><span>Died of old age</span><b>${fmt(e.old)}</b></div>`);
+bindHover('trustChart', 'trustTip', 'trust', PAD2, drawTrust, e => `<div class="h">Year ${e.gen}${eventTag(e)}</div><div class="r"><span>Moves that share</span><b>${pct(e.coop)}%</b></div>`);
+function drawPop() { drawLine('popChart', 'pop', e => e.pop, '#9085e9', 0, v => v >= 1000 ? (v / 1000) + 'k' : String(Math.round(v)), true); }
+function drawTrust() { drawLine('trustChart', 'trust', e => e.coop * 100, '#3987e5', 100, v => Math.round(v) + '%', true); }
+
+function renderTable() {
+  if (!$('tableDetails').open) return;
+  const H = W.hist;
+  let html = '<thead><tr><th>Year</th><th>Villagers</th><th>Sharing</th>' + STRATS.map(s => `<th>${s.plural}</th>`).join('') + '</tr></thead><tbody>';
+  for (const e of H) {
+    if (e.gen % 25 !== 0 && e !== H[H.length - 1]) continue;
+    html += `<tr><td>${e.gen}</td><td>${fmt(e.pop)}</td><td>${pct(e.coop)}%</td>` + e.counts.map(c => `<td>${e.pop ? pct(c / e.pop) : 0}%</td>`).join('') + '</tr>';
+  }
+  $('histTable').innerHTML = html + '</tbody>';
+}
+$('tableDetails').addEventListener('toggle', renderTable);
+
+function renderStats() {
+  const h = W.hist[W.hist.length - 1];
+  $('tYear').textContent = fmt(h.gen);
+  $('tPop').textContent = fmt(h.pop);
+  $('tTrust').textContent = pct(h.coop) + '%';
+  $('tLead').textContent = h.pop ? STRATS[leaderOf(h)].plural : 'Nobody';
+  for (let s = 0; s < NS; s++) {
+    $('ct' + s).textContent = fmt(h.counts[s]);
+    $('sc' + s).classList.toggle('gone', h.counts[s] === 0);
+  }
+}
+function renderAll() {
+  drawMap(); renderStats(); drawArea(); drawPop(); drawTrust();
+  if (mapHover >= 0) showMapTip();
+  if (W.gen % 25 === 0) renderTable();
+}
+
+// ---------- Loop & controls ----------
+let playing = true, acc = 0, lastT = performance.now();
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function loop(t) {
+  const dt = Math.min(0.25, (t - lastT) / 1000); lastT = t;
+  if (playing) {
+    acc += dt * parseFloat($('speed').value);
+    let n = 0;
+    while (acc >= 1 && n < 10) { step(); acc -= 1; n++; }
+    if (n) renderAll();
+  }
+  requestAnimationFrame(loop);
+}
+function setPlaying(p) { playing = p; $('play').textContent = p ? 'Pause' : 'Play'; }
+$('play').addEventListener('click', () => setPlaying(!playing));
+$('stepBtn').addEventListener('click', () => { setPlaying(false); step(); renderAll(); });
+function restart() {
+  story.innerHTML = ''; stickBottom = true;
+  $('copybox').style.display = 'none'; $('copied').textContent = '';
+  const seed = Math.max(1, parseInt($('seed').value, 10) || 1);
+  newWorld(seed, $('preset').value);
+  renderAll(); drawMapLegend(); renderTable();
+}
+$('reset').addEventListener('click', restart);
+$('preset').addEventListener('change', restart);
+$('newseed').addEventListener('click', () => { $('seed').value = 1 + Math.floor(Math.random() * 99999); restart(); });
+$('noise').addEventListener('input', e => { settings.noise = parseFloat(e.target.value); $('noiseV').textContent = (settings.noise * 100).toFixed(1).replace('.0', '') + '%'; });
+$('mut').addEventListener('input', e => { settings.mut = parseFloat(e.target.value); $('mutV').textContent = (settings.mut * 100).toFixed(2).replace(/\.?0+$/, '') + '%'; });
+$('autoEvents').addEventListener('change', e => settings.autoEvents = e.target.checked);
+$('immig').addEventListener('change', e => settings.immig = e.target.checked);
+$('evDrought').addEventListener('click', () => { if (W.droughtLeft === 0) triggerDrought(false); });
+$('evHarvest').addEventListener('click', () => { triggerHarvest(false); });
+$('evCheaters').addEventListener('click', () => { triggerInvasion(1, false); renderAll(); });
+$('evSneaks').addEventListener('click', () => { triggerInvasion(5, false); renderAll(); });
+document.addEventListener('keydown', e => { if (e.code === 'Space' && e.target === document.body) { e.preventDefault(); setPlaying(!playing); } });
+
+$('copyScript').addEventListener('click', () => {
+  const text = `CHEATERS & COOPERATORS. Seed ${W.seed}, start: ${$('preset').selectedOptions[0].text}\n\n` +
+    W.script.map(l => `[Year ${l.year}] ${l.text}`).join('\n\n');
+  const fallback = () => { $('copybox').style.display = 'block'; $('copyText').value = text; $('copyText').select(); $('copied').textContent = 'Select all and copy the text below.'; };
+  try {
+    navigator.clipboard.writeText(text).then(() => { $('copied').textContent = `Copied ${W.script.length} lines.`; }, fallback);
+  } catch (err) { fallback(); }
+});
+window.addEventListener('resize', () => { drawArea(); drawPop(); drawTrust(); });
+
+newWorld(7, 'mixed');
+drawMapLegend();
+if (reduceMotion) { for (let i = 0; i < 150; i++) step(); setPlaying(false); }
+renderAll();
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

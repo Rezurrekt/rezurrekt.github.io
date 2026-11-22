@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tiny Island</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: cozy field-naturalist, playful but exact; the island tells its own story.
+   IDEA: a pocket diorama in a sea-blue box, with a narrator's caption card pinned to it.
+   PICTURE: the living pixel island itself, large; rings and dotted trails mark what the narrator means.
+   COLOUR and TYPE: deep sea blue field, hare tan, fox orange, highlight yellow; Pixelify Sans for names and numbers, Nunito for prose.
+   LAYOUT: island first and widest, journal beside it (below on narrow screens), then chart and genes, then how it works. */
+:root{color-scheme:light dark;--bg:light-dark(#0f5470,#08202d);--panel:light-dark(#156585,#0e3142);--line:light-dark(rgba(255,255,255,.16),rgba(255,255,255,.1));--ink:#f2fbf8;--soft:light-dark(rgba(242,251,248,.8),rgba(242,251,248,.72));--hare:#e8c79c;--fox:#ff8a3d;--hi:#ffd23f}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Nunito,system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(18px,3vw,40px) max(4vw,14px)}
+.wrap{max-width:1320px;margin:0 auto}
+h1,h2,h3,.px{font-family:"Pixelify Sans",Nunito,sans-serif;font-weight:700;letter-spacing:.01em}
+h1{font-size:clamp(34px,5vw,50px);line-height:1.05;margin:0}
+h2{font-size:26px;line-height:1.1;margin:0 0 12px}
+h3{font-size:17px;margin:14px 0 6px;color:var(--soft)}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;padding-bottom:14px}
+.top p{margin:6px 0 0;color:var(--soft);max-width:60ch}
+.hud{display:flex;gap:10px;flex-wrap:wrap}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px 14px;min-width:86px}
+.stat span{display:block;font-size:13px;color:var(--soft)}
+.stat b{font:700 26px/1.1 "Pixelify Sans",sans-serif;font-variant-numeric:tabular-nums}
+#nh{color:var(--hare)}#nf{color:var(--fox)}
+#season[data-s="0"]{color:#9fe58a}#season[data-s="1"]{color:#ffe066}#season[data-s="2"]{color:#ffab5e}#season[data-s="3"]{color:#e6f6ff}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;padding-top:0}
+.fig{position:relative;width:100%;aspect-ratio:3/2;max-height:78vh;min-height:300px;border-radius:18px;overflow:hidden;background:#1b6fa0;box-shadow:0 0 0 1px var(--line),0 18px 40px rgba(0,0,0,.25)}
+.fig>canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}
+.fig>canvas:active{cursor:grabbing}
+#caption{position:absolute;left:14px;right:14px;bottom:14px;max-width:560px;background:rgba(10,32,44,.88);backdrop-filter:blur(6px);border:1px solid rgba(255,210,63,.55);border-radius:14px;padding:10px 14px 12px;opacity:0;transform:translateY(10px);transition:opacity .35s,transform .35s;pointer-events:none}
+#caption.on{opacity:1;transform:none;pointer-events:auto}
+#caption b{display:block;font:700 19px/1.2 "Pixelify Sans",sans-serif;color:var(--hi);margin:2px 0 3px}
+#caption p{margin:0;font-size:15.5px;line-height:1.45}
+.cap-top{display:flex;align-items:center;gap:8px}
+.stamp{font-size:13px;color:var(--soft)}
+.chip{font-size:12px;background:var(--hi);color:#2a2200;border-radius:99px;padding:1px 8px;font-weight:800}
+.skip{margin-left:auto;background:none;border:0;color:var(--ink);font:800 14px Nunito,sans-serif;cursor:pointer;padding:6px 4px;min-height:32px}
+.bar{height:3px;background:rgba(255,255,255,.12);border-radius:2px;margin-top:9px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:var(--hi)}
+.zoom{position:absolute;top:12px;left:12px;display:flex;flex-direction:column;gap:6px}
+.zoom button{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:rgba(10,32,44,.75);color:var(--ink);font:700 20px "Pixelify Sans",sans-serif;cursor:pointer}
+.zoom button:hover{background:rgba(10,32,44,.95)}
+#inspect{position:absolute;top:12px;right:12px;width:230px;background:rgba(10,32,44,.9);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:none;font-size:14px}
+#inspect.on{display:block}
+#inspect p{margin:2px 0;color:var(--soft)}
+.ih{display:flex;justify-content:space-between;align-items:center}.ih b{font:700 18px "Pixelify Sans",sans-serif}
+.ih button{background:none;border:0;color:var(--ink);font-size:22px;cursor:pointer;width:32px;height:32px}
+.ir{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding:3px 0}
+.fine{font-size:13px}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
+.btn,.seg button{min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:800 15px Nunito,sans-serif;cursor:pointer}
+.btn:hover,.seg button:hover{border-color:rgba(255,255,255,.4)}
+.btn[aria-pressed=true]{background:var(--hi);color:#2a2200;border-color:var(--hi)}
+.btn.small{min-height:36px;margin-top:8px;width:100%}
+.seg{display:flex;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+.seg button{border:0;border-radius:0;padding:0 12px;min-width:46px;font-variant-numeric:tabular-nums}
+.seg button[aria-pressed=true]{background:var(--ink);color:#0f3b52}
+#play{min-width:92px}
+.isle{margin-left:auto;color:var(--soft);font-size:14px}
+button:focus-visible{outline:3px solid var(--hi);outline-offset:2px}
+aside{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px 14px 6px;display:flex;flex-direction:column;max-height:min(78vh,880px)}
+aside h2{font-size:22px;margin-bottom:2px}
+aside .sub{margin:0 0 10px;color:var(--soft);font-size:14px}
+#journal{list-style:none;margin:0;padding:0;overflow-y:auto;flex:1}
+#journal li button{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);color:var(--ink);padding:9px 4px;cursor:pointer;font:inherit}
+#journal li button:hover{background:rgba(255,255,255,.06)}
+#journal b{display:block;font:700 16px/1.25 "Pixelify Sans",sans-serif;color:var(--hi)}
+#journal .txt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:14px;color:var(--soft)}
+#journal:empty::after{content:"Stories will appear here as the island changes.";color:var(--soft);font-size:14px}
+.lower{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px;align-items:start}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px}
+.lower>.card:first-child{display:flex;flex-direction:column}.figp{position:relative;height:300px}.figp canvas{position:absolute;inset:0;width:100%;height:100%}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;color:var(--soft);margin-top:8px}
+.legend i{display:inline-block;width:14px;height:4px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.gene{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:6px 0;border-top:1px solid var(--line)}
+.gn{font-weight:800}.gd{font-size:14px;color:var(--soft);font-variant-numeric:tabular-nums;white-space:nowrap}.gd.up{color:#9fe58a}.gd.dn{color:#ffab5e}
+.gw{grid-column:1/-1;font-size:13px;color:var(--soft)}
+.track{grid-column:1/-1;position:relative;height:9px;border-radius:5px;background:rgba(255,255,255,.12)}
+.track i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:var(--hare)}.track.f i{background:var(--fox)}
+.track em{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);opacity:.7}
+.how{columns:2 320px;column-gap:32px;color:var(--soft)}
+.how p{margin:0 0 12px;break-inside:avoid}.how b{color:var(--ink)}
+@media(max-width:980px){.main{grid-template-columns:minmax(0,1fr)}aside{max-height:420px}.lower{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.fig{aspect-ratio:3/4;max-height:76vh}.figp{height:220px}#caption{left:8px;right:8px;bottom:8px;padding:8px 11px 10px}#caption p{font-size:14.5px}#inspect{width:200px}.isle{margin-left:0;width:100%}}
+@media(prefers-reduced-motion:reduce){#caption{transition:none}}
+</style>
+</head>
+<body>
+<header class="band"><div class="wrap top">
+  <div><h1>Tiny Island</h1><p>Hares and foxes live, breed and evolve on a small island. When something interesting happens, the narrator zooms in and circles it. Click any animal to inspect it.</p></div>
+  <div class="hud" aria-live="polite">
+    <div class="stat"><span id="when">Year 1</span><b id="season" data-s="0">Spring</b></div>
+    <div class="stat"><span>Hares</span><b id="nh">0</b></div>
+    <div class="stat"><span>Foxes</span><b id="nf">0</b></div>
+  </div>
+</div></header>
+<section class="band" style="padding-top:0"><div class="wrap main">
+  <div>
+    <div class="fig" id="fig">
+      <canvas id="island" aria-label="Animated island with hares and foxes"></canvas>
+      <div class="zoom"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button><button id="zfit" aria-label="Show whole island" style="font-size:14px">fit</button></div>
+      <div id="inspect" aria-live="polite"></div>
+      <div id="caption" aria-live="polite"></div>
+    </div>
+    <div class="controls">
+      <button class="btn" id="play" aria-pressed="false">Pause</button>
+      <div class="seg" role="group" aria-label="Speed">
+        <button data-speed="1" aria-pressed="false">1×</button><button data-speed="2" aria-pressed="true">2×</button><button data-speed="4" aria-pressed="false">4×</button><button data-speed="8" aria-pressed="false">8×</button><button data-speed="16" aria-pressed="false">16×</button>
+      </div>
+      <button class="btn" id="dir" aria-pressed="true">Narrator camera</button>
+      <button class="btn" id="addfox">Add 4 foxes</button>
+      <button class="btn" id="winter" aria-pressed="false">Long winters</button>
+      <button class="btn" id="newisle">New island</button>
+      <span class="isle px" id="isle"></span>
+    </div>
+  </div>
+  <aside>
+    <h2>Island journal <span class="stamp">(<span id="jcount">0</span>)</span></h2>
+    <p class="sub">Every story the narrator told. Click one to fly back to where it happened.</p>
+    <ul id="journal"></ul>
+  </aside>
+</div></section>
+<section class="band" style="padding-top:0"><div class="wrap lower">
+  <div class="card">
+    <h2>Boom and bust</h2>
+    <div class="figp"><canvas id="pop" aria-label="Hare and fox populations over time"></canvas></div>
+    <div class="legend"><span><i style="background:var(--hare)"></i>Hares (left scale)</span><span><i style="background:var(--fox)"></i>Foxes (right scale)</span><span><i style="background:rgba(255,255,255,.25);height:10px"></i>Winters</span><span><i style="background:var(--hi);width:6px;height:6px;border-radius:3px"></i>Big stories</span></div>
+  </div>
+  <div class="card">
+    <h2>Genes right now</h2>
+    <p class="stamp" style="margin:0">Each bar is today's average. The white tick marks where the first arrivals started.</p>
+    <div id="genes"></div>
+  </div>
+</div></section>
+<section class="band" style="padding-top:0"><div class="wrap card">
+  <h2>How the island works</h2>
+  <div class="how">
+    <p><b>Grass and seasons.</b> Grass regrows fastest in spring and barely at all under snow. Each year, snow arrives and melts on a slightly different date, but hares change coat on a fixed calendar, so in some years their coats are out of step with the snow.</p>
+    <p><b>Hares</b> eat grass and berries, breed in spring and summer, and run when they hear a fox. Longer legs mean faster escapes but burn more food; bigger ears hear foxes sooner; bigger litters mean more, weaker babies. A coat that doesn't match the ground (brown on snow, white on grass) is easier to spot.</p>
+    <p><b>Foxes</b> stalk, then sprint for a few seconds and give up if the hare keeps its lead. They slow down in forest, eat mice and beetles between hares, and breed once a year, with bigger litters when well fed. In cold winters a few may cross the sea ice from the mainland.</p>
+    <p><b>Evolution.</b> Babies inherit the average of both parents' genes plus a small random mutation. Nothing is told to evolve: genes drift toward whatever kept their carriers alive and breeding. Results vary a lot between islands. Try a few, and try long winters.</p>
+    <p><b>What to expect.</b> Hare and fox numbers rise and crash in cycles several years long, with foxes peaking a little after hares. That's the pattern in the Hudson's Bay Company fur records for lynx and snowshoe hares, though the real cycle is closer to ten years. Fox numbers here are kept small so the island stays readable.</p>
+  </div>
+</div></section>
+<script>
+(() => {
+// ===== Tiny Island: simulation core =====
+const W = 120, H = 80, YEAR = 1200;
+const WATER = 0, SAND = 1, GRASS = 2, FOREST = 3;
+const SEASONS = ['Spring', 'Summer', 'Autumn', 'Winter'];
+const HG = { sp: [0.6, 1.7], ears: [0, 1], lit: [1, 6], coat: [0, 1] };
+const FG = { sp: [0.6, 1.7], eyes: [0, 1], lit: [1, 5] };
+
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+
+function makeNoise(rnd, n) {
+  const g = new Float32Array(n * n); for (let i = 0; i < g.length; i++) g[i] = rnd();
+  return (x, y) => {
+    const xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi;
+    const s = t => t * t * (3 - 2 * t), at = (i, j) => g[((j % n + n) % n) * n + ((i % n + n) % n)];
+    const a = at(xi, yi), b = at(xi + 1, yi), c = at(xi, yi + 1), d = at(xi + 1, yi + 1);
+    const u = s(fx), v = s(fy); return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  };
+}
+
+function createWorld(seed) {
+  const rnd = mulberry(seed * 9973 + 17);
+  const n1 = makeNoise(rnd, 64), n2 = makeNoise(rnd, 64);
+  const terrain = new Uint8Array(W * H), grass = new Float32Array(W * H), height = new Float32Array(W * H);
+  let land = 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const nx = (x - W / 2) / (W / 2), ny = (y - H / 2) / (H / 2);
+    const d = Math.sqrt(nx * nx * 0.9 + ny * ny * 1.1);
+    let h = 0, amp = 1, f = 1 / 14, tot = 0;
+    for (let o = 0; o < 4; o++) { h += n1(x * f, y * f) * amp; tot += amp; amp *= 0.5; f *= 2; }
+    h = h / tot + 0.62 - d * 1.05 - Math.max(0, d - 0.8) * 1.6;
+    height[y * W + x] = h;
+    const fo = n2(x / 11, y / 11) * 0.7 + n2(x / 5, y / 5) * 0.3;
+    let t = WATER;
+    if (h > 0.12) t = SAND;
+    if (h > 0.165) t = fo > 0.56 ? FOREST : GRASS;
+    terrain[y * W + x] = t;
+    if (t >= GRASS) { land++; grass[y * W + x] = t === GRASS ? 0.8 : 0.4; }
+  }
+  // keep only the biggest landmass so nothing is stranded
+  const lab = new Int32Array(W * H).fill(-1); let best = -1, bestN = 0;
+  for (let i = 0; i < W * H; i++) {
+    if (terrain[i] === WATER || lab[i] >= 0) continue;
+    const st = [i]; lab[i] = i; let n = 0;
+    while (st.length) { const c = st.pop(); n++; const cx = c % W, cy = (c / W) | 0;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const x = cx + dx, y = cy + dy; if (x < 0 || y < 0 || x >= W || y >= H) continue; const j = y * W + x; if (terrain[j] !== WATER && lab[j] < 0) { lab[j] = i; st.push(j); } } }
+    if (n > bestN) { bestN = n; best = i; }
+  }
+  for (let i = 0; i < W * H; i++) if (terrain[i] !== WATER && lab[i] !== best) { terrain[i] = WATER; grass[i] = 0; }
+  const S = {
+    seed, rnd, terrain, grass, height, tick: 0, nextId: 1, hares: [], foxes: [], bushes: [], events: [],
+    snow: 0, moult: 0, winterJitter: 0, springJitter: 0, longWinter: false, year: 0,
+    hist: [], cells: [], founders: {}, records: { oldHare: 0, oldFox: 0, maxHares: 0 }, deaths: { eaten: 0, starved: 0, old: 0, foxStarved: 0 },
+    births: { h: 0, f: 0 }
+  };
+  for (let i = 0; i < 110; i++) { const p = randLand(S, GRASS); if (p) S.bushes.push({ x: p.x, y: p.y, b: 2, max: 3 + ((rnd() * 3) | 0) }); }
+  const start = (sp, n) => { for (let i = 0; i < n; i++) { const p = randLand(S); if (!p) continue; const a = sp === 'h' ? newHare(S, p.x, p.y, null, null) : newFox(S, p.x, p.y, null, null); a.age = (0.5 + rnd() * 1.5) * YEAR * 0.6; a.e = 0.8; S.founders[a.id] = a.sp; } };
+  start('h', 220); start('f', 7);
+  S.cells = new Array(Math.ceil(W / 5) * Math.ceil(H / 5)).fill(0).map(() => []);
+  recordStats(S);
+  return S;
+}
+
+function randLand(S, want) { for (let k = 0; k < 400; k++) { const x = S.rnd() * W, y = S.rnd() * H, t = S.terrain[(y | 0) * W + (x | 0)]; if (want ? t === want : t >= GRASS) return { x, y }; } return null; }
+const tileAt = (S, x, y) => (x < 0 || y < 0 || x >= W || y >= H) ? WATER : S.terrain[(y | 0) * W + (x | 0)];
+const walkable = (S, x, y) => tileAt(S, x, y) !== WATER;
+
+function gauss(r) { return (r() + r() + r() - 1.5) * 1.15; }
+function inherit(S, a, b, key, range, sd, base) {
+  if (!a) return clamp(base + gauss(S.rnd) * sd * 2, range[0], range[1]);
+  const v = (b ? (a.g[key] + b.g[key]) / 2 : a.g[key]) + gauss(S.rnd) * sd;
+  return clamp(v, range[0], range[1]);
+}
+function baseAnimal(S, sp, x, y, mom, dad) {
+  return { id: S.nextId++, sp, x, y, dir: S.rnd() * 6.283, e: 0.4, age: 0, alive: true, mom: mom ? mom.id : 0,
+    founder: mom ? mom.founder : 0, gen: mom ? mom.gen + 1 : 0, kids: 0, cd: 0, trail: new Float32Array(48), ti: 0, tn: 0,
+    alert: 0, threat: 0, target: 0, chaseT: 0, rest: 0, kills: 0, escapes: 0, born: S.tick, moving: 0 };
+}
+function newHare(S, x, y, mom, dad) {
+  const a = baseAnimal(S, 'h', x, y, mom, dad);
+  a.g = { sp: inherit(S, mom, dad, 'sp', HG.sp, 0.05, 1), ears: inherit(S, mom, dad, 'ears', HG.ears, 0.05, 0.4),
+    lit: inherit(S, mom, dad, 'lit', HG.lit, 0.25, 3), coat: inherit(S, mom, dad, 'coat', HG.coat, 0.06, 0.3) };
+  if (!mom) a.founder = a.id;
+  S.hares.push(a); return a;
+}
+function newFox(S, x, y, mom, dad) {
+  const a = baseAnimal(S, 'f', x, y, mom, dad);
+  a.g = { sp: inherit(S, mom, dad, 'sp', FG.sp, 0.05, 1), eyes: inherit(S, mom, dad, 'eyes', FG.eyes, 0.05, 0.4),
+    lit: inherit(S, mom, dad, 'lit', FG.lit, 0.25, 2.6) };
+  if (!mom) a.founder = a.id;
+  a.e = 0.6; S.foxes.push(a); return a;
+}
+
+// ---- calendar ----
+function calendar(S) {
+  const t = S.tick % YEAR, lw = S.longWinter;
+  const b = lw ? [0, 230, 460, 690] : [0, 300, 600, 900]; // season starts; winter runs to year end
+  let s = 3; for (let i = 3; i >= 0; i--) if (t >= b[i]) { s = i; break; }
+  return { t, s, b };
+}
+function seasonName(S) { return SEASONS[calendar(S).s]; }
+function yearNum(S) { return Math.floor(S.tick / YEAR) + 1; }
+
+// ---- spatial hash ----
+const CW = Math.ceil(W / 5);
+function rebuildCells(S) {
+  for (const c of S.cells) c.length = 0;
+  for (const a of S.hares) if (a.alive) S.cells[((a.y / 5) | 0) * CW + ((a.x / 5) | 0)].push(a);
+}
+function haresNear(S, x, y, r, fn) {
+  const x0 = Math.max(0, ((x - r) / 5) | 0), x1 = Math.min(CW - 1, ((x + r) / 5) | 0), y0 = Math.max(0, ((y - r) / 5) | 0), y1 = Math.min(Math.ceil(H / 5) - 1, ((y + r) / 5) | 0);
+  for (let cy = y0; cy <= y1; cy++) for (let cx = x0; cx <= x1; cx++) for (const h of S.cells[cy * CW + cx]) fn(h);
+}
+
+function moveToward(S, a, ang, spd) {
+  for (const off of [0, 0.5, -0.5, 1, -1, 1.6, -1.6, 2.4, -2.4, 3.14]) {
+    const t = ang + off, nx = a.x + Math.cos(t) * spd, ny = a.y + Math.sin(t) * spd;
+    if (walkable(S, nx, ny)) { a.x = nx; a.y = ny; a.dir = t; a.moving = spd; return true; }
+  }
+  a.moving = 0; return false;
+}
+function hareVisibility(S, h) {
+  const t = tileAt(S, h.x, h.y);
+  const white = h.g.coat * (0.25 + 0.75 * S.moult);
+  let v = 1 + 0.9 * Math.abs(white - S.snow);
+  if (t === FOREST) v *= 0.45;
+  return v;
+}
+function hareWhite(S, h) { return h.g.coat * (0.25 + 0.75 * S.moult); }
+
+// ---- one tick ----
+function step(S) {
+  S.tick++;
+  const cal = calendar(S), t = cal.t;
+  if (t === 0) { S.winterJitter = (S.rnd() - 0.5) * 160; S.springJitter = (S.rnd() - 0.5) * 120; S.year = yearNum(S); }
+  // snow follows the actual (jittered) weather; coats follow the calendar
+  const wStart = cal.b[3] + S.winterJitter, sEnd = 40 + S.springJitter;
+  const snowy = t > wStart || t < sEnd;
+  S.snow = clamp(S.snow + (snowy ? 0.012 : -0.012), 0, 1);
+  const moulty = t > cal.b[3] - 20 || t < 50;
+  S.moult = clamp(S.moult + (moulty ? 0.006 : -0.006), 0, 1);
+
+  // grass + berries
+  const rg = [0.00046, 0.00034, 0.00015, 0.00002][cal.s] * (1 - 0.9 * S.snow);
+  const g = S.grass, tr = S.terrain;
+  for (let i = 0; i < g.length; i++) { const k = tr[i]; if (k === GRASS) { if (g[i] < 1) g[i] += rg; } else if (k === FOREST) { if (g[i] < 0.45) g[i] += rg * 0.6; } }
+  if (cal.s === 1 && S.tick % 40 === 0) for (const b of S.bushes) if (b.b < b.max && S.rnd() < 0.5) b.b++;
+
+  rebuildCells(S);
+  const breedingH = cal.s <= 1;
+  const nh = S.hares.length;
+  // ---- hares ----
+  for (let i = 0; i < nh; i++) {
+    const h = S.hares[i]; if (!h.alive) continue;
+    h.age++; if (h.cd > 0) h.cd--;
+    let met = 0.0011 + 0.0011 * h.g.sp * h.g.sp + 0.0005 * h.g.ears;
+    // look for foxes
+    const dr = 1.8 + 3.6 * h.g.ears;
+    let fx = null, fd = 1e9;
+    for (const f of S.foxes) { if (!f.alive) continue; const dx = f.x - h.x, dy = f.y - h.y, d = dx * dx + dy * dy; if (d < dr * dr && d < fd) { fd = d; fx = f; } }
+    if (fx && (h.alert > 0 || S.rnd() < 0.22)) { h.alert = 40; h.threat = fx.id; }
+    if (h.alert > 0) {
+      h.alert--;
+      const f = fx || S.foxes.find(q => q.id === h.threat && q.alive);
+      if (f) { moveToward(S, h, Math.atan2(h.y - f.y, h.x - f.x) + gauss(S.rnd) * 0.25, 0.085 * h.g.sp * (h.age < 200 ? 0.8 : 1)); met *= 2.2; }
+      else h.alert = 0;
+    } else {
+      const idx = (h.y | 0) * W + (h.x | 0);
+      if (h.e < 0.9 && g[idx] > 0.06) { const bite = Math.min(0.011, g[idx]); g[idx] -= bite; h.e += bite * 1.0; h.moving = 0; }
+      else {
+        if (h.e < 0.9 && S.rnd() < 0.08) { // hop toward greener ground
+          let bx = h.x, by = h.y, bg = g[idx];
+          for (let k = 0; k < 5; k++) { const x = h.x + (S.rnd() - 0.5) * 9, y = h.y + (S.rnd() - 0.5) * 9; if (!walkable(S, x, y)) continue; const v = g[(y | 0) * W + (x | 0)]; if (v > bg) { bg = v; bx = x; by = y; } }
+          if (bx !== h.x) h.dir = Math.atan2(by - h.y, bx - h.x);
+        }
+        h.dir += gauss(S.rnd) * 0.3; moveToward(S, h, h.dir, 0.03 * h.g.sp);
+      }
+      // berries
+      if (h.e < 0.85) for (const b of S.bushes) if (b.b > 0 && Math.abs(b.x - h.x) < 0.8 && Math.abs(b.y - h.y) < 0.8) { b.b--; h.e += 0.12; break; }
+    }
+    h.e = Math.min(1, h.e - met);
+    // breed
+    if (breedingH && h.age > 300 && h.e > 0.6 && h.cd === 0 && S.hares.length < 1000) {
+      let mate = null; haresNear(S, h.x, h.y, 2.5, o => { if (!mate && o !== h && o.age > 300 && o.alive && Math.abs(o.x - h.x) < 2.5 && Math.abs(o.y - h.y) < 2.5) mate = o; });
+      if (mate) {
+        const n = clamp(Math.round(h.g.lit + S.rnd() - 0.5), 1, 6);
+        h.e -= 0.1 + 0.055 * n; h.cd = 300; h.kids += n; S.births.h += n;
+        for (let k = 0; k < n; k++) { const c = newHare(S, h.x + (S.rnd() - 0.5), h.y + (S.rnd() - 0.5), h, mate); if (!walkable(S, c.x, c.y)) { c.x = h.x; c.y = h.y; } c.e = 0.42; }
+      }
+    }
+    // death
+    if (h.e <= 0) { die(S, h, 'starved'); continue; }
+    if (h.age > 3000 + (h.id % 7) * 150 || S.rnd() < 0.00004) { die(S, h, 'old'); continue; }
+    pushTrail(h, S.tick);
+  }
+  // ---- foxes ----
+  const breedingF = cal.t >= 20 && cal.t < 140;
+  for (let i = 0, n = S.foxes.length; i < n; i++) {
+    const f = S.foxes[i]; if (!f.alive) continue;
+    f.age++; if (f.cd > 0) f.cd--; if (f.rest > 0) f.rest--;
+    let met = 0.0006 + 0.0007 * f.g.sp * f.g.sp + 0.0004 * f.g.eyes;
+    if (!f.target) met -= [0.0002, 0.0004, 0.0003, 0.00005][cal.s]; // mice, beetles, berries
+    let tgt = f.target ? S.hares.find(q => q.id === f.target && q.alive) : null;
+    if (!tgt && f.target) { f.target = 0; f.chaseT = 0; }
+    if (!tgt && f.rest === 0 && f.e < 0.92) {
+      const vr = 3.5 + 5.5 * f.g.eyes; let bd = 1e9;
+      haresNear(S, f.x, f.y, vr * 1.9, h => { const dx = h.x - f.x, dy = h.y - f.y, d = Math.sqrt(dx * dx + dy * dy); if (d < vr * hareVisibility(S, h) && d < bd) { bd = d; tgt = h; } });
+      if (tgt) { f.target = tgt.id; f.chaseT = 0; f.startD = bd; }
+    }
+    if (tgt) {
+      const dx = tgt.x - f.x, dy = tgt.y - f.y, d = Math.hypot(dx, dy), ang = Math.atan2(dy, dx);
+      const forest = tileAt(S, f.x, f.y) === FOREST ? 0.85 : 1;
+      if (tgt.alert > 0) { f.chaseT++; moveToward(S, f, ang, 0.14 * f.g.sp * forest); met *= 2.4; }
+      else moveToward(S, f, ang, 0.04 * f.g.sp);
+      if (d < 0.5) {
+        f.e = Math.min(1, f.e + 0.55); f.kills++; f.target = 0; f.rest = 60;
+        let wet = false; for (let k = 0; k < 8; k++) if (!walkable(S, tgt.x + Math.cos(k * 0.785) * 1.3, tgt.y + Math.sin(k * 0.785) * 1.3)) wet = true;
+        S.events.push({ type: 'kill', t: S.tick, f, h: tgt, x: tgt.x, y: tgt.y, chase: f.chaseT, white: hareWhite(S, tgt), snow: S.snow, forest: tileAt(S, tgt.x, tgt.y) === FOREST, water: wet, startD: f.startD });
+        die(S, tgt, 'eaten');
+      } else if (f.chaseT > 75 || d > 14) {
+        if (tgt.alert > 0 && f.chaseT > 30) { tgt.escapes++; S.events.push({ type: 'escape', t: S.tick, f, h: tgt, x: tgt.x, y: tgt.y, d, forest: tileAt(S, tgt.x, tgt.y) === FOREST }); }
+        f.target = 0; f.chaseT = 0; f.rest = 110;
+      }
+    } else {
+      f.dir += gauss(S.rnd) * 0.18; moveToward(S, f, f.dir, f.e < 0.5 ? 0.05 : 0.028);
+    }
+    f.e = Math.min(1, f.e - met);
+    if (breedingF && f.age > 900 && f.e > 0.35 && f.cd === 0) {
+      let mate = null; for (const o of S.foxes) if (o !== f && o.alive && o.age > 900 && Math.abs(o.x - f.x) < 30 && Math.abs(o.y - f.y) < 30) { mate = o; break; }
+      if (mate) {
+        const n = clamp(Math.round(f.g.lit + S.rnd() - 0.5 + (f.e > 0.75 ? 1 : 0)), 1, 6);
+        f.e -= 0.08 * n; f.cd = 1000; f.kids += n; mate.cd = 1000; S.births.f += n;
+        const cubs = []; for (let k = 0; k < n; k++) { const c = newFox(S, f.x, f.y, f, mate); c.e = 0.75; cubs.push(c); }
+        S.events.push({ type: 'cubs', t: S.tick, f, cubs, n, x: f.x, y: f.y });
+      }
+    }
+    if (f.e <= 0) { die(S, f, 'foxStarved'); continue; }
+    if (f.age > 6000 + (f.id % 5) * 300 || S.rnd() < 0.00003) { die(S, f, 'old'); continue; }
+    pushTrail(f, S.tick);
+  }
+  if (cal.s === 3 && t === cal.b[3] + 150 && S.snow > 0.8) {
+    const live = S.foxes.filter(a => a.alive).length;
+    const liveH = S.hares.filter(a => a.alive).length;
+    if (liveH < 8) { const r = addHares(S, 6); S.events.push({ type: 'iceHares', t: S.tick, x: r.x, y: r.y, ids: r.ids }); }
+    if (live < 4 && S.rnd() < 0.4) { const r = addFoxes(S, 2); S.events.push({ type: 'ice', t: S.tick, x: r.x, y: r.y, ids: r.ids }); }
+  }
+  if (S.tick % 30 === 0) {
+    S.hares = S.hares.filter(a => a.alive); S.foxes = S.foxes.filter(a => a.alive);
+  }
+  if (S.tick % 20 === 0) recordStats(S);
+}
+function pushTrail(a, t) { if (t % 3) return; const i = (a.ti % 24) * 2; a.trail[i] = a.x; a.trail[i + 1] = a.y; a.ti++; a.tn = Math.min(24, a.tn + 1); }
+function die(S, a, why) {
+  a.alive = false; a.died = S.tick; a.why = why; S.deaths[why] = (S.deaths[why] || 0) + 1;
+  if (a.sp === 'h' && a.age > S.records.oldHare) S.records.oldHare = a.age;
+  if (a.sp === 'f' && a.age > S.records.oldFox) S.records.oldFox = a.age;
+  S.graveyard = S.graveyard || []; S.graveyard.push(a); if (S.graveyard.length > 300) S.graveyard.shift();
+  if (why === 'foxStarved') S.events.push({ type: 'foxStarved', t: S.tick, f: a, x: a.x, y: a.y });
+}
+function mean(arr, k) { if (!arr.length) return null; let s = 0; for (const a of arr) s += a.g[k]; return s / arr.length; }
+function recordStats(S) {
+  const hs = S.hares.filter(a => a.alive), fs = S.foxes.filter(a => a.alive);
+  S.hist.push({ t: S.tick, h: hs.length, f: fs.length, hsp: mean(hs, 'sp'), ears: mean(hs, 'ears'), lit: mean(hs, 'lit'), coat: mean(hs, 'coat'),
+    fsp: mean(fs, 'sp'), eyes: mean(fs, 'eyes'), flit: mean(fs, 'lit'), snow: S.snow });
+  if (hs.length > S.records.maxHares) S.records.maxHares = hs.length;
+}
+function addFoxes(S, n) {
+  const out = [];
+  // they arrive together on one beach
+  let p = null; for (let k = 0; k < 500 && !p; k++) { const q = randLand(S); if (q && tileAt(S, q.x + 3, q.y) === WATER || q && tileAt(S, q.x - 3, q.y) === WATER) p = q; }
+  p = p || randLand(S);
+  for (let i = 0; i < n; i++) { const f = newFox(S, p.x + (S.rnd() - 0.5) * 2, p.y + (S.rnd() - 0.5) * 2, null, null); if (!walkable(S, f.x, f.y)) { f.x = p.x; f.y = p.y; } f.age = 1000; f.e = 0.9; S.founders[f.id] = 'f'; out.push(f); }
+  return { x: p.x, y: p.y, ids: out };
+}
+
+function addHares(S, n) {
+  const p = randLand(S, GRASS) || randLand(S), ids = [];
+  for (let i = 0; i < n; i++) { const h = newHare(S, p.x + (S.rnd() - 0.5) * 2, p.y + (S.rnd() - 0.5) * 2, null, null); if (!walkable(S, h.x, h.y)) { h.x = p.x; h.y = p.y; } h.age = 600; h.e = 0.9; ids.push(h); }
+  return { x: p.x, y: p.y, ids };
+}
+
+// ===== Tiny Island: rendering, camera, narrator, UI =====
+const $ = id => document.getElementById(id);
+const fig = $('fig'), cv = $('island'), ctx = cv.getContext('2d');
+const TS = 8; // texture pixels per tile
+let S, terr = {}, grassCv, grassCtx, grassImg, iceCv, sparkles = [], flakes = [], poofs = [], ghosts = [];
+let cw = 0, ch = 0, dpr = 1, fitZ = 7;
+const cam = { x: W / 2, y: H / 2, z: 7 }, camT = { x: W / 2, y: H / 2, z: 7 };
+let speed = 2, paused = false, director = true, manual = false, follow = null, selected = null;
+let seed = (Date.now() % 9000) + 1;
+const hexToRgb = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+const mix = (a, b, t) => { const A = hexToRgb(a), B = hexToRgb(b); return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(',')})`; };
+const hash = (x, y, k = 0) => { let h = (x * 374761393 + y * 668265263 + k * 1442695041) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+
+// ---------- terrain textures ----------
+const PAL = {
+  summer: { grass: ['#7cc35a', '#70b84f', '#88cd63'], forest: ['#4f9a45', '#478f3e'], canopy: ['#2f7d3a', '#3f9a48', '#6cc067'], flower: ['#ffd84a', '#ff8fb1', '#ffffff'] },
+  autumn: { grass: ['#c4b45a', '#b8a24c', '#d0bf64'], forest: ['#9a7a3a', '#8c6c32'], canopy: ['#c8622a', '#e08a33', '#f5c95a'], flower: ['#e9a13c', '#c8622a', '#f2d27a'] },
+  winter: { grass: ['#eef5f8', '#e3edf2', '#f7fbfd'], forest: ['#dce8ee', '#d2e0e8'], canopy: ['#2f5e48', '#3b6f55', '#ffffff'], flower: ['#eef5f8', '#e3edf2', '#ffffff'] }
+};
+function buildTerrain() {
+  for (const season of ['summer', 'autumn', 'winter']) {
+    const c = document.createElement('canvas'); c.width = W * TS; c.height = H * TS;
+    const g = c.getContext('2d'), img = g.createImageData(c.width, c.height), d = img.data, P = PAL[season];
+    const put = (x, y, col) => { if (x < 0 || y < 0 || x >= c.width || y >= c.height) return; const [r, gg, b] = hexToRgb(col), i = (y * c.width + x) * 4; d[i] = r; d[i + 1] = gg; d[i + 2] = b; d[i + 3] = 255; };
+    for (let py = 0; py < c.height; py++) for (let px = 0; px < c.width; px++) {
+      const tx = (px / TS) | 0, ty = (py / TS) | 0, i = ty * W + tx, t = S.terrain[i], n = hash(px, py, 3);
+      let col;
+      if (t === WATER) {
+        const h = S.height[i]; col = h > 0.07 ? '#58c6d8' : h > -0.05 ? '#2f9fc6' : h > -0.2 ? '#2386b6' : '#1b6fa0';
+        if (h > 0.09 && n > 0.93) col = '#9fe3ea';
+      } else if (t === SAND) col = season === 'winter' ? (n > 0.5 ? '#e9eff2' : '#dfe7ec') : (n > 0.6 ? '#f2dca4' : n > 0.15 ? '#ead08f' : '#dcc07c');
+      else if (t === GRASS) { col = P.grass[n > 0.7 ? 2 : n > 0.35 ? 0 : 1]; if (hash(tx, ty, 9) > 0.9 && n > 0.985) col = P.flower[(hash(px, py, 4) * 3) | 0]; }
+      else col = P.forest[n > 0.5 ? 0 : 1];
+      put(px, py, col);
+    }
+    // shoreline foam
+    for (let ty = 0; ty < H; ty++) for (let tx = 0; tx < W; tx++) {
+      if (S.terrain[ty * W + tx] !== WATER) continue;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const x = tx + dx, y = ty + dy; if (x < 0 || y < 0 || x >= W || y >= H || S.terrain[y * W + x] === WATER) continue;
+        for (let k = 0; k < TS; k++) { const fx = dx === 1 ? TS - 1 : dx === -1 ? 0 : k, fy = dy === 1 ? TS - 1 : dy === -1 ? 0 : k; if (hash(tx * TS + fx, ty * TS + fy, 5) > 0.25) put(tx * TS + fx, ty * TS + fy, season === 'winter' ? '#ffffff' : '#e8fbff'); }
+      }
+    }
+    // trees, drawn back to front
+    for (let ty = 0; ty < H; ty++) for (let tx = 0; tx < W; tx++) {
+      if (S.terrain[ty * W + tx] !== FOREST || hash(tx, ty, 1) > 0.62) continue;
+      const cx = tx * TS + 4 + ((hash(tx, ty, 2) * 4) | 0) - 2, cy = ty * TS + 3 + ((hash(tx, ty, 6) * 3) | 0), r = 4 + ((hash(tx, ty, 7) * 2) | 0);
+      for (let y = -1; y <= 1; y++) for (let x = -r; x <= r; x++) if (x * x / (r * r) + y * y < 1) put(cx + x + 1, cy + r + 1 + y, season === 'winter' ? '#c9d6de' : '#2d5f2c');
+      put(cx, cy + r, '#5b3a22'); put(cx, cy + r + 1, '#5b3a22');
+      for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) {
+        const q = x * x + y * y; if (q > r * r) continue;
+        let col = P.canopy[0];
+        if (x + y < -r * 0.4) col = P.canopy[1];
+        if ((x + 1.5) ** 2 + (y + 1.5) ** 2 < r * 0.9) col = P.canopy[1];
+        if ((x + 2) ** 2 + (y + 2) ** 2 < 2.2) col = P.canopy[2];
+        if (season === 'winter' && y < -r * 0.15 + Math.sin(x * 1.7) * 0.8) col = (x + y < -r * 0.6) ? '#ffffff' : '#eef6fa';
+        put(cx + x, cy + y, col);
+      }
+    }
+    g.putImageData(img, 0, 0); terr[season] = c;
+  }
+  // sea ice: water near land
+  iceCv = document.createElement('canvas'); iceCv.width = W * TS / 2; iceCv.height = H * TS / 2;
+  const ig = iceCv.getContext('2d'), im = ig.createImageData(iceCv.width, iceCv.height);
+  const dist = new Float32Array(W * H).fill(99);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (S.terrain[y * W + x] !== WATER) dist[y * W + x] = 0;
+  for (let it = 0; it < 5; it++) for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) { const i = y * W + x; dist[i] = Math.min(dist[i], dist[i - 1] + 1, dist[i + 1] + 1, dist[i - W] + 1, dist[i + W] + 1); }
+  for (let py = 0; py < iceCv.height; py++) for (let px = 0; px < iceCv.width; px++) {
+    const tx = (px * 2 / TS) | 0, ty = (py * 2 / TS) | 0, dd = dist[ty * W + tx]; if (dd === 0 || dd > 4.5) continue;
+    const i = (py * iceCv.width + px) * 4, n = hash(px, py, 11), crack = hash((px / 3) | 0, (py / 3) | 0, 12) > 0.94;
+    const v = crack ? [176, 214, 230] : n > 0.5 ? [232, 246, 251] : [218, 238, 247];
+    im.data[i] = v[0]; im.data[i + 1] = v[1]; im.data[i + 2] = v[2]; im.data[i + 3] = Math.round(255 * Math.min(1, (4.6 - dd) / 2.2));
+  }
+  ig.putImageData(im, 0, 0);
+  grassCv = document.createElement('canvas'); grassCv.width = W; grassCv.height = H; grassCtx = grassCv.getContext('2d'); grassImg = grassCtx.createImageData(W, H);
+  sparkles = []; for (let k = 0; k < 90; k++) { for (let tries = 0; tries < 50; tries++) { const x = Math.random() * W, y = Math.random() * H; if (S.terrain[(y | 0) * W + (x | 0)] === WATER) { sparkles.push({ x, y, p: Math.random() * 6.28 }); break; } } }
+}
+function updateGrass() {
+  const d = grassImg.data, snowHide = 1 - 0.85 * S.snow;
+  for (let i = 0; i < W * H; i++) {
+    const t = S.terrain[i]; let a = 0;
+    if (t === GRASS) a = Math.max(0, 1 - S.grass[i] / 0.7) * 0.62;
+    else if (t === FOREST) a = Math.max(0, 1 - S.grass[i] / 0.3) * 0.3;
+    d[i * 4] = 138; d[i * 4 + 1] = 103; d[i * 4 + 2] = 58; d[i * 4 + 3] = Math.round(a * snowHide * 255);
+  }
+  grassCtx.putImageData(grassImg, 0, 0);
+}
+
+// ---------- camera ----------
+function resize() {
+  dpr = Math.min(2, window.devicePixelRatio || 1); cw = fig.clientWidth; ch = fig.clientHeight;
+  cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr);
+  const nf = Math.min(cw / W, ch / H) * 1.02; if (Math.abs(cam.z - fitZ) < 0.01) cam.z = nf; fitZ = nf;
+  if (!flakes.length) for (let k = 0; k < 110; k++) flakes.push({ x: Math.random(), y: Math.random(), v: 0.0007 + Math.random() * 0.0012, r: Math.random() < 0.3 ? 2 : 1 });
+}
+const ro = new ResizeObserver(resize); ro.observe(fig);
+const toScreen = (x, y) => [(x - cam.x) * cam.z + cw / 2, (y - cam.y) * cam.z + ch / 2];
+const toWorld = (sx, sy) => [(sx - cw / 2) / cam.z + cam.x, (sy - ch / 2) / cam.z + cam.y];
+function clampCam(c) {
+  c.z = Math.max(fitZ * 0.9, Math.min(fitZ * 6, c.z));
+  const hw = cw / 2 / c.z, hh = ch / 2 / c.z;
+  c.x = hw * 2 >= W ? W / 2 : Math.max(hw, Math.min(W - hw, c.x));
+  c.y = hh * 2 >= H ? H / 2 : Math.max(hh, Math.min(H - hh, c.y));
+}
+function posOf(t) { if (t.frozen) return [t.sx, t.sy]; return t.a && t.a.alive ? [t.a.x, t.a.y] : [t.x, t.y]; }
+function aimCamera() {
+  if (follow && follow.alive) { camT.x = follow.x; camT.y = follow.y; camT.z = fitZ * 3.6; }
+  else if (manual) { /* user drives */ }
+  else if (director && card && card.targets.length) {
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    for (const t of card.targets) { const [x, y] = posOf(t); x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+    const pad = card.pad || 5; camT.x = (x0 + x1) / 2; camT.y = (y0 + y1) / 2 + 1.2;
+    camT.z = Math.min(fitZ * (card.zoom || 3.4), cw / (x1 - x0 + pad * 2), ch / (y1 - y0 + pad * 2.6));
+  } else { camT.x = W / 2; camT.y = H / 2; camT.z = fitZ; }
+  clampCam(camT);
+  const k = manual ? 1 : 0.055;
+  cam.x += (camT.x - cam.x) * k; cam.y += (camT.y - cam.y) * k; cam.z += (camT.z - cam.z) * k;
+  clampCam(cam);
+}
+
+// ---------- sprites ----------
+function whiteOf(h) { return h.g.coat * (0.25 + 0.75 * S.moult); }
+function drawHare(h) {
+  const s = h.age < 300 ? 0.62 : 1, u = 0.125 * s, fl = Math.cos(h.dir) < 0 ? -1 : 1;
+  const hop = h.moving > 0.02 ? Math.abs(Math.sin(S.tick * 0.42 + h.id)) * (h.alert ? 2 : 1.3) : 0;
+  const X = h.x, Y = h.y - hop * u;
+  const R = (x, y, w, hh, c) => { ctx.fillStyle = c; ctx.fillRect(X + (fl > 0 ? x : -x - w) * u, Y + y * u, w * u, hh * u); };
+  ctx.fillStyle = 'rgba(20,40,20,.22)'; ctx.fillRect(h.x - 2.5 * u, h.y + 1.8 * u, 5 * u, 1 * u);
+  const w = whiteOf(h), body = mix('#b98a5a', '#f6f8fa', w), dark = mix('#86603a', '#c4ced6', w);
+  const leg = 1 + Math.round((h.g.sp - 0.6) / 0.5);
+  R(-3, 1, 2, leg, dark); R(1, 1, 1, 1, dark);
+  R(-3, -2, 5, 3, body); R(-2, -3, 3, 1, body);
+  R(-4, -2, 1, 1, '#ffffff');
+  R(1, -4, 2, 2, body); R(3, -3, 1, 1, body);
+  R(2, -4, 1, 1, '#2a1b12'); R(3.6, -3, 0.6, 0.6, '#f19aa8');
+  const el = 1 + Math.round(h.g.ears * 3);
+  R(1, -4 - el, 1, el, dark); R(2, -4 - el + 1, 1, el - 1 || 0.5, body);
+  if (h.alert > 0 && cam.z > fitZ * 1.8) { R(0.5, -11.5, 1, 2.5, '#fff'); R(0.5, -8.5, 1, 1, '#fff'); }
+}
+function drawFox(f) {
+  const s = f.age < 600 ? 0.68 : 1, u = 0.13 * s, fl = Math.cos(f.dir) < 0 ? -1 : 1;
+  const trot = f.moving > 0.02 ? Math.abs(Math.sin(S.tick * 0.5 + f.id)) * 0.8 : 0;
+  const X = f.x, Y = f.y - trot * u;
+  const R = (x, y, w, hh, c) => { ctx.fillStyle = c; ctx.fillRect(X + (fl > 0 ? x : -x - w) * u, Y + y * u, w * u, hh * u); };
+  ctx.fillStyle = 'rgba(20,40,20,.22)'; ctx.fillRect(f.x - 4 * u, f.y + 1.8 * u, 8 * u, 1 * u);
+  const leg = 1 + Math.round((f.g.sp - 0.6) / 0.5), sprint = f.target && f.moving > 0.08;
+  if (sprint) { R(-10, -1.5, 2, 0.4, 'rgba(255,255,255,.8)'); R(-11, 0, 2.5, 0.4, 'rgba(255,255,255,.6)'); }
+  R(-3, 1, 1, leg, '#2b1a12'); R(2, 1, 1, leg, '#2b1a12');
+  R(-6, -2.5, 3, 2, '#e8742c'); R(-7, -2.5, 1, 2, '#fbefe2');
+  R(-3, -2, 6, 3, '#e8742c'); R(-1, 0, 3, 1, '#fbefe2');
+  R(3, -3, 3, 3, '#ef8236'); R(6, -2, 1, 1.4, '#fbefe2'); R(7, -2, 0.8, 0.8, '#2b1a12');
+  R(3, -4, 1, 1, '#a9481a'); R(5, -4, 1, 1, '#a9481a');
+  if (f.g.eyes > 0.6) R(4, -2.4, 1.6, 1.2, '#2b1a12'); else R(4.5, -2, 0.9, 0.9, '#2b1a12');
+}
+function drawBush(b) {
+  const bare = S.snow > 0.5;
+  ctx.fillStyle = 'rgba(20,40,20,.25)'; ctx.beginPath(); ctx.ellipse(b.x, b.y + 0.35, 0.5, 0.16, 0, 0, 6.29); ctx.fill();
+  ctx.fillStyle = bare ? '#8b7a6a' : S.snow > 0.2 ? '#5d7f4c' : '#3f8a3c'; ctx.beginPath(); ctx.arc(b.x, b.y, 0.42, 0, 6.29); ctx.fill();
+  ctx.fillStyle = bare ? '#ffffff' : '#57a84a'; ctx.beginPath(); ctx.arc(b.x - 0.12, b.y - 0.14, 0.22, 0, 6.29); ctx.fill();
+  if (!bare) { ctx.fillStyle = '#e5343f'; const o = [[0.18, 0.05], [-0.2, 0.15], [0.05, -0.22], [0.25, -0.15], [-0.05, 0.25], [-0.25, -0.08]]; for (let k = 0; k < b.b && k < 6; k++) ctx.fillRect(b.x + o[k][0] - 0.07, b.y + o[k][1] - 0.07, 0.14, 0.14); }
+}
+
+// ---------- draw ----------
+let lastGrass = -99;
+function draw(now) {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = '#1b6fa0'; ctx.fillRect(0, 0, cw, ch);
+  ctx.setTransform(dpr * cam.z, 0, 0, dpr * cam.z, dpr * (cw / 2 - cam.x * cam.z), dpr * (ch / 2 - cam.y * cam.z));
+  ctx.imageSmoothingEnabled = false;
+  const cal = calendar(S);
+  let aut = cal.s === 2 ? Math.min(1, (cal.t - cal.b[2]) / 120) : cal.s === 3 ? 1 : cal.s === 0 ? Math.max(0, 1 - cal.t / 120) : 0;
+  ctx.drawImage(terr.summer, 0, 0, W, H);
+  if (aut > 0) { ctx.globalAlpha = aut; ctx.drawImage(terr.autumn, 0, 0, W, H); }
+  if (S.snow > 0) { ctx.globalAlpha = S.snow; ctx.drawImage(terr.winter, 0, 0, W, H); ctx.globalAlpha = S.snow * 0.95; ctx.drawImage(iceCv, 0, 0, W, H); }
+  ctx.globalAlpha = 1;
+  if (S.tick - lastGrass >= 12 || S.tick < lastGrass) { updateGrass(); lastGrass = S.tick; }
+  ctx.imageSmoothingEnabled = true; ctx.drawImage(grassCv, 0, 0, W, H); ctx.imageSmoothingEnabled = false;
+  // sparkles
+  ctx.fillStyle = '#ffffff';
+  for (const p of sparkles) { const a = Math.sin(now / 700 + p.p); if (a > 0.85) { ctx.globalAlpha = (a - 0.85) * 6 * (1 - S.snow * 0.6); ctx.fillRect(p.x, p.y, 0.5, 0.12); } }
+  ctx.globalAlpha = 1;
+  const [vx0, vy0] = toWorld(-20, -20), [vx1, vy1] = toWorld(cw + 20, ch + 20);
+  const vis = a => a.x > vx0 && a.x < vx1 && a.y > vy0 && a.y < vy1;
+  for (const b of S.bushes) if (vis(b)) drawBush(b);
+  // ghosts and fur puffs
+  for (let i = poofs.length - 1; i >= 0; i--) {
+    const p = poofs[i], age = S.tick - p.t; if (age > 100 || age < 0) { poofs.splice(i, 1); continue; }
+    ctx.globalAlpha = 1 - age / 100; ctx.fillStyle = p.c;
+    for (let k = 0; k < 7; k++) { const a = k * 0.9 + p.t, r = 0.2 + age * 0.012; ctx.fillRect(p.x + Math.cos(a) * r, p.y + Math.sin(a) * r - age * 0.004, 0.12, 0.12); }
+  }
+  ctx.globalAlpha = 1;
+  for (let i = ghosts.length - 1; i >= 0; i--) {
+    const g = ghosts[i], age = S.tick - g.t; if (age > 700 || age < 0) { ghosts.splice(i, 1); continue; }
+    ctx.globalAlpha = 0.7 * (1 - age / 700); ctx.fillStyle = '#ffffff';
+    const u = 0.12, X = g.x - 2 * u, Y = g.y - 5 * u - Math.sin(age / 30) * 0.15;
+    ctx.fillRect(X + u, Y, 2 * u, u); ctx.fillRect(X, Y + u, 4 * u, 3 * u); ctx.fillRect(X, Y + 4 * u, u, u); ctx.fillRect(X + 3 * u, Y + 4 * u, u, u); ctx.fillRect(X + 1.5 * u, Y + 4 * u, u, u);
+    ctx.fillStyle = '#2b3a44'; ctx.fillRect(X + u, Y + 2 * u, 0.6 * u, 0.6 * u); ctx.fillRect(X + 2.4 * u, Y + 2 * u, 0.6 * u, 0.6 * u);
+  }
+  ctx.globalAlpha = 1;
+  // trails for the current story
+  if (card) for (const tr of card.trails || []) {
+    ctx.fillStyle = tr.c; const n = tr.pts.length;
+    for (let k = 0; k < n; k++) { ctx.globalAlpha = 0.25 + 0.65 * k / n; ctx.beginPath(); ctx.arc(tr.pts[k][0], tr.pts[k][1], 0.13, 0, 6.29); ctx.fill(); }
+  }
+  ctx.globalAlpha = 1;
+  const list = [];
+  for (const h of S.hares) if (h.alive && vis(h)) list.push(h);
+  for (const f of S.foxes) if (f.alive && vis(f)) list.push(f);
+  list.sort((a, b) => a.y - b.y);
+  for (const a of list) a.sp === 'h' ? drawHare(a) : drawFox(a);
+  if (card && card.replay) { ctx.globalAlpha = 0.8; for (const t of card.targets) if (t.a) { const g = Object.assign({}, t.a, { x: t.sx, y: t.sy, moving: 0, alert: 0 }); g.sp === 'h' ? drawHare(g) : drawFox(g); } ctx.globalAlpha = 1; }
+  // snow fall in screen space
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const falling = cal.s === 3 || (cal.s === 2 && S.snow > 0.02);
+  if (falling && S.snow > 0.02) {
+    ctx.fillStyle = '#ffffff'; ctx.globalAlpha = Math.min(0.9, S.snow + 0.2);
+    for (const f of flakes) { if (!paused) { f.y += f.v * (1 + speed * 0.15); f.x += Math.sin(now / 900 + f.v * 4000) * 0.0004; } if (f.y > 1) { f.y = 0; f.x = Math.random(); } ctx.fillRect(f.x * cw, f.y * ch, f.r * 1.5, f.r * 1.5); }
+    ctx.globalAlpha = 1;
+  }
+  // rings for whatever the narrator is talking about
+  const pulse = 1 + Math.sin(now / 220) * 0.12;
+  if (card) {
+    card.targets.forEach((t, i) => {
+      const [x, y] = posOf(t), [sx, sy] = toScreen(x, y - 0.25);
+      const r = Math.max(9, cam.z * (card.targets.length > 3 ? 0.75 : 1.05)) * pulse;
+      ctx.strokeStyle = t.c || '#ffd23f'; ctx.lineWidth = i === 0 ? 3 : 2; ctx.beginPath(); ctx.arc(sx, sy, r, 0, 6.29); ctx.stroke();
+      if (i === 0) ctx.setLineDash([]);
+    });
+    // leader line to the caption
+    const t0 = card.targets[0];
+    if (t0 && capEl.classList.contains('on')) {
+      const [x, y] = posOf(t0), [sx, sy] = toScreen(x, y - 0.25), fr = fig.getBoundingClientRect(), cr = capEl.getBoundingClientRect();
+      const ex = Math.max(cr.left - fr.left + 24, Math.min(cr.right - fr.left - 24, sx)), ey = cr.top - fr.top;
+      const r = Math.max(9, cam.z * 1.05) * pulse;
+      if (sy + r < ey - 6 && sy > 0 && sy < ch) {
+        ctx.strokeStyle = 'rgba(255,210,63,.9)'; ctx.lineWidth = 2; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(sx, sy + r); ctx.lineTo(ex, ey); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(ex, ey, 3.5, 0, 6.29); ctx.fill();
+      }
+    }
+  }
+  if (selected && selected.alive) {
+    const [sx, sy] = toScreen(selected.x, selected.y - 0.25), r = Math.max(10, cam.z * 1.1);
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.arc(sx, sy, r, 0, 6.29); ctx.stroke(); ctx.setLineDash([]);
+  }
+}
+
+// ---------- narrator ----------
+const capEl = $('caption'), journal = $('journal');
+let card = null, cardEnd = 0, queue = [], cards = [], lastShown = 0;
+const N = {};
+function resetNarrator() {
+  card = null; queue = []; cards = []; journal.innerHTML = ''; capEl.classList.remove('on');
+  lastShown = -1e9; Object.assign(N, { lastChase: -1e9, lastKill: -1e9, trough: 9999, peak: 0, fpeak: 0, boomed: false, base: null, steps: {}, lineage: 0, famine: [], lastFamine: -1e9, cubsYear: -1, winterYear: -1, springYear: -1, foxesGone: false, lastWinterSnow: 0 });
+}
+function stamp(t) { const y = Math.floor(t / YEAR) + 1; const tt = t % YEAR, b = S.longWinter ? [0, 230, 460, 690] : [0, 300, 600, 900]; let s = 3; for (let i = 3; i >= 0; i--) if (tt >= b[i]) { s = i; break; } return `Year ${y} · ${SEASONS[s]}`; }
+const T = (a, c) => ({ a, x: a.x, y: a.y, c });
+const P = (x, y) => ({ x, y });
+function trailPts(a) { const pts = []; for (let k = a.tn - 1; k >= 0; k--) { const i = ((a.ti - 1 - k) % 24 + 24) % 24 * 2; pts.push([a.trail[i], a.trail[i + 1]]); } pts.push([a.x, a.y]); return pts; }
+function say(c) {
+  c.t = S.tick; c.stamp = stamp(S.tick); c.targets = c.targets || [];
+  for (const t of c.targets) { if (t.a) { t.x = t.a.x; t.y = t.a.y; } t.sx = t.x; t.sy = t.y; }
+  cards.push(c);
+  const li = document.createElement('li');
+  li.innerHTML = `<button><span class="stamp">${c.stamp}</span><b>${c.title}</b><span class="txt">${c.text}</span></button>`;
+  li.firstChild.onclick = () => { manual = false; follow = null; director = true; setDirUI(); showCard(c, true); };
+  journal.prepend(li); $('jcount').textContent = cards.length;
+  queue.push(c); queue.sort((a, b) => b.pri - a.pri || b.t - a.t); if (queue.length > 5) queue.length = 5;
+}
+const liveH = () => S.hares.filter(a => a.alive), liveF = () => S.foxes.filter(a => a.alive);
+function pct(list, key, v) { let n = 0; for (const a of list) if (a.g[key] < v) n++; return Math.round(100 * n / Math.max(1, list.length)); }
+function cluster(list, score, n, r = 16) {
+  if (!list.length) return [];
+  const best = list.reduce((m, a) => score(a) > score(m) ? a : m, list[0]);
+  return list.filter(a => Math.abs(a.x - best.x) < r && Math.abs(a.y - best.y) < r).sort((a, b) => score(b) - score(a)).slice(0, n);
+}
+function considerEvent(e) {
+  const real = performance.now();
+  if (e.type === 'kill') {
+    poofs.push({ x: e.x, y: e.y, t: S.tick, c: mix('#b98a5a', '#f6f8fa', e.white) });
+    if (real - N.lastKill < 32000 || queue.length > 2) return;
+    let title, text;
+    if (e.snow > 0.6 && e.white < 0.35) { title = 'Brown on white'; text = `This hare's coat hadn't turned white, so it stood out on the snow and the fox spotted it from far away. Each winter, hares with whiter winter coats survive more often.`; }
+    else if (e.water) { title = 'Cornered at the shore'; text = `The hare ran out of island. A hare fleeing toward the water has nowhere left to go.`; }
+    else if (e.chase > 50) { const p = pct(liveF(), 'sp', e.f.g.sp); title = 'A long chase'; text = `The fox ran this hare down after a long sprint. ` + (p >= 60 ? `Its legs are longer than ${p}% of the island's foxes, and speed is inherited too.` : `It isn't an especially fast fox. The hare was young or slow, or turned the wrong way.`) + ` That was fox #${e.f.id}'s ${ord(e.f.kills)} hare.`; }
+    else return;
+    N.lastKill = real;
+    say({ kind: 'kill', pri: 3, slow: true, title, text, targets: [T(e.f, '#ff8a3d'), P(e.x, e.y)], trails: [{ c: '#ff8a3d', pts: trailPts(e.f) }, { c: '#ffffff', pts: trailPts(e.h) }], zoom: 3.8 });
+  } else if (e.type === 'escape') {
+    if (real - N.lastChase < 22000 || queue.length > 2) return;
+    const H_ = liveH(), ps = pct(H_, 'sp', e.h.g.sp), pe = pct(H_, 'ears', e.h.g.ears);
+    let text;
+    if (e.forest) text = `It made it into the trees. Foxes slow down in the undergrowth and lose sight of hares there.`;
+    else if (ps >= 70) text = `Its legs are longer than ${ps}% of the island's hares. Leg length is inherited, so its babies should be fast too.`;
+    else if (pe >= 70) text = `Big ears: it heard the fox sooner than ${pe}% of hares would have, and got a head start.`;
+    else text = `Average legs, average ears. Sometimes it's just luck, which is why evolution takes many generations.`;
+    N.lastChase = real;
+    say({ kind: 'escape', pri: 3, slow: true, title: `Hare #${e.h.id} outran a fox`, text, targets: [T(e.h), T(e.f, '#ff8a3d')], trails: [{ c: '#ffffff', pts: trailPts(e.h) }, { c: '#ff8a3d', pts: trailPts(e.f) }], zoom: 3.6 });
+  } else if (e.type === 'cubs') {
+    const y = yearNum(S); if (N.cubsYear === y) return; N.cubsYear = y;
+    say({ kind: 'cubs', pri: 4, title: `A fox den: ${e.n} cub${e.n > 1 ? 's' : ''}`, text: `Well-fed foxes have bigger litters, so fox numbers climb about a year after hare numbers do. Right now there are ${liveH().length} hares for ${liveF().length} foxes.`, targets: [T(e.f, '#ff8a3d'), ...e.cubs.slice(0, 4).map(c => T(c, '#ffb27a'))], zoom: 4 });
+  } else if (e.type === 'foxStarved') {
+    ghosts.push({ x: e.x, y: e.y, t: S.tick });
+    N.famine.push(S.tick); N.famine = N.famine.filter(t => S.tick - t < 300);
+    if (N.famine.length >= 3 && S.tick - N.lastFamine > YEAR * 1.5) {
+      N.lastFamine = S.tick;
+      const near = liveF().filter(f => Math.hypot(f.x - e.x, f.y - e.y) < 18).slice(0, 3);
+      say({ kind: 'famine', pri: 6, title: 'Hungry foxes', text: `Foxes are starving: ${N.famine.length} have died of hunger in a few weeks. With fewer foxes hunting, the hares that are left get a break, and the cycle turns.`, targets: [P(e.x, e.y), ...near.map(f => T(f, '#ff8a3d'))], zoom: 2.6, pad: 7 });
+    }
+  } else if (e.type === 'ice' || e.type === 'iceHares') {
+    const fx = e.type === 'ice';
+    say({ kind: 'ice', pri: 8, title: 'The sea froze', text: fx ? `${e.ids.length} foxes walked across the sea ice from the mainland. Foxes really do this in cold winters.` : `With almost no hares left, ${e.ids.length} hares crossed the ice from the mainland, a fresh start for the island.`, targets: e.ids.map(a => T(a, fx ? '#ff8a3d' : '#ffd23f')), zoom: 3.4 });
+  }
+}
+function ord(n) { const s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
+function analyse() {
+  const cal = calendar(S), H_ = liveH(), F_ = liveF(), h = H_.length, f = F_.length;
+  if (!N.base && S.hist.length) N.base = S.hist[0];
+  // seasons
+  const y = yearNum(S);
+  if (cal.s === 3 && S.snow > 0.5 && N.winterYear !== y && S.tick > 600) {
+    N.winterYear = y;
+    const j = S.winterJitter, open = H_.filter(a => a.age > 300 && tileAt(S, a.x, a.y) !== FOREST);
+    const vis = a => Math.abs(whiteOf(a) - S.snow);
+    const tg = cluster(open, vis, 5);
+    const when = j < -45 ? 'Snow came early this year, before most hares finished turning white.' : j > 45 ? 'Snow came late this year, so hares had already turned white on bare brown ground.' : 'Snow arrived about on time.';
+    say({ kind: 'winter', pri: 5, title: `Winter, year ${y}`, text: `${when} The circled hares are the ones whose coats clash most with the ground, and they're the easiest for foxes to spot.`, targets: tg.map(a => T(a)), zoom: 3, pad: 4 });
+  }
+  if (cal.s === 0 && S.snow < 0.3 && N.springYear !== y && y % 2 === 0) {
+    N.springYear = y; N.springYear = y;
+    const tg = cluster(H_.filter(a => a.age > 300), a => -Math.hypot(a.x - W / 2, a.y - H / 2), 3, 6);
+    say({ kind: 'spring', pri: 2, title: 'Spring melt', text: `Hares start breeding now, and grass grows back fastest in spring. A hare can raise two litters before autumn.`, targets: tg.map(a => T(a)), zoom: 3 });
+  }
+  // boom and crash
+  if (!N.boomed) { N.trough = Math.min(N.trough, h); if (h > Math.max(320, N.trough * 2.5) && S.tick > YEAR * 2) {
+    N.boomed = true; N.peak = h; N.fpeak = f;
+    let bx = W / 2, by = H / 2, bv = 9;
+    for (let k = 0; k < 300; k++) { const x = 4 + Math.random() * (W - 8), y2 = 4 + Math.random() * (H - 8); if (S.terrain[(y2 | 0) * W + (x | 0)] !== GRASS) continue; let s = 0, n = 0; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const i = ((y2 | 0) + dy) * W + (x | 0) + dx; if (S.terrain[i] === GRASS) { s += S.grass[i]; n++; } } if (n > 15 && s / n < bv) { bv = s / n; bx = x; by = y2; } }
+    say({ kind: 'boom', pri: 7, title: `Hare boom: ${h} hares`, text: `Up from ${N.trough} at the last low. They're eating grass faster than it grows back; the brown patches are bare ground.`, targets: [P(bx, by)], zoom: 2.4 });
+  } } else {
+    N.peak = Math.max(N.peak, h); N.fpeak = Math.max(N.fpeak, f);
+    if (h < N.peak * 0.35) {
+      const tg = cluster(F_, a => -Math.hypot(a.x - W / 2, a.y - H / 2), 4, 20);
+      say({ kind: 'crash', pri: 7, title: 'The crash', text: N.fpeak >= 10 ? `Hares fell from ${N.peak} to ${h}. Foxes peaked at ${N.fpeak}: lots of foxes and too little grass hit the hares at the same time.` : `Hares fell from ${N.peak} to ${h}. There were hardly any foxes, so this was hunger: the hares ate the grass faster than it could grow back.`, targets: tg.map(a => T(a, '#ff8a3d')), zoom: 2.2, pad: 6 });
+      N.boomed = false; N.trough = h; N.fpeak = 0;
+    }
+  }
+  if (f === 0 && !N.foxesGone && S.tick > 200) { N.foxesGone = true; const g = ghosts[ghosts.length - 1];
+    say({ kind: 'extinct', pri: 8, title: 'The last fox is gone', text: `With no predators, hares will multiply until the grass runs out. Foxes may cross the sea ice next winter, or you can add some.`, targets: g ? [P(g.x, g.y)] : [], zoom: 2.4 }); }
+  if (f > 0) N.foxesGone = false;
+  // trait drift, checked mid-summer
+  if (cal.t === 450 && N.base && h > 30) {
+    const traits = [
+      ['hsp', 'sp', 'h', 0.05, true, d => d > 0 ? `Hares now run ${d}% faster on average than the first settlers. The circled ones have the longest legs on the island.` : `Hares are ${-d}% slower than the first settlers. Long legs burn food, and with few foxes around, speed doesn't pay for itself.`],
+      ['ears', 'ears', 'h', 0.07, false, d => d > 0 ? `Ears are getting bigger. Hares hear foxes coming from farther away; the circled ones have the biggest ears.` : `Ears are shrinking. Big ears cost energy, and lately foxes have been scarce.`],
+      ['coat', 'coat', 'h', 0.07, false, d => d > 0 ? `Winter coats are getting whiter. Each snowy winter, browner hares are picked off first. The circled hares have the whitest coats.` : `Winter coats are getting browner. A white coat stands out when snow comes late or melts early.`],
+      ['lit', 'lit', 'h', 0.08, true, d => d > 0 ? `Litters are getting bigger: about ${mean2(H_, 'lit')} babies each now. Big litters pay off when grass is plentiful.` : `Litters are getting smaller: about ${mean2(H_, 'lit')} babies each now. When food is short, fewer, stronger babies do better.`],
+      ['fsp', 'sp', 'f', 0.05, true, d => d > 0 ? `Foxes run ${d}% faster than the first ones that arrived. Slow foxes starve in the lean years. The circled foxes are the fastest.` : `Foxes are ${-d}% slower than the first ones. Speed costs food, and food has been scarce.`],
+      ['eyes', 'eyes', 'f', 0.07, false, d => d > 0 ? `Foxes' eyesight is getting sharper: they spot hares from farther away. Look for the big-eyed foxes.` : `Foxes' eyesight is getting worse on average. Sharp eyes cost energy too.`]
+    ];
+    for (const [hk, gk, sp, step, rel, txt] of traits) {
+      const b = N.base[hk], list = sp === 'h' ? H_ : F_; if (b == null || list.length < 4) continue;
+      const m = list.reduce((s, a) => s + a.g[gk], 0) / list.length, diff = rel ? (m - b) / b : m - b, lvl = Math.trunc(diff / step);
+      const prev = N.steps[hk] || 0;
+      if (Math.abs(lvl) > Math.abs(prev) || (lvl !== 0 && Math.sign(lvl) !== Math.sign(prev))) {
+        N.steps[hk] = lvl; const d = Math.round(rel ? diff * 100 : diff * 100);
+        const tg = cluster(list, a => lvl > 0 ? a.g[gk] : -a.g[gk], 5, 18);
+        say({ kind: 'trait', pri: 5, title: 'Evolution at work', text: txt(d), targets: tg.map(a => T(a, sp === 'f' ? '#ff8a3d' : '#ffd23f')), zoom: 3, pad: 4 });
+        break;
+      } else if (Math.abs(lvl) < Math.abs(prev)) N.steps[hk] = lvl;
+    }
+  }
+  // family lines
+  if (cal.t === 800 && h > 40) {
+    const cnt = {}; for (const a of H_) cnt[a.founder] = (cnt[a.founder] || 0) + 1;
+    let best = 0, bid = 0; for (const k in cnt) if (cnt[k] > best) { best = cnt[k]; bid = +k; }
+    const share = best / h, lv = share > 0.75 ? 4 : share > 0.5 ? 3 : share > 0.33 ? 2 : share > 0.2 ? 1 : 0;
+    if (lv > N.lineage) {
+      N.lineage = lv; const fam = cluster(H_.filter(a => a.founder === bid), a => -a.age, 6, 15);
+      say({ kind: 'family', pri: 5, title: 'One big family', text: `${Math.round(share * 100)}% of hares now descend from founder hare #${bid}, one of the first to arrive. The circled hares are some of its great-great-grandchildren.`, targets: fam.map(a => T(a)), zoom: 3, pad: 4 });
+    }
+  }
+}
+function mean2(l, k) { return (l.reduce((s, a) => s + a.g[k], 0) / l.length).toFixed(1); }
+function showCard(c, replay) {
+  card = c; const len = c.text.length;
+  cardEnd = performance.now() + Math.min(10000, 4500 + len * 26); c.replay = !!replay;
+  c.targets.forEach(t => t.frozen = !!replay);
+  capEl.innerHTML = `<div class="cap-top"><span class="stamp">${c.stamp}${replay ? ' · replay' : ''}</span>${!replay && speed > 1 && director && !manual ? '<span class="chip">Slowed to 1× to narrate</span>' : ''}<button class="skip" id="skip" aria-label="Next story">Next ›</button></div><b>${c.title}</b><p>${c.text}</p><div class="bar"><i></i></div>`;
+  capEl.classList.add('on');
+  const bar = capEl.querySelector('.bar i'); bar.style.transition = 'none'; bar.style.width = '0%'; void bar.offsetWidth; bar.style.transition = `width ${cardEnd - performance.now()}ms linear`; bar.style.width = '100%';
+  $('skip').onclick = () => { cardEnd = 0; };
+}
+function tickNarrator(now) {
+  if (card && now > cardEnd) {
+    // remember where each target ended up, for replays
+    for (const t of card.targets) if (t.a && !t.frozen) { t.x = t.a.alive ? t.a.x : t.x; t.y = t.a.alive ? t.a.y : t.y; }
+    for (const t of card.targets) t.frozen = false;
+    card = null; capEl.classList.remove('on'); lastShown = now;
+  }
+  if (card) for (const t of card.targets) if (t.a && t.a.alive && !t.frozen) { t.x = t.a.x; t.y = t.a.y; }
+  if (!card && queue.length && now - lastShown > 2600) {
+    let c = queue.shift();
+    while (c && (c.pri < 7 ? S.tick - c.t > YEAR * 0.35 : S.tick - c.t > YEAR)) c = queue.shift();
+    if (c) { c.targets = c.targets.filter(t => !t.a || t.a.alive || c.kind === 'kill' || c.kind === 'famine'); showCard(c); }
+  }
+}
+
+// ---------- panels ----------
+const popCv = $('pop'), popCtx = popCv.getContext('2d');
+function drawPop() {
+  const w = popCv.clientWidth, h = popCv.clientHeight; if (!w) return;
+  popCv.width = w * dpr; popCv.height = h * dpr; const g = popCtx; g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  const hs = S.hist, L = 34, Rr = 30, top = 10, bot = 22, pw = w - L - Rr, ph = h - top - bot;
+  const t1 = Math.max(S.tick, YEAR * 8), xs = t => L + (t / t1) * pw;
+  const maxH = Math.max(400, ...hs.map(p => p.h)), maxF = Math.max(20, ...hs.map(p => p.f));
+  const ysH = v => top + ph - (v / maxH) * ph, ysF = v => top + ph - (v / maxF) * ph;
+  g.fillStyle = 'rgba(255,255,255,.07)';
+  for (let y = 0; y * YEAR < t1; y++) { const a = xs(y * YEAR + (S.longWinter ? 690 : 900)), b = xs((y + 1) * YEAR); g.fillRect(a, top, b - a, ph); }
+  g.strokeStyle = 'rgba(255,255,255,.15)'; g.lineWidth = 1; g.beginPath(); g.moveTo(L, top + ph + 0.5); g.lineTo(L + pw, top + ph + 0.5); g.stroke();
+  g.fillStyle = 'rgba(242,251,248,.75)'; g.font = '12px Nunito, sans-serif'; g.textAlign = 'center';
+  const yrs = t1 / YEAR, stepY = yrs > 60 ? 20 : yrs > 30 ? 10 : yrs > 12 ? 5 : 2;
+  for (let y = 0; y <= yrs; y += stepY) g.fillText(y === 0 ? 'Year 0' : y, xs(y * YEAR), h - 6);
+  g.textAlign = 'right'; g.fillStyle = '#e8c79c'; g.fillText(maxH, L - 6, top + 9); g.fillText('0', L - 6, top + ph);
+  g.textAlign = 'left'; g.fillStyle = '#ff9a55'; g.fillText(maxF, L + pw + 6, top + 9); g.fillText('0', L + pw + 6, top + ph);
+  const step = Math.max(1, Math.floor(hs.length / pw));
+  const line = (key, ys, col, wdt) => { g.strokeStyle = col; g.lineWidth = wdt; g.lineJoin = 'round'; g.beginPath(); for (let i = 0; i < hs.length; i += step) { const p = hs[i], x = xs(p.t), y = ys(p[key]); i ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke(); };
+  line('h', ysH, '#e8c79c', 2.2); line('f', ysF, '#ff8a3d', 2.2);
+  g.fillStyle = '#ffd23f'; for (const c of cards) { if (c.pri >= 5) { g.beginPath(); g.arc(xs(c.t), top + 3, 2.5, 0, 6.29); g.fill(); } }
+}
+const roPop = new ResizeObserver(() => drawPop()); roPop.observe(popCv);
+const GENES = [
+  ['h', 'sp', 'Leg length', 'Faster escapes, but costs food', HG.sp, 'hsp'], ['h', 'ears', 'Ear size', 'Hears foxes sooner', HG.ears, 'ears'],
+  ['h', 'coat', 'Winter whiteness', 'Camouflage on snow', HG.coat, 'coat'], ['h', 'lit', 'Litter size', 'More babies, each weaker', HG.lit, 'lit'],
+  ['f', 'sp', 'Leg length', 'Faster sprints, but costs food', FG.sp, 'fsp'], ['f', 'eyes', 'Eyesight', 'Spots hares from farther', FG.eyes, 'eyes'], ['f', 'lit', 'Litter size', 'Cubs per den', FG.lit, 'flit']
+];
+function drawGenes() {
+  const H_ = liveH(), F_ = liveF(), b = S.hist[0];
+  $('genes').innerHTML = GENES.map(([sp, k, name, why, r, hk], i) => {
+    const l = sp === 'h' ? H_ : F_, head = i === 0 ? '<h3>Hares</h3>' : i === 4 ? '<h3>Foxes</h3>' : '';
+    if (!l.length) return head + `<div class="gene"><span class="gn">${name}</span><span class="gw">none alive</span></div>`;
+    const m = l.reduce((s, a) => s + a.g[k], 0) / l.length, f0 = (b[hk] - r[0]) / (r[1] - r[0]), f1 = (m - r[0]) / (r[1] - r[0]);
+    const d = (m - b[hk]) / Math.max(0.05, b[hk]) * 100, ds = Math.abs(d) < 1 ? 'no change' : `${d > 0 ? 'up' : 'down'} ${Math.abs(d).toFixed(0)}% since start`;
+    return head + `<div class="gene"><span class="gn">${name}</span><span class="gd ${d >= 1 ? 'up' : d <= -1 ? 'dn' : ''}">${ds}</span><div class="track ${sp}"><i style="width:${(f1 * 100).toFixed(1)}%"></i><em style="left:${(f0 * 100).toFixed(1)}%"></em></div><span class="gw">${why}</span></div>`;
+  }).join('');
+}
+function updateHud() {
+  const h = liveH().length, f = liveF().length;
+  $('nh').textContent = h; $('nf').textContent = f; $('when').textContent = `Year ${yearNum(S)}`; $('season').textContent = seasonName(S);
+  $('season').dataset.s = calendar(S).s;
+}
+const insp = $('inspect');
+function showInspect() {
+  const a = selected; if (!a) { insp.classList.remove('on'); return; }
+  const l = a.sp === 'h' ? liveH() : liveF(), name = a.sp === 'h' ? 'Hare' : 'Fox';
+  const rows = (a.sp === 'h' ? [['sp', 'Legs'], ['ears', 'Ears'], ['coat', 'Winter white'], ['lit', 'Litter']] : [['sp', 'Legs'], ['eyes', 'Eyes'], ['lit', 'Litter']])
+    .map(([k, n]) => `<div class="ir"><span>${n}</span><span>${a.alive ? `beats ${pct(l, k, a.g[k])}%` : a.g[k].toFixed(2)}</span></div>`).join('');
+  const why = { eaten: 'Caught by a fox', starved: 'Starved', foxStarved: 'Starved', old: 'Died of old age' };
+  const status = a.alive ? `${(a.age / YEAR).toFixed(1)} years old · generation ${a.gen}` : `${why[a.why] || 'Died'} in ${stamp(a.died)}`;
+  insp.innerHTML = `<div class="ih"><b>${name} #${a.id}</b><button id="ix" aria-label="Close">×</button></div><p>${status}</p><p>${a.kids} ${a.sp === 'h' ? 'babies' : 'cubs'} · ${a.sp === 'h' ? `escaped ${a.escapes} foxes` : `caught ${a.kills} hares`}</p>${rows}<p class="fine">Founder line #${a.founder}</p>${a.alive ? `<button id="ifol" class="btn small">${follow === a ? 'Stop following' : 'Follow'}</button>` : ''}`;
+  insp.classList.add('on');
+  $('ix').onclick = () => { selected = null; if (follow) follow = null; insp.classList.remove('on'); };
+  const fb = $('ifol'); if (fb) fb.onclick = () => { follow = follow === a ? null : a; manual = false; showInspect(); };
+}
+
+// ---------- input ----------
+let drag = null;
+cv.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y, moved: false }; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove', e => {
+  if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (Math.abs(dx) + Math.abs(dy) > 5) { drag.moved = true; manual = true; follow = null; setDirUI(); cam.x = drag.cx - dx / cam.z; cam.y = drag.cy - dy / cam.z; clampCam(cam); Object.assign(camT, cam); }
+});
+cv.addEventListener('pointerup', e => {
+  if (drag && !drag.moved) {
+    const r = cv.getBoundingClientRect(), [wx, wy] = toWorld(e.clientX - r.left, e.clientY - r.top);
+    let best = null, bd = Math.max(1.4, 14 / cam.z);
+    for (const a of [...S.hares, ...S.foxes]) { if (!a.alive) continue; const d = Math.hypot(a.x - wx, a.y - wy + 0.2); if (d < bd) { bd = d; best = a; } }
+    selected = best; showInspect();
+  }
+  drag = null;
+});
+cv.addEventListener('wheel', e => {
+  e.preventDefault(); const r = cv.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top, [wx, wy] = toWorld(sx, sy);
+  cam.z *= Math.exp(-e.deltaY * 0.0015); clampCam(cam); const [nx, ny] = toWorld(sx, sy); cam.x += wx - nx; cam.y += wy - ny; clampCam(cam);
+  Object.assign(camT, cam); manual = true; follow = null; setDirUI();
+}, { passive: false });
+const zoomBy = k => { cam.z *= k; clampCam(cam); Object.assign(camT, cam); manual = true; setDirUI(); };
+$('zin').onclick = () => zoomBy(1.4); $('zout').onclick = () => zoomBy(1 / 1.4);
+$('zfit').onclick = () => { manual = false; follow = null; director = true; setDirUI(); };
+function setDirUI() { $('dir').setAttribute('aria-pressed', String(director && !manual)); }
+$('dir').onclick = () => { if (director && !manual) { director = false; manual = true; } else { director = true; manual = false; follow = null; } setDirUI(); };
+$('play').onclick = () => { paused = !paused; $('play').textContent = paused ? 'Play' : 'Pause'; $('play').setAttribute('aria-pressed', String(paused)); };
+document.querySelectorAll('[data-speed]').forEach(b => b.onclick = () => { speed = +b.dataset.speed; document.querySelectorAll('[data-speed]').forEach(o => o.setAttribute('aria-pressed', String(o === b))); });
+$('addfox').onclick = () => { const r = addFoxes(S, 4); say({ kind: 'add', pri: 9, title: '4 foxes landed', text: `You brought 4 foxes to the beach. With ${liveH().length} hares on the island, watch how fast they spread.`, targets: r.ids.map(a => T(a, '#ff8a3d')), zoom: 3.4 }); };
+$('winter').onclick = () => { S.longWinter = !S.longWinter; $('winter').setAttribute('aria-pressed', String(S.longWinter)); say({ kind: 'climate', pri: 9, title: S.longWinter ? 'Longer winters' : 'Normal winters', text: S.longWinter ? 'Winter now lasts about five months instead of three. Grass has less time to grow, and coat colour matters for longer each year.' : 'Winters are back to about three months.', targets: [] }); };
+$('newisle').onclick = () => { seed = (Math.random() * 9000 | 0) + 1; start(); };
+document.addEventListener('keydown', e => { if (e.code === 'Space' && e.target === document.body) { e.preventDefault(); $('play').click(); } });
+
+// ---------- main loop ----------
+function start() {
+  S = createWorld(seed); $('isle').textContent = `Island #${seed}`; buildTerrain(); resetNarrator(); poofs = []; ghosts = []; selected = null; follow = null; lastGrass = -99;
+  $('winter').setAttribute('aria-pressed', 'false'); insp.classList.remove('on');
+  const H_ = liveH(), tg = cluster(H_, a => -Math.hypot(a.x - W / 2, a.y - H / 2), 3, 8);
+  say({ kind: 'intro', pri: 10, title: 'Welcome to the island', text: `${H_.length} hares and ${liveF().length} foxes just arrived. Every hare carries genes for leg length, ear size, litter size and how white it turns in winter. Babies inherit a blend of both parents, with small mutations.`, targets: tg.map(a => T(a)), zoom: 3.2 });
+  updateHud(); drawGenes(); drawPop();
+}
+let lastHud = 0, lastPanels = 0, acc = 0, lastNow = 0;
+function frame(now) {
+  if (S) {
+    if (!paused) {
+      const eff = card && director && !manual && !card.replay ? 1 : speed;
+      acc += Math.min(100, now - (lastNow || now)) * eff * 0.03; let n = Math.min(40, Math.floor(acc)); acc -= n; if (acc > 40) acc = 0;
+      for (let i = 0; i < n; i++) { step(S); for (const e of S.events) considerEvent(e); S.events.length = 0; if (S.tick % 30 === 0) analyse(); }
+      if (selected && !selected.alive && insp.classList.contains('on') && !insp.dataset.dead) { insp.dataset.dead = 1; showInspect(); }
+    }
+    lastNow = now; tickNarrator(now); aimCamera(); draw(now);
+    if (now - lastHud > 250) { lastHud = now; updateHud(); if (selected && selected.alive) showInspect(); }
+    if (now - lastPanels > 1000) { lastPanels = now; drawGenes(); drawPop(); }
+  }
+  requestAnimationFrame(frame);
+}
+resize(); start(); requestAnimationFrame(frame);
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saltmere: The Drowning Bell</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: a moody, cute island mystery; quiet dread, small warm lights
+   IDEA: an investigator's casebook pinned beside a pixel sea chart
+   PICTURE: the island map, tide rising day by day, lighthouse beam at night
+   COLOUR and TYPE: deep sea-teal, sea-glass ink, coral lighthouse accent; Pixelify Sans + Nunito
+   LAYOUT: map + place panel on top, casebook tabs below; stacks under 900px */
+:root{color-scheme:dark;--bg:#0c3237;--panel:#124248;--panel2:#0f3a40;--line:#2a6168;--ink:#e6f2ec;--muted:#9fc3bb;--coral:#ff6b5a;--gold:#ffd166;--good:#8fe3a8;--bad:#ff8a7a}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Nunito,system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3,.px{font-family:"Pixelify Sans",Nunito,sans-serif;font-weight:700;letter-spacing:.01em}
+h1{font-size:clamp(26px,4vw,40px);line-height:1.05;margin:0}
+h2{font-size:22px;margin:0 0 6px}
+h3{font-size:17px;margin:0 0 4px}
+button{font:inherit;color:inherit;cursor:pointer}
+.wrap{max-width:1240px;margin:0 auto;padding:14px max(3vw,12px) 40px}
+header.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;margin-bottom:12px}
+.hud{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto}
+.chip{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:14px;white-space:nowrap}
+.chip b{font-family:"Pixelify Sans";font-size:16px}
+.slots{display:inline-flex;gap:3px;vertical-align:middle;margin-left:6px}
+.slots i{width:9px;height:9px;border-radius:2px;background:var(--line)}
+.slots i.on{background:var(--gold)}
+.main{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:14px}
+@media(max-width:900px){.main{grid-template-columns:minmax(0,1fr)}}
+.mapbox{position:relative;border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#0a2a2f;aspect-ratio:320/200}
+.mapbox canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
+.pin{position:absolute;transform:translate(-50%,4px);background:rgba(8,32,36,.82);border:1px solid var(--line);border-radius:8px;padding:2px 7px;font-size:12px;line-height:1.3;white-space:nowrap;min-height:22px}
+.pin:hover,.pin:focus-visible{border-color:var(--gold);outline:none}
+.pin.cur{background:var(--coral);border-color:var(--coral);color:#fff;font-weight:800}
+.pin:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:560px){.pin{font-size:10px;padding:1px 4px;min-height:18px}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+.place .desc{color:var(--muted);font-size:15px;margin:0 0 10px}
+.acts{display:flex;flex-direction:column;gap:7px}
+.act{display:flex;align-items:center;gap:10px;text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;min-height:44px}
+.act:hover:not(:disabled),.act:focus-visible{border-color:var(--gold);outline:none}
+.act:disabled{opacity:.45;cursor:not-allowed}
+.act small{margin-left:auto;color:var(--muted);white-space:nowrap;font-size:13px}
+.act canvas{width:32px;height:32px;image-rendering:pixelated;border-radius:6px;flex:none}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0 10px}
+.tab{background:transparent;border:1px solid var(--line);border-radius:999px;padding:7px 14px;min-height:40px}
+.tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:800}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+.card p{margin:4px 0}
+.badge{display:inline-block;font-size:12px;font-weight:800;border-radius:6px;padding:1px 7px;margin-right:6px;background:var(--line)}
+.b-journal{background:#e9d6a8;color:#3a2a10}.b-evidence{background:#7bdff2;color:#06303a}.b-testimony{background:#c79bff;color:#2a0f45}.b-rumour{background:#ffd166;color:#3a2a00}.b-find{background:#b8f28c;color:#173300}
+.meta{color:var(--muted);font-size:13px}
+.claimln{border-left:3px solid var(--gold);padding-left:8px;margin-top:6px;font-weight:600}
+.ver{font-size:13px;font-weight:800;margin-top:6px}
+.ver.t{color:var(--good)}.ver.f{color:var(--bad)}.ver.u{color:var(--muted)}
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.filters button{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:4px 10px;font-size:13px;min-height:34px}
+.filters button.on{border-color:var(--gold);color:var(--gold)}
+.sus{display:grid;grid-template-columns:56px minmax(0,1fr);gap:10px;align-items:start}
+.sus canvas{width:56px;height:56px;image-rendering:pixelated;border-radius:8px}
+.marks{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.marks button{font-size:12px;border:1px solid var(--line);background:var(--panel2);border-radius:6px;padding:3px 8px;min-height:30px}
+.marks button.on{background:var(--gold);color:#2a2000;border-color:var(--gold);font-weight:800}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:left}
+td.c,th.c{text-align:center}
+.scroll{overflow-x:auto}
+textarea{width:100%;min-height:200px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;font:16px/1.5 Nunito,sans-serif}
+.log p{margin:3px 0;font-size:14px}.log .d{color:var(--gold);font-family:"Pixelify Sans";margin-top:10px}
+#modal{position:fixed;inset:0;background:rgba(3,16,18,.72);display:flex;align-items:center;justify-content:center;padding:12px;z-index:20}
+#modal[hidden]{display:none}
+#mbox{background:var(--panel);border:2px solid var(--line);border-radius:16px;max-width:640px;width:100%;max-height:92vh;overflow:auto;padding:18px}
+.dlg{display:grid;grid-template-columns:72px minmax(0,1fr);gap:14px;align-items:start}
+.dlg canvas{width:72px;height:72px;image-rendering:pixelated;border-radius:10px}
+.dlg .who{font-family:"Pixelify Sans";color:var(--gold);font-size:18px}
+.dlg .txt{font-size:17px;margin-top:2px}
+.letter{background:#efe3c4;color:#2c2414;border-radius:8px;padding:14px 16px;font-size:16px}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;justify-content:flex-end}
+.btn{background:var(--coral);color:#fff;border:0;border-radius:10px;padding:10px 18px;font-weight:800;min-height:44px}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn:disabled{opacity:.4}
+.btn:focus-visible,.tab:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.pzgrid{display:grid;gap:4px;margin:12px auto;width:fit-content}
+.lamp{width:46px;height:46px;border-radius:10px;border:2px solid var(--line);background:#0a2328}
+.lamp.on{background:radial-gradient(circle at 50% 45%,#fff3c4,#ffd166 45%,#c98a1c);border-color:#ffd166;box-shadow:0 0 12px #ffd16688}
+.peg{width:40px;height:40px;border-radius:50%;border:2px solid #0006;font-size:18px;display:inline-flex;align-items:center;justify-content:center;color:#1a1a1a;font-weight:800}
+.lockrow{display:flex;gap:6px;align-items:center;justify-content:center;margin:5px 0}
+.fb{font-size:14px;min-width:90px;color:var(--muted)}
+.tile{width:68px;height:68px;border-radius:8px;border:2px solid var(--line);font-family:"Pixelify Sans";font-size:24px;background:var(--panel2)}
+.tile.e{visibility:hidden}
+.cipher{font-family:"Pixelify Sans";font-size:19px;line-height:1.5;background:var(--panel2);border-radius:10px;padding:12px;word-break:break-word}
+.dial{display:flex;align-items:center;gap:8px;justify-content:center;margin:8px 0}
+.dial button{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);font-size:20px}
+.dial b{font-family:"Pixelify Sans";font-size:22px;min-width:40px;text-align:center}
+select{font:16px Nunito,sans-serif;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px;width:100%;min-height:44px}
+label.f{display:block;margin:10px 0 4px;font-weight:800}
+.tide{display:inline-block;width:60px;height:9px;border-radius:5px;background:var(--line);overflow:hidden;vertical-align:middle;margin-left:6px}
+.tide i{display:block;height:100%;background:#7bdff2}
+.heat0{color:var(--good)}.heat1{color:var(--gold)}.heat2{color:#ffa36b}.heat3{color:var(--bad)}
+.sub{color:var(--muted);font-size:14px;margin:2px 0 0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Saltmere: The Drowning Bell</h1>
+      <p class="sub">Find the thief, the lookout and the hiding place before the fourteenth tide.</p>
+    </div>
+    <div class="hud" id="hud"></div>
+  </header>
+  <div class="main">
+    <div class="mapbox" id="mapbox"><canvas id="map" width="320" height="200"></canvas></div>
+    <section class="panel place" id="place"></section>
+  </div>
+  <nav class="tabs" id="tabs"></nav>
+  <section id="tabbody"></section>
+</div>
+<div id="modal" hidden><div id="mbox" role="dialog" aria-modal="true"></div></div>
+
+<script>
+{
+/* ---------- data ---------- */
+const PLACES={
+ lighthouse:{n:"The Lighthouse",x:46,y:50,d:"Uncle Aldous's tower on its rock. The brass cradle in the lens room sits empty."},
+ apothecary:{n:"Apothecary",x:108,y:92,d:"Jars of kelp tincture and sleeping draughts. Shuttered at night."},
+ square:{n:"Market Square",x:178,y:86,d:"Stalls, the old well, and Kit perched on its rim."},
+ chapel:{n:"St. Brine Chapel",x:224,y:46,d:"The bell tower above, the crypt below. The tide-bell hums on its own."},
+ manor:{n:"Marrow Manor",x:276,y:84,d:"Peeling grandeur on the east hill. The wine cellar runs deep."},
+ tavern:{n:"The Gull & Lantern",x:152,y:126,d:"Warm, loud, and full of loose tongues after dark."},
+ archive:{n:"The Archive",x:214,y:126,d:"Every deed, tide table and lie ever written in Saltmere. Shut at night."},
+ harbour:{n:"Harbour",x:118,y:160,d:"Creaking jetties. Hale's chandlery sells lamp oil."},
+ cemetery:{n:"Cliff Cemetery",x:262,y:154,d:"Salt-bitten headstones and the Marrow family tomb."},
+ cove:{n:"Smugglers' Cove",x:60,y:148,d:"Sea caves gape at low water. The wreck of the Grey Maiden rots on the sand."}
+};
+const NPC={
+ ysolde:{name:"Mother Ysolde",short:"Mother Ysolde",role:"Chaplain of St. Brine",home:"chapel",look:{skin:"#f0cfae",hair:"#e8e8e8",style:"veil",cloth:"#2b2f3a"},intro:"Your uncle rang our bell three times the night before he vanished. Aldous never rang it. Not once in thirty years."},
+ hale:{name:"Captain Brannoch Hale",short:"Captain Hale",role:"Harbourmaster",home:"harbour",look:{skin:"#d9a27a",hair:"#777",style:"cap",hat:"#1f3b5a",cloth:"#24455e",beard:1},intro:"Tides are my business, and they're wrong. Higher every morning, and no moon to blame."},
+ wenna:{name:"Wenna Pike",short:"Wenna",role:"Keeper of the Gull & Lantern",home:"tavern",look:{skin:"#f4c9a8",hair:"#d9542b",style:"bun",cloth:"#6b3a2a"},intro:"First drink's free for Aldous's kin. The second you pay for in stories."},
+ crane:{name:"Dr. Silas Crane",short:"Dr. Crane",role:"Apothecary",home:"apothecary",look:{skin:"#e9c39f",hair:"#222",style:"short",cloth:"#3b4a3f",glasses:1},intro:"Fear is a fever, and this town has it badly. I can sell you something for the nerves."},
+ ophelia:{name:"Lady Ophelia Marrow",short:"Lady Marrow",role:"Heir of Marrow Manor",home:"manor",look:{skin:"#f6d8c2",hair:"#3a2340",style:"tall",cloth:"#7b3f8c"},intro:"The Marrows built that lighthouse. Whatever was stolen from it was ours first."},
+ tobin:{name:"Tobin Reyes",short:"Tobin",role:"Gravedigger",home:"cemetery",look:{skin:"#b9825a",hair:"#4a3222",style:"cap",hat:"#5a4a2a",cloth:"#4a4a32",beard:1},intro:"Graves keep filling with seawater. Never used to. The dead don't like it."},
+ edda:{name:"Edda Quill",short:"Edda",role:"Archivist",home:"archive",look:{skin:"#efd2b8",hair:"#9a9a9a",style:"bun",cloth:"#3a3a5a",glasses:1},intro:"Every record of the Tidestone is in this room. Most of them are lies. I keep them anyway."}
+};
+const KIT={name:"Kit",look:{skin:"#e8b890",hair:"#a0522d",style:"messy",cloth:"#5a6a3a"}};
+const ALDOUS={name:"Uncle Aldous",look:{skin:"#e6c09a",hair:"#ddd",style:"short",cloth:"#7a2a24",beard:1,glasses:1}};
+const BARN={name:"Barnacle",look:{cat:1}};
+const IDS=Object.keys(NPC);
+const SITES={
+ tower:{n:"Chapel bell tower",the:"chapel bell tower",place:"chapel",below:0,wet:0,holy:1,town:1},
+ crypt:{n:"Chapel crypt",the:"chapel crypt",place:"chapel",below:1,wet:0,holy:1,town:1},
+ caves:{n:"Sea caves",the:"sea caves",place:"cove",below:1,wet:1,holy:0,town:0},
+ wreck:{n:"Wreck of the Grey Maiden",the:"wreck of the Grey Maiden",place:"cove",below:0,wet:1,holy:0,town:0},
+ well:{n:"Old well",the:"old well",place:"square",below:1,wet:1,holy:0,town:1},
+ cellar:{n:"Manor wine cellar",the:"manor wine cellar",place:"manor",below:1,wet:0,holy:0,town:1},
+ tomb:{n:"Marrow family tomb",the:"Marrow family tomb",place:"cemetery",below:0,wet:0,holy:1,town:0}
+};
+const SIDS=Object.keys(SITES);
+const CATS={hand:["left-handed","right-handed"],habit:["pipe smoker","snuff taker","licorice chewer"],boots:["hobnail boots","sea boots","soft shoes"],stain:["ink-stained fingers","wax-stained fingers","earth-stained fingers","salt-crusted fingers"]};
+const CATL={hand:"Hand",habit:"Habit",boots:"Footwear",stain:"Fingers"};
+const TP={hand:["is left-handed","is right-handed"],habit:["smokes a pipe","takes snuff","chews licorice"],boots:["wears hobnail boots","wears sea boots","wears soft shoes"],stain:["has ink-stained fingers","has wax-stained fingers","has earth-stained fingers","has salt-crusted fingers"]};
+const SP={below:["The stone is hidden above ground, open to the sky.","The stone is hidden below ground."],wet:["The hiding place is dry.","The hiding place is wet."],holy:["The stone is not on holy ground.","The stone lies on holy ground."],town:["The stone was carried out of town, into the wild.","The stone never left the town."]};
+const FL={
+ cT:{hand:["Pry marks on the cradle lock lean leftward.","Pry marks on the cradle lock lean rightward."],habit:["Pipe ash on the lens-room stair.","Spilled snuff beside the empty cradle.","A chewed licorice root under the cradle."],boots:["Hobnail scratches across the lantern-room boards.","Broad sea-boot prints in the lamp soot.","Only faint soft-shoe scuffs in the soot."],stain:["An inky thumbprint on the cradle brass.","A waxy thumbprint on the cradle brass.","An earthy thumbprint on the cradle brass.","A salt-crusted thumbprint on the cradle brass."]},
+ aT:{boots:["Hobnail scratches on the doorstep, where someone waited.","Deep sea-boot prints by the door, where someone stood a long while.","Soft-shoe prints pacing by the door."],habit:["A little heap of pipe ash by the door, where someone kept watch.","Spilled snuff on the step where someone kept watch.","Chewed licorice by the door, where someone kept watch."],stain:["An inky smear on the door rail, where the lookout leaned.","A drip of wax on the door rail, where the lookout leaned.","An earthy handprint on the door rail, where the lookout leaned.","Salt crust on the door rail, where the lookout leaned."]},
+ sP:{below:["Gull down caught in the stone's wrapping cloth.","The wrapping cloth smells of deep, still, underground air."],wet:["The wrapping cloth is bone dry and dusty.","Salt water has dried in rings on the wrapping cloth."],holy:["A rough note: \"Not on holy ground. It won't abide it.\"","Drips of blessed beeswax on the wrapping cloth."],town:["Heather burrs caught in the handcart that moved it.","Cobble grit in the handcart that moved it."]}
+};
+const SECRETS={
+ ysolde:"A pawn ticket: Mother Ysolde sold the chapel's silver chalice last month, quietly.",
+ hale:"A manifest with no names on it. Captain Hale lands untaxed brandy by night.",
+ wenna:"An IOU in Wenna's hand: she owes Lady Marrow forty crowns, long overdue.",
+ crane:"Dr. Crane's ledger: large sleeping draughts, sold weekly to someone at the manor.",
+ ophelia:"A bank letter: Marrow Manor is mortgaged to the roof, and the bank wants it by spring.",
+ tobin:"A gold ring in a twist of cloth, grave-dirt still on it. Tobin has been robbing the dead.",
+ edda:"Two copies of the same deed, one forged. Edda has been quietly altering the town records."
+};
+const NOTHING=["Old nets, a dead crab, and nothing else.","A child's drawing of the lighthouse. Sweet, and useless.","Dust, mouse droppings, and a button.","A love letter, unsigned and decades old. It tells you nothing.","An empty bottle with a cork that says 'LUCK'. It isn't."];
+const PZ={lock:"a locked sea-chest",lamps:"a lantern panel",mirror:"a mirror-lock set in the stone",slide:"a torn chart in a frame",cipher:"a letter written in cipher"};
+const SLOTS=["Dawn","Noon","Dusk","Night"];
+const PREF=["I'll tell you plain:","Mark this:","Between us,","Swear on the tide:","I saw enough to say this:","For what it's worth,"];
+
+/* ---------- rng ---------- */
+function mul(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+let R=Math.random;
+const ri=n=>Math.floor(R()*n), pick=a=>a[ri(a.length)];
+function shuf(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=ri(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
+const N=x=>NPC[x].short;
+
+/* ---------- logic ---------- */
+let T={};
+function ev(p,w){switch(p.t){
+ case"notC":return w.c!==p.x;case"notA":return w.a!==p.x;
+ case"inno":return w.c!==p.x&&w.a!==p.x;case"inv":return w.c===p.x||w.a===p.x;
+ case"cT":return T[w.c][p.cat]===p.v;case"aT":return T[w.a][p.cat]===p.v;
+ case"sP":return SITES[w.h][p.k]===p.v;case"nS":return w.h!==p.s}}
+function allProps(){const P=[];
+ IDS.forEach(x=>P.push({t:"notC",x},{t:"notA",x},{t:"inno",x},{t:"inv",x}));
+ for(const c in CATS)CATS[c].forEach((_,v)=>P.push({t:"cT",cat:c,v}));
+ ["boots","habit","stain"].forEach(c=>CATS[c].forEach((_,v)=>P.push({t:"aT",cat:c,v})));
+ ["below","wet","holy","town"].forEach(k=>[0,1].forEach(v=>P.push({t:"sP",k,v})));
+ SIDS.forEach(s=>P.push({t:"nS",s}));return P}
+const WORLDS=[];IDS.forEach(c=>IDS.forEach(a=>{if(a!==c)SIDS.forEach(h=>WORLDS.push({c,a,h}))}));
+const pkey=p=>JSON.stringify(p);
+function claim(p,spk){const me=p.x&&p.x===spk;switch(p.t){
+ case"notC":return me?"I never laid a finger on the Tidestone.":`${N(p.x)} did not take the Tidestone.`;
+ case"notA":return me?"I kept watch for nobody.":`${N(p.x)} was not the lookout.`;
+ case"inno":return me?"I had no part in it.":`${N(p.x)} had no part in the theft.`;
+ case"inv":return `${N(p.x)} had a hand in the theft.`;
+ case"cT":return `The thief ${TP[p.cat][p.v]}.`;case"aT":return `The lookout ${TP[p.cat][p.v]}.`;
+ case"sP":return SP[p.k][p.v];case"nS":return `The stone is not in the ${SITES[p.s].the}.`}}
+function flav(p){switch(p.t){
+ case"cT":return FL.cT[p.cat][p.v];case"aT":return FL.aT[p.cat][p.v];case"sP":return FL.sP[p.k][p.v];
+ case"nS":return `A scrawled list of hiding places, one struck through: "${SITES[p.s].n}: too watched."`;
+ case"notC":return `A signed docket puts ${N(p.x)} across town at the very hour of the theft.`;
+ case"notA":return `A lamplighter's note: ${N(p.x)}'s window was lit till dawn, and nobody left it.`;
+ case"inno":return `A ferry stub: ${N(p.x)} was on the mainland the night of the theft.`;
+ case"inv":return `A scrap in ${N(p.x)}'s hand: the lighthouse watch times, carefully copied.`}}
+
+/* ---------- world generation ---------- */
+let G=null;
+function gen(seed){
+ for(let tryN=0;tryN<400;tryN++){
+  R=mul(seed*7919+tryN*104729);
+  const r=tryGen();
+  if(r){R=Math.random;return r}
+ }
+ R=Math.random;return null;
+}
+function tryGen(){
+ const c=pick(IDS),a=pick(IDS.filter(x=>x!==c)),h=pick(SIDS),W={c,a,h};
+ T={};IDS.forEach(id=>{T[id]={};for(const k in CATS)T[id][k]=ri(CATS[k].length)});
+ const P=allProps(),truP=P.filter(p=>ev(p,W)),falP=P.filter(p=>!ev(p,W));
+ let cand=WORLDS.slice();const need=[];
+ for(const p of shuf(truP.filter(p=>p.t!=="inv"&&p.t!=="inno"))){
+  const nw=cand.filter(w=>ev(p,w));if(nw.length<cand.length){need.push(p);cand=nw}if(cand.length===1)break}
+ if(cand.length!==1||need.length<8||need.length>15)return null;
+ const used=new Set(need.map(pkey));
+ const items={};let nid=0;const mk=o=>{o.id="i"+(nid++);items[o.id]=o;return o.id};
+ const ns=shuf(need);
+ const journal=ns.splice(0,3).map(p=>mk({kind:"journal",prop:p,truth:true}));
+ const inn=IDS.filter(x=>x!==c&&x!==a);
+ const testi={};IDS.forEach(x=>testi[x]=[]);
+ const evid=[],rum=[];
+ ns.forEach((p,i)=>{
+  const r=R();
+  if(r<.45){const ok=inn.filter(x=>testi[x].length<3&&p.x!==x);if(ok.length){const s=pick(ok);testi[s].push(mk({kind:"testimony",prop:p,truth:true,spk:s}));return}}
+  if(r<.6&&rum.length<2){rum.push(mk({kind:"rumour",prop:p,truth:true}));return}
+  evid.push(mk({kind:"evidence",prop:p,truth:true}));
+ });
+ const extra=shuf(truP.filter(p=>!used.has(pkey(p))&&p.t!=="inv"));
+ inn.forEach(s=>{while(testi[s].length<3){const k=extra.findIndex(p=>p.x!==s);if(k<0)break;const p=extra.splice(k,1)[0];testi[s].push(mk({kind:"testimony",prop:p,truth:true,spk:s}))}});
+ if(extra.length)evid.push(mk({kind:"evidence",prop:extra.shift(),truth:true}));
+ if(rum.length<3&&extra.length)rum.push(mk({kind:"rumour",prop:extra.shift(),truth:true}));
+ const fpick=f=>{const L=falP.filter(f);return L.length?pick(L):pick(falP)};
+ [[c,a],[a,c]].forEach(([L,Pt])=>{
+  const ps=[];
+  ps.push(R()<.5?{t:"inno",x:Pt}:(L===c?{t:"notA",x:Pt}:{t:"notC",x:Pt}));
+  ps.push(fpick(p=>p.t==="inv"&&inn.includes(p.x)));
+  ps.push(fpick(p=>(p.t==="cT"||p.t==="sP"||p.t==="aT"||(p.t==="nS"&&p.s===h))));
+  if(R()<.5)ps[0]={t:"notC",x:L===c?L:Pt};
+  shuf(ps).forEach(p=>{if(ev(p,W))return;testi[L].push(mk({kind:"testimony",prop:p,truth:false,spk:L}))});
+ });
+ for(let i=0;i<2;i++)evid.push(mk({kind:"evidence",prop:fpick(p=>p.t==="cT"||p.t==="sP"||(p.t==="inv"&&inn.includes(p.x))||p.t==="nS"&&p.s===h),truth:false}));
+ for(let i=0;i<3;i++)rum.push(mk({kind:"rumour",prop:fpick(p=>p.t!=="aT"),truth:false}));
+ const rumours=shuf(rum);
+ // verify unique solution assuming every object's truth were known
+ const all=Object.values(items);
+ const ok=WORLDS.filter(w=>all.every(it=>{const v=ev(it.prop,w);
+  if(it.kind==="journal")return v;if(it.kind==="testimony")return v===!(it.spk===w.c||it.spk===w.a);return v===it.truth}));
+ if(ok.length!==1)return null;
+ const secrets=IDS.map(x=>mk({kind:"secret",text:SECRETS[x],about:x}));
+ const misc=[mk({kind:"coins",amt:6+ri(5)}),mk({kind:"coins",amt:6+ri(5)}),mk({kind:"coins",amt:8+ri(5)}),mk({kind:"oil"})];
+ const nothings=[];for(let i=0;i<5;i++)nothings.push(mk({kind:"nothing",text:NOTHING[i]}));
+ let pool=shuf([...journal,...evid,...secrets,...misc,...nothings.slice(0,3)]);
+ // wrap some in puzzles (incl. dead ends)
+ const puzzles={};let pn=0;const types=shuf(["lock","lamps","mirror","slide","cipher","lock","lamps","mirror","cipher"]);
+ const wrapIdx=shuf(pool.map((_,i)=>i)).slice(0,8);
+ if(!wrapIdx.some(i=>["secret","nothing"].includes(items[pool[i]].kind)))return null;
+ wrapIdx.forEach((i,k)=>{const id="p"+(pn++);puzzles[id]={type:types[k%types.length],item:pool[i]};pool[i]=id});
+ pool=pool.concat(nothings.slice(3));
+ const places=Object.keys(PLACES),decks={};places.forEach(p=>decks[p]=[]);
+ pool=shuf(pool);let pi=0;
+ while(pool.length){const pl=places[pi%places.length];if(!(pl==="lighthouse"&&decks[pl].length>=2))decks[pl].push(pool.shift());pi++}
+ Object.entries(puzzles).forEach(([id,pz])=>{for(const pl in decks)if(decks[pl].includes(id))pz.place=pl});
+ return{W,T:JSON.parse(JSON.stringify(T)),items,testi,rumours,decks,puzzles,ferry:pick(inn),storm:6+ri(4)};
+}
+
+/* ---------- state ---------- */
+let S=null;const KEY="saltmere1";
+function newState(seed){return{seed,day:1,slot:0,place:"lighthouse",coins:20,oil:2,oilBought:0,heat:0,talked:{},met:{},tI:{},dI:{},clues:[],pz:{},ver:{},marks:{},smarks:{},fd:{},burned:{},rI:0,flags:{},log:[],notes:"",over:false,ambush:0}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function load(){try{const s=localStorage.getItem(KEY);return s?JSON.parse(s):null}catch(e){return null}}
+function startGame(seed){S=newState(seed);G=gen(seed);T=G.T;addLog("You arrive at Saltmere on the evening ferry.");save();render();intro()}
+function addLog(t){S.log.push({d:S.day,s:S.slot,t})}
+
+/* ---------- helpers ---------- */
+const stormNow=()=>S.day===G.storm||S.day===G.storm+1;
+const gone=id=>id===G.ferry&&S.day>=10;
+function npcAt(id){if(gone(id))return null;if(S.slot===3){if(id==="hale"||id==="tobin")return"tavern";if(id==="crane"||id==="edda")return null}return NPC[id].home}
+const here=p=>IDS.filter(id=>npcAt(id)===p);
+const closed=p=>(p==="cove"&&stormNow())||((p==="archive"||p==="apothecary")&&S.slot===3);
+function heatTier(){const h=S.heat;return h<3?0:h<6?1:h<9?2:3}
+const HT=["Unnoticed","Watched","Hunted","In danger"];
+function guiltyAt(p){return SITES[G.W.h].place===p}
+
+function spend(n,who){
+ S.slot+=n;S.heat+=0.2*n;
+ if(who&&(who===G.W.c||who===G.W.a))S.heat+=1;
+ checkHeat();
+ if(S.slot>=4)endDay();
+}
+function checkHeat(){
+ if(S.heat>=5&&!S.flags.h1){S.flags.h1=1;burn("Someone has been ahead of you. Somewhere on the island, a clue you hadn't found yet is now ash.")}
+ if(S.heat>=8&&!S.flags.h2){S.flags.h2=1;S.ambush=1;addLog("You are being followed.")}
+ if(S.heat>=11&&!S.flags.h3){S.flags.h3=1;S.ambush=1;burn("Another hiding place has been emptied before you reached it.")}
+}
+function burn(msg){
+ const opts=[];for(const pl in G.decks){G.decks[pl].forEach((e,i)=>{if(i<(S.dI[pl]||0)||S.burned[e])return;const it=e[0]==="p"?G.items[G.puzzles[e].item]:G.items[e];if((it.kind==="journal"||it.kind==="evidence")&&it.truth)opts.push(e)})}
+ if(opts.length){S.burned[pick(opts)]=1}
+ addLog(msg);S.pendingMsg=(S.pendingMsg||[]).concat([msg]);
+}
+function endDay(){
+ if(S.day>=14){S.slot=3;moot(true);return}
+ S.day++;S.slot=0;S.talked={};S.heat=Math.max(0,S.heat-0.6);
+ const lines=[];
+ if(S.ambush){S.slot=1;S.ambush=0;lines.push("In the night, a sack over your head, a shove down the lighthouse stair. You wake at noon, bruised. Someone wants you slower.")}
+ if(S.day===3)lines.push(`A notice at the harbour: ${NPC[G.ferry].name} has booked passage on the day-10 ferry. Hear them out before then.`);
+ if(S.day===10)lines.push(`${NPC[G.ferry].name} left on the morning ferry. Whatever they knew is gone with them.`);
+ if(S.day===G.storm)lines.push("A storm batters Saltmere. Smugglers' Cove is cut off today and tomorrow.");
+ if(S.day===G.storm-1)lines.push("Captain Hale's barometer is falling fast. A storm will hit tomorrow.");
+ if(S.day===14)lines.push("The last day. Tonight the tide-bell rings. Call the Moot at the lighthouse when you're ready, or it will be called for you at nightfall.");
+ if(R()<.3){const r=R();if(r<.15){S.oil++;lines.push("Barnacle the cat drops a little flask of lamp oil on your pillow. Where does she find these?")}else{const c=2+ri(5);S.coins+=c;lines.push(`Barnacle the cat brings you ${c} coins, one at a time.`)}}
+ if(S.pendingMsg){lines.push(...S.pendingMsg);S.pendingMsg=null}
+ addLog(`Day ${S.day} begins.`);
+ S.place="lighthouse";tgt={x:PLACES.lighthouse.x,y:PLACES.lighthouse.y};
+ showMorning((b,close)=>{b.innerHTML=`<h2>Day ${S.day} of 14</h2><p class="meta">The tide stands ${S.day*7} inches higher than when you came.</p>${lines.map(l=>`<p>${l}</p>`).join("")||"<p>Grey morning. Gulls. The bell hums under everything.</p>"}<div class="row"><button class="btn" id="ok">Go out</button></div>`;b.querySelector("#ok").onclick=close});
+}
+
+/* ---------- modal ---------- */
+const MB=document.getElementById("mbox"),MD=document.getElementById("modal");let mOpen=false;const mq=[];
+function modal(build){if(mOpen){mq.push(build);return}mOpen=true;MD.hidden=false;MB.scrollTop=0;build(MB,closeM);const f=MB.querySelector("button");if(f)f.focus()}
+let pendM=null;function showMorning(f){if(mOpen)pendM=f;else modal(f)}
+function closeM(){mOpen=false;MD.hidden=true;MB.innerHTML="";render();save();if(mq.length)modal(mq.shift());else if(pendM){const f=pendM;pendM=null;modal(f)}}
+function say(lines,after){modal((b,close)=>{let i=0;const step=()=>{if(i>=lines.length){close();after&&after();return}const L=lines[i];
+ if(L.letter){b.innerHTML=`<div class="letter">${L.letter}</div><div class="row"><button class="btn" id="nx">${i===lines.length-1?"Close":"Next"}</button></div>`}
+ else{const who=L.who==="nar"?null:L.who;b.innerHTML=`<div class="dlg">${who?'<canvas id="pc"></canvas>':'<div></div>'}<div>${who?`<div class="who">${who.name}</div>`:""}<div class="txt">${L.t}</div></div></div><div class="row"><button class="btn" id="nx">${i===lines.length-1?"Close":"Next"}</button></div>`;
+  if(who)portrait(b.querySelector("#pc"),who.look)}
+ const nx=b.querySelector("#nx");nx.onclick=()=>{i++;step()};nx.focus()};step()})}
+
+/* ---------- portraits ---------- */
+function portrait(cv,L){cv.width=16;cv.height=16;const x=cv.getContext("2d");const r=(a,b,c,d,col)=>{x.fillStyle=col;x.fillRect(a,b,c,d)};
+ r(0,0,16,16,"#1d4a50");
+ if(L.cat){r(3,6,10,8,"#f0a35a");r(3,3,3,4,"#f0a35a");r(10,3,3,4,"#f0a35a");r(4,4,1,2,"#ffcf9a");r(11,4,1,2,"#ffcf9a");r(5,8,2,2,"#1a1a1a");r(9,8,2,2,"#1a1a1a");r(5,8,1,1,"#9be38a");r(9,8,1,1,"#9be38a");r(7,11,2,1,"#c0504a");r(3,10,2,1,"#fff");r(11,10,2,1,"#fff");r(4,13,8,1,"#d4823a");return}
+ r(3,12,10,4,L.cloth);r(6,10,4,2,L.skin);r(4,4,8,7,L.skin);
+ const h=L.hair;
+ if(L.style==="short"){r(4,3,8,2,h);r(4,4,1,3,h);r(11,4,1,3,h)}
+ if(L.style==="bun"){r(4,3,8,2,h);r(4,4,1,3,h);r(11,4,1,3,h);r(6,1,4,2,h)}
+ if(L.style==="tall"){r(4,1,8,4,h);r(3,4,1,7,h);r(12,4,1,7,h)}
+ if(L.style==="messy"){r(4,2,8,3,h);r(3,3,1,3,h);r(12,3,1,3,h);r(5,1,2,1,h);r(9,1,2,1,h)}
+ if(L.style==="veil"){r(3,2,10,3,L.cloth);r(3,4,1,9,L.cloth);r(12,4,1,9,L.cloth);r(4,4,8,1,"#eee")}
+ if(L.style==="cap"){r(4,5,1,2,h);r(11,5,1,2,h);r(4,2,8,3,L.hat);r(3,4,10,1,L.hat)}
+ if(L.beard){r(4,9,8,2,h);r(5,11,6,1,h)}
+ if(L.glasses)r(5,7,6,1,"#cfe3e6");
+ r(6,7,1,1,"#1a1a1a");r(9,7,1,1,"#1a1a1a");r(7,9,2,1,L.beard?"#5a2a22":"#a0564a");r(5,8,1,1,"#f2a89a");r(10,8,1,1,"#f2a89a")}
+
+/* ---------- map ---------- */
+const cv=document.getElementById("map"),cx=cv.getContext("2d");
+const MBX=document.getElementById("mapbox");
+const pins={};
+for(const p in PLACES){const b=document.createElement("button");b.className="pin";b.textContent=PLACES[p].n;b.style.left=(PLACES[p].x/320*100)+"%";b.style.top=(PLACES[p].y/200*100)+"%";b.onclick=()=>go(p);MBX.appendChild(b);pins[p]=b}
+let pos={x:PLACES.lighthouse.x,y:PLACES.lighthouse.y},tgt=null;
+const ISL=[];for(let i=0;i<64;i++){const a=i/64*Math.PI*2;ISL.push([a,1+.07*Math.sin(3*a+1)+.05*Math.sin(5*a+2)+.035*Math.sin(9*a)])}
+const RM=matchMedia("(prefers-reduced-motion: reduce)").matches;
+function poly(s,col){cx.fillStyle=col;cx.beginPath();ISL.forEach(([a,k],i)=>{const X=165+Math.cos(a)*128*k*s,Y=102+Math.sin(a)*78*k*s;i?cx.lineTo(X,Y):cx.moveTo(X,Y)});cx.closePath();cx.fill()}
+const px=(x,y,w,h,c)=>{cx.fillStyle=c;cx.fillRect(Math.round(x),Math.round(y),w,h)};
+function house(x,y,w,h,wall,roof){px(x-w/2,y-h,w,h,wall);cx.fillStyle=roof;cx.beginPath();cx.moveTo(x-w/2-2,y-h);cx.lineTo(x,y-h-6);cx.lineTo(x+w/2+2,y-h);cx.fill();px(x-1,y-4,3,4,"#3a2a1a")}
+function drawMap(t){
+ const sl=S?S.slot:0,day=S?S.day:1;
+ const seaC=["#1f6f7a","#227a84","#1b5d6a","#0e3440"][sl];
+ px(0,0,320,200,seaC);
+ cx.fillStyle="rgba(255,255,255,.14)";
+ for(let i=0;i<40;i++){const y=(i*37)%200,x=((i*71)+t*0.012*(1+i%3))%340-20;cx.fillRect(Math.round(x),y,6,1)}
+ const s=1-(day-1)*0.0065;
+ poly(s*1.04,"#d8c58f");poly(s*.97,"#7fae5a");poly(s*.86,"#6c9c4c");
+ cx.strokeStyle="#cdb98a";cx.lineWidth=2;cx.beginPath();
+ ["apothecary","chapel","manor","tavern","archive","harbour","cemetery","cove"].forEach(p=>{cx.moveTo(178,86);cx.lineTo(PLACES[p].x,PLACES[p].y)});cx.stroke();
+ cx.beginPath();cx.moveTo(108,92);cx.lineTo(46,52);cx.stroke();
+ // rocks
+ [[40,56,14],[56,52,8],[52,154,12],[70,156,9]].forEach(([x,y,r])=>{cx.fillStyle="#5d6b6b";cx.beginPath();cx.arc(x,y,r/2+2,0,7);cx.fill()});
+ // lighthouse
+ const L=PLACES.lighthouse;for(let i=0;i<5;i++)px(L.x-3,L.y-6-i*4,7,4,i%2?"#f4efe4":"#e0473a");px(L.x-4,L.y-28,9,4,"#2a2a2a");px(L.x-2,L.y-27,5,2,sl>=2?"#ffe08a":"#bfe3ea");
+ if(sl>=2){const a=t/900;cx.fillStyle="rgba(255,230,140,.22)";cx.beginPath();cx.moveTo(L.x,L.y-26);cx.lineTo(L.x+Math.cos(a)*140-Math.sin(a)*14,L.y-26+Math.sin(a)*140+Math.cos(a)*14);cx.lineTo(L.x+Math.cos(a)*140+Math.sin(a)*14,L.y-26+Math.sin(a)*140-Math.cos(a)*14);cx.fill()}
+ house(108,92,14,9,"#e6dcc8","#5a8a6a");
+ house(152,126,18,10,"#c9a27a","#8a3a2a");
+ house(214,126,16,11,"#d8d0c0","#45506a");
+ const C=PLACES.chapel;house(C.x,C.y,14,10,"#e8e2d4","#6a6a7a");px(C.x+6,C.y-22,5,14,"#e8e2d4");cx.fillStyle="#6a6a7a";cx.beginPath();cx.moveTo(C.x+5,C.y-22);cx.lineTo(C.x+8.5,C.y-30);cx.lineTo(C.x+12,C.y-22);cx.fill();
+ house(270,84,14,13,"#c8b8d8","#4a3a5a");house(282,84,12,10,"#c8b8d8","#4a3a5a");
+ px(172,82,12,8,"#8a7a6a");px(175,83,6,3,"#2a4a6a");
+ px(102,160,32,3,"#7a5a3a");px(126,152,3,14,"#7a5a3a");px(110,154,8,5,"#e6dcc8");
+ const M=PLACES.cemetery;for(let i=0;i<5;i++)px(M.x-12+i*5,M.y-5-(i%2),3,5,"#b8c0c0");px(M.x+12,M.y-10,8,10,"#9aa0a8");
+ const V=PLACES.cove;px(V.x-14,V.y-10,10,8,"#2a2a30");px(V.x+4,V.y-4,14,4,"#6a4a2a");px(V.x+10,V.y-16,1,12,"#5a3a22");
+ if(S)IDS.forEach((id,k)=>{const p=npcAt(id);if(!p)return;const P=PLACES[p];const off=here(p).indexOf(id);px(P.x+10+off*4,P.y-14,3,3,NPC[id].look.hair==="#e8e8e8"?"#fff":NPC[id].look.cloth);px(P.x+10+off*4,P.y-16,3,2,NPC[id].look.skin)});
+ if(tgt){const dx=tgt.x-pos.x,dy=tgt.y-pos.y,d=Math.hypot(dx,dy);if(d<1.5||RM){pos={x:tgt.x,y:tgt.y};tgt=null}else{pos.x+=dx/d*Math.min(d,2.2);pos.y+=dy/d*Math.min(d,2.2)}}
+ const bob=Math.round(Math.sin(t/180));px(pos.x-2,pos.y-9+bob,5,5,"#ffd166");px(pos.x-2,pos.y-12+bob,5,3,"#f0c9a0");px(pos.x-2,pos.y-13+bob,5,1,"#3a2a1a");
+ if(sl>0){cx.fillStyle=["","rgba(255,170,90,.06)","rgba(60,30,90,.22)","rgba(5,10,30,.48)"][sl];cx.fillRect(0,0,320,200)}
+ if(S&&stormNow()){cx.fillStyle="rgba(200,220,255,.35)";for(let i=0;i<90;i++){const x=(i*53+t*0.3)%320,y=(i*29+t*0.5)%200;cx.fillRect(Math.round(x),Math.round(y),1,4)}}
+ cx.fillStyle="rgba(230,240,240,.07)";for(let i=0;i<6;i++){const x=(i*70+t*0.006)%380-30;cx.beginPath();cx.arc(x,40+i*25,26,0,7);cx.fill()}
+}
+function loop(t){drawMap(t);if(!RM||tgt)requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+
+/* ---------- actions ---------- */
+function go(p){if(mOpen||S.over)return;if(closed(p)&&p==="cove")return;tgt={x:PLACES[p].x,y:PLACES[p].y};S.place=p;if(RM)requestAnimationFrame(loop);render();save()}
+function talk(id){
+ const n=NPC[id],first=!S.met[id];S.met[id]=1;S.talked[id]=1;
+ const k=S.tI[id]||0,list=G.testi[id];const lines=[];
+ if(first)lines.push({who:n,t:n.intro},{who:{name:"Your notes"},t:`${n.name}: ${CATS.hand[T[id].hand]}, ${CATS.habit[T[id].habit]}, ${CATS.boots[T[id].boots]}, ${CATS.stain[T[id].stain]}.`});
+ if(k<list.length){const it=G.items[list[k]];S.tI[id]=k+1;S.clues.push(it.id);S.fd[it.id]=S.day;
+  lines.push({who:n,t:`${pick(PREF)} ${claim(it.prop,id)}`});addLog(`${n.short} told you: ${claim(it.prop,id)}`)}
+ else lines.push({who:n,t:"I've told you everything I mean to tell you."});
+ if(k+1<list.length)lines.push({who:{name:""},t:`<span class="meta">${n.short} might say more on another day.</span>`});
+ lines.forEach(l=>{if(l.who&&!l.who.look)l.who=null});
+ say(lines.map(l=>l.who===null?{who:"nar",t:l.t}:l));spend(1,id);
+}
+function itemText(it){
+ if(it.kind==="journal")return{title:"A page of Uncle Aldous's journal",body:`"I am sure of this much: ${claim(it.prop)}"`};
+ if(it.kind==="evidence")return{title:"Evidence",body:`${flav(it.prop)}`,cl:claim(it.prop)};
+ if(it.kind==="secret")return{title:"Something hidden",body:it.text};
+ if(it.kind==="coins")return{title:"Coins",body:`A purse with ${it.amt} coins in it.`};
+ if(it.kind==="oil")return{title:"Lamp oil",body:"A full flask of lamp oil, enough for one use of the Truthglass."};
+ if(it.kind==="rumour")return{title:"Rumour",body:claim(it.prop)};
+ return{title:"Nothing",body:it.text};
+}
+function collect(it){
+ if(it.kind==="coins")S.coins+=it.amt;else if(it.kind==="oil")S.oil++;
+ else if(it.kind!=="nothing"){S.clues.push(it.id);S.fd[it.id]=S.day}
+ const tx=itemText(it);addLog(`Found: ${tx.title}. ${tx.body}${tx.cl?" "+tx.cl:""}`);
+ return tx;
+}
+function search(p){
+ const i=S.dI[p]||0,e=G.decks[p][i];S.dI[p]=i+1;
+ let html;
+ if(S.burned[e]){html=`<h2>Too late</h2><p>A scorched patch, a fistful of warm ash. Someone got here first.</p>`;addLog(`Searched ${PLACES[p].n}: only ash.`)}
+ else if(e[0]==="p"){const pz=G.puzzles[e];S.pz[e]={found:1};html=`<h2>You find ${PZ[pz.type]}</h2><p>It might hold something. It might hold nothing at all. Working at it will cost time.</p>`;addLog(`Found ${PZ[pz.type]} at ${PLACES[p].n}.`)}
+ else{const tx=collect(G.items[e]);html=`<h2>${tx.title}</h2><p>${tx.body}</p>${tx.cl?`<p class="claimln">${tx.cl}</p>`:""}`}
+ if(guiltyAt(p))S.heat+=0.8;
+ modal((b,close)=>{b.innerHTML=html+`<div class="row"><button class="btn" id="ok">OK</button></div>`;b.querySelector("#ok").onclick=close});
+ spend(1);
+}
+function rumour(src,cost){
+ if(S.coins<cost)return;S.coins-=cost;
+ let html;
+ if(S.rI<G.rumours.length){const it=G.items[G.rumours[S.rI++]];S.clues.push(it.id);S.fd[it.id]=S.day;
+  html=`<p>${src==="kit"?"Kit leans close":"Over the din, someone at the bar says"}: "${claim(it.prop)}"</p><p class="meta">Rumours are true about half the time.</p>`;addLog(`Rumour: ${claim(it.prop)}`)}
+ else html="<p>Nothing new. The same old stories go round again.</p>";
+ say([{who:src==="kit"?KIT:{name:"The Gull & Lantern",look:NPC.wenna.look},t:html}]);
+ spend(1);
+}
+function lieLow(){S.heat=Math.max(0,S.heat-1.6);say([{who:BARN,t:"You keep the lamp and stay out of sight. Barnacle approves. Fewer eyes are on you now."}]);spend(1)}
+function buyOil(){if(S.coins<12||S.oilBought>=3)return;S.coins-=12;S.oil++;S.oilBought++;render();save()}
+function sleep(){modal((b,close)=>{b.innerHTML=`<h2>Sleep now?</h2><p>The rest of today is lost.</p><div class="row"><button class="btn ghost" id="n">Stay up</button><button class="btn" id="y">Sleep</button></div>`;b.querySelector("#n").onclick=close;b.querySelector("#y").onclick=()=>{close();S.slot=4;endDay();render()}})}
+function truthglass(){
+ const L=S.clues.map(id=>G.items[id]).filter(it=>["evidence","rumour","secret"].includes(it.kind)&&!S.ver[it.id]);
+ modal((b,close)=>{b.innerHTML=`<h2>The Truthglass</h2><p>Aldous's great lens reads objects and hearsay, not hearts. One flask of oil, one reading. You have ${S.oil}.</p>${L.length?`<div class="acts">${L.map(it=>{const tx=itemText(it);return`<button class="act" data-id="${it.id}"><span><b>${tx.title}</b>: ${tx.cl||tx.body}</span></button>`}).join("")}</div>`:"<p class='meta'>Nothing you hold can be tested. Testimony can't be read by the glass.</p>"}<div class="row"><button class="btn ghost" id="c">Cancel</button></div>`;
+  b.querySelector("#c").onclick=close;
+  b.querySelectorAll("[data-id]").forEach(x=>x.onclick=()=>{const it=G.items[x.dataset.id];S.oil--;
+   S.ver[it.id]=it.kind==="secret"?"u":it.truth?"t":"f";spend(1);
+   const msg=it.kind==="secret"?"The glass glows steady: genuine. But it has nothing to do with the Tidestone.":it.truth?"The glass glows clear and steady. This is true.":(it.kind==="rumour"?"The glass clouds over. This rumour is false.":"The glass clouds over. Planted! Someone wanted you to find this.");
+   addLog(`Truthglass: ${msg}`);b.innerHTML=`<h2>The Truthglass</h2><p>${msg}</p><div class="row"><button class="btn" id="ok">OK</button></div>`;b.querySelector("#ok").onclick=close})})}
+
+/* ---------- puzzles ---------- */
+function tryPuzzle(id){
+ const pz=G.puzzles[id];
+ modal((b,close)=>{
+  const done=win=>{S.pz[id].tried=S.day;
+   if(win){S.pz[id].solved=1;const it=G.items[pz.item];const tx=collect(it);
+    b.innerHTML=`<h2>It opens</h2><h3>${tx.title}</h3><p>${tx.body}</p>${tx.cl?`<p class="claimln">${tx.cl}</p>`:""}<div class="row"><button class="btn" id="ok">OK</button></div>`}
+   else{if(pz.type==="lock")S.pz[id].jam=S.day;b.innerHTML=`<h2>You walk away</h2><p>${pz.type==="lock"?"The mechanism has jammed. It will reset by tomorrow.":"You can come back to it later."}</p><div class="row"><button class="btn" id="ok">OK</button></div>`}
+   b.querySelector("#ok").onclick=()=>{close();spend(1);render()}};
+  const head=`<h2>${PZ[pz.type][0].toUpperCase()+PZ[pz.type].slice(1)}</h2>`;
+  ({lock:pLock,lamps:pLamps,mirror:pMirror,slide:pSlide,cipher:pCipher})[pz.type](b,head,done,G.items[pz.item]);
+ })}
+function quitRow(b,done){const r=document.createElement("div");r.className="row";r.innerHTML=`<button class="btn ghost" id="q">Walk away</button>`;b.appendChild(r);r.querySelector("#q").onclick=()=>done(false)}
+function pLock(b,head,done){
+ const COL=["#ff6b5a","#ffd166","#7bdff2","#b8f28c","#c79bff","#f4f1de"],GL=["▲","■","●","◆","✚","★"];
+ const code=[0,1,2,3].map(()=>Math.floor(Math.random()*6));let g=[0,0,0,0];const hist=[];
+ const draw=()=>{b.innerHTML=head+`<p>Four dials, six symbols, eight tries. ● means right symbol in the right place, ○ means right symbol in the wrong place. Symbols can repeat.</p>
+ ${hist.map(h=>`<div class="lockrow">${h.g.map(v=>`<span class="peg" style="background:${COL[v]}">${GL[v]}</span>`).join("")}<span class="fb">${"●".repeat(h.e)}${"○".repeat(h.m)}${!h.e&&!h.m?"nothing":""}</span></div>`).join("")}
+ <div class="lockrow">${g.map((v,i)=>`<button class="peg" data-i="${i}" style="background:${COL[v]}" aria-label="Dial ${i+1}">${GL[v]}</button>`).join("")}<span class="fb">${8-hist.length} left</span></div>
+ <div class="row" style="justify-content:center"><button class="btn" id="try">Try this</button></div>`;
+  b.querySelectorAll("[data-i]").forEach(x=>x.onclick=()=>{g[+x.dataset.i]=(g[+x.dataset.i]+1)%6;draw()});
+  b.querySelector("#try").onclick=()=>{let e=0,m=0;const cc=[0,0,0,0,0,0],gc=[0,0,0,0,0,0];g.forEach((v,i)=>{if(v===code[i])e++;else{cc[code[i]]++;gc[v]++}});for(let k=0;k<6;k++)m+=Math.min(cc[k],gc[k]);hist.push({g:g.slice(),e,m});if(e===4)return done(true);if(hist.length>=8)return done(false);draw()};
+  quitRow(b,done)};draw()}
+function pLamps(b,head,done){
+ const n=5,s=Array(25).fill(1);const tog=i=>{const r=Math.floor(i/n),c=i%n;[[0,0],[1,0],[-1,0],[0,1],[0,-1]].forEach(([dr,dc])=>{const R2=r+dr,C2=c+dc;if(R2>=0&&R2<n&&C2>=0&&C2<n)s[R2*n+C2]^=1})};
+ const pres=new Set();while(pres.size<7)pres.add(Math.floor(Math.random()*25));pres.forEach(tog);let mv=0;
+ const draw=()=>{b.innerHTML=head+`<p>Light every lantern. Each one you touch flips itself and its four neighbours. Moves: ${mv}</p><div class="pzgrid" style="grid-template-columns:repeat(5,46px)">${s.map((v,i)=>`<button class="lamp ${v?"on":""}" data-i="${i}" aria-label="Lantern ${i+1} ${v?"lit":"dark"}"></button>`).join("")}</div>`;
+  b.querySelectorAll("[data-i]").forEach(x=>x.onclick=()=>{tog(+x.dataset.i);mv++;if(s.every(v=>v))return done(true);draw()});quitRow(b,done)};draw()}
+function pMirror(b,head,done){
+ const n=7;const D=[[0,1],[1,0],[0,-1],[-1,0]];// E S W N
+ const refl=(m,d)=>m==="/"?[3,2,1,0][d]:[1,0,3,2][d];
+ let grid,target,r0;
+ const trace=()=>{let r=r0,c=-1,d=0;const pts=[[r,c]];const seen=new Set();for(let k=0;k<200;k++){r+=D[d][0];c+=D[d][1];pts.push([r,c]);if(r<0||c<0||r>=n||c>=n)return{pts,end:[r,c]};const m=grid[r][c];if(m)d=refl(m,d);const key=r+","+c+","+d;if(seen.has(key))return{pts,end:null};seen.add(key)}return{pts,end:null}};
+ for(let att=0;att<500;att++){grid=[...Array(n)].map(()=>Array(n).fill(null));r0=Math.floor(Math.random()*n);
+  let r=r0,c=-1,d=0,cnt=0,ok=true;for(let k=0;k<60;k++){r+=D[d][0];c+=D[d][1];if(r<0||c<0||r>=n||c>=n)break;if(!grid[r][c]&&Math.random()<.32&&c>0){grid[r][c]=Math.random()<.5?"/":"\\";cnt++}if(grid[r][c])d=refl(grid[r][c],d)}
+  const t=trace();if(!t.end||cnt<5||(t.end[1]===-1&&t.end[0]===r0))continue;target=t.end;const onP=new Set(t.pts.map(q=>q.join(",")));
+  for(let k=0;k<5;k++){const a=Math.floor(Math.random()*n),q=Math.floor(Math.random()*n);if(!grid[a][q]&&!onP.has(a+","+q))grid[a][q]="/"}
+  for(let a=0;a<n;a++)for(let q=0;q<n;q++)if(grid[a][q])grid[a][q]=Math.random()<.5?"/":"\\";
+  const t2=trace();if(t2.end&&t2.end[0]===target[0]&&t2.end[1]===target[1])continue;
+  break}
+ const z=11,off=z;const P=([r,c])=>[off+c*z+z/2,off+r*z+z/2];
+ const draw=()=>{const t=trace();const W=(n+2)*z;
+  let svg=`<svg viewBox="0 0 ${W} ${W}" width="320" height="320" style="max-width:100%;height:auto;display:block;margin:10px auto;background:#0a2328;border-radius:10px">`;
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++){svg+=`<rect x="${off+c*z+.5}" y="${off+r*z+.5}" width="${z-1}" height="${z-1}" fill="#123a40" rx="1" data-r="${r}" data-c="${c}" style="cursor:${grid[r][c]?"pointer":"default"}"/>`;const m=grid[r][c];if(m){const x=off+c*z,y=off+r*z;svg+=m==="/"?`<line x1="${x+2}" y1="${y+z-2}" x2="${x+z-2}" y2="${y+2}" stroke="#cfe8e0" stroke-width="1.6" pointer-events="none"/>`:`<line x1="${x+2}" y1="${y+2}" x2="${x+z-2}" y2="${y+z-2}" stroke="#cfe8e0" stroke-width="1.6" pointer-events="none"/>`}}
+  svg+=`<polyline points="${t.pts.map(p=>P(p).join(",")).join(" ")}" fill="none" stroke="#ffd166" stroke-width="1.2" opacity=".9"/>`;
+  const [sx,sy]=P([r0,-1]);svg+=`<circle cx="${sx}" cy="${sy}" r="3.5" fill="#ffd166"/>`;const [tx,ty]=P(target);svg+=`<circle cx="${tx}" cy="${ty}" r="3.6" fill="none" stroke="#ff6b5a" stroke-width="1.4"/><circle cx="${tx}" cy="${ty}" r="1.4" fill="#ff6b5a"/></svg>`;
+  b.innerHTML=head+`<p>Turn the mirrors so the lamp's beam reaches the red seal. Tap a mirror to flip it.</p>${svg}`;
+  b.querySelectorAll("rect[data-r]").forEach(x=>x.onclick=()=>{const r=+x.dataset.r,c=+x.dataset.c;if(!grid[r][c])return;grid[r][c]=grid[r][c]==="/"?"\\":"/";const t3=trace();if(t3.end&&t3.end[0]===target[0]&&t3.end[1]===target[1])return done(true);draw()});
+  quitRow(b,done)};draw()}
+function pSlide(b,head,done){
+ let s=[1,2,3,4,5,6,7,8,0];const nb=i=>[i-3,i+3,i%3?i-1:-1,i%3<2?i+1:-1].filter(j=>j>=0&&j<9);
+ let last=-1;for(let k=0;k<120;k++){const e=s.indexOf(0);const o=nb(e).filter(j=>j!==last);const j=o[Math.floor(Math.random()*o.length)];[s[e],s[j]]=[s[j],s[e]];last=e}
+ if(s.join()==="1,2,3,4,5,6,7,8,0"){s=[1,2,3,4,5,6,0,7,8]}
+ const draw=()=>{b.innerHTML=head+`<p>Slide the torn pieces back into order, 1 to 8, gap last.</p><div class="pzgrid" style="grid-template-columns:repeat(3,68px)">${s.map((v,i)=>`<button class="tile ${v?"":"e"}" data-i="${i}" ${v?"":"tabindex=-1"}>${v||""}</button>`).join("")}</div>`;
+  b.querySelectorAll("[data-i]").forEach(x=>x.onclick=()=>{const i=+x.dataset.i,e=s.indexOf(0);if(nb(e).includes(i)){[s[e],s[i]]=[s[i],s[e]];if(s.join()==="1,2,3,4,5,6,7,8,0")return done(true);draw()}});quitRow(b,done)};draw()}
+function pCipher(b,head,done,it){
+ const tx=itemText(it);const plain=(tx.cl||tx.body).toUpperCase();
+ const k=1+Math.floor(Math.random()*25),st=Math.floor(Math.random()*3);
+ const enc=(t,K,S2,dir)=>{let w=0;return t.split("").map(ch=>{if(ch===" "){w++;return ch}const c=ch.charCodeAt(0);if(c<65||c>90)return ch;const sh=((K+S2*w)%26)*dir;return String.fromCharCode((c-65+sh+26*4)%26+65)}).join("")};
+ const ct=enc(plain,k,st,1);let a=0,s2=0;
+ const draw=()=>{b.innerHTML=head+`<p>Each word is shifted along the alphabet. The first word by the key, and each word after by the step more. Find both.</p><div class="cipher">${enc(ct,a,s2,-1)}</div>
+ <div class="dial"><span>Key</span><button id="kd">−</button><b>${a}</b><button id="ku">+</button></div>
+ <div class="dial"><span>Step</span><button id="sd">−</button><b>${s2}</b><button id="su">+</button></div>
+ <div class="row" style="justify-content:center"><button class="btn" id="ok">This reads true</button></div><p class="meta" id="msg"></p>`;
+  b.querySelector("#kd").onclick=()=>{a=(a+25)%26;draw()};b.querySelector("#ku").onclick=()=>{a=(a+1)%26;draw()};
+  b.querySelector("#sd").onclick=()=>{s2=(s2+2)%3;draw()};b.querySelector("#su").onclick=()=>{s2=(s2+1)%3;draw()};
+  b.querySelector("#ok").onclick=()=>{if(enc(ct,a,s2,-1)===plain)done(true);else b.querySelector("#msg").textContent="Still gibberish."};quitRow(b,done)};draw()}
+
+/* ---------- moot & ending ---------- */
+function moot(forced){
+ modal((b,close)=>{
+  const opt=(arr,f)=>arr.map(x=>`<option value="${x}">${f(x)}</option>`).join("");
+  b.innerHTML=`<h2>The Moot</h2><p>${forced?"Night falls on the fourteenth day. The bell begins to toll. ":""}The town crowds into the lighthouse. Name the thief and the lookout, and say where the Tidestone lies. You get one chance.</p>
+  <label class="f" for="mc">The thief</label><select id="mc">${opt(IDS,x=>NPC[x].name)}</select>
+  <label class="f" for="ma">The lookout</label><select id="ma">${opt(IDS,x=>NPC[x].name)}</select>
+  <label class="f" for="mh">The hiding place</label><select id="mh">${opt(SIDS,x=>SITES[x].n)}</select>
+  <p class="meta" id="mm"></p><div class="row">${forced?"":'<button class="btn ghost" id="cn">Not yet</button>'}<button class="btn" id="go">Make the accusation</button></div>`;
+  if(!forced)b.querySelector("#cn").onclick=close;b.querySelector("#ma").selectedIndex=1;
+  b.querySelector("#go").onclick=()=>{const c=b.querySelector("#mc").value,a=b.querySelector("#ma").value,h=b.querySelector("#mh").value;if(c===a){b.querySelector("#mm").textContent="The thief and the lookout must be two different people.";return}ending(b,c,a,h)};
+ })}
+function ending(b,c,a,h){
+ S.over=true;const W=G.W,ok=[c===W.c,a===W.a,h===W.h];
+ let title,story;
+ if(ok[2]&&ok[0]&&ok[1]){title="The Keeper's Light";story=`You lead the town to the ${SITES[h].the}. The Tidestone is there, humming, and beside it, bound and furious but alive, Uncle Aldous. ${NPC[W.c].name} and ${NPC[W.a].name} are taken in irons. The stone goes back in its cradle, the bell falls silent, and the sea sighs and draws back.`}
+ else if(ok[2]&&ok[0]){title="Saltmere Stands";story=`The stone is where you said. ${NPC[W.c].name} breaks down at the sight of it. The sea draws back. But the lookout walks free, and nobody knows where Aldous is held. Not yet.`}
+ else if(ok[2]){title="A Hollow Dawn";story=`You find the Tidestone in the ${SITES[h].the} and the tide turns. But you named the wrong people, and whoever really took it is still in the crowd, watching you.`}
+ else{title="The Drowning";story=`The ${SITES[h].the} is empty. The bell tolls thirteen times and the sea comes over the harbour wall, the square, the chapel steps. Saltmere goes under.${ok[0]?" You were right about the thief, for all the good it does now.":""}`}
+ const found=S.clues.length,tot=Object.values(G.items).filter(i=>!["coins","oil","nothing"].includes(i.kind)).length;
+ const planted=Object.values(G.items).filter(i=>i.kind==="evidence"&&!i.truth).map(i=>flav(i.prop));
+ b.innerHTML=`<h2>${title}</h2><p>${story}</p>
+ <h3>The truth</h3><p>Thief: <b>${NPC[W.c].name}</b> ${ok[0]?"✓":"✗"} · Lookout: <b>${NPC[W.a].name}</b> ${ok[1]?"✓":"✗"} · Hidden in: <b>${SITES[W.h].n}</b> ${ok[2]?"✓":"✗"}</p>
+ <p class="meta">Both of them lied in every word they gave you. Planted evidence: ${planted.join(" / ")}</p>
+ <p class="meta">You found ${found} of ${tot} clues and secrets.</p>
+ <div class="row"><button class="btn" id="again">New mystery</button></div>`;
+ b.querySelector("#again").onclick=()=>{closeM();startGame(Date.now()%1e9)};
+ addLog(`The Moot: ${title}.`);save();
+}
+
+/* ---------- intro ---------- */
+function intro(){
+ say([
+  {who:"nar",t:"The ferry leaves you on Saltmere's jetty at dusk. The lighthouse is dark. It has never been dark."},
+  {letter:`<b>To my nephew or niece, whoever comes.</b><br><br>If you are reading this, I've been taken. The Tidestone is gone from its cradle. For three hundred years it has held the sea back from Saltmere, and without it the tide rises a little every day.<br><br>On the fourteenth night the tide-bell will ring, and the sea will take the town.<br><br><b>Two people did this.</b> One took the stone, and one kept watch at the door. They hid it somewhere on this island. I've hidden what I learned in torn pages around the town, and those pages, at least, you can trust.<br><br>Trust little else. The guilty will lie to your face, every word. The honest will tell you only what's true, though not always what matters. Rumours are coin-flips. And someone will leave false trails for you.<br><br>Use the Truthglass in the lens room. It reads objects, never people, and it drinks oil.<br><br>Find the stone. Name them both at the Moot. Be quick.<br><br><i>Aldous</i>`},
+  {who:BARN,t:"A ginger cat winds round your ankles. The tag on her collar says BARNACLE. She seems to expect you to get on with it."},
+  {who:"nar",t:"<b>How it works.</b> Each day has four slots: Dawn, Noon, Dusk, Night. Talking, searching, puzzles, rumours and the Truthglass each cost one. Walking is free. Puzzles may hold a clue, a secret, or nothing. Ask too many of the wrong questions and the guilty will notice. Keep notes in the Suspects and Sites tabs."}
+ ]);
+}
+
+/* ---------- render ---------- */
+let TAB="case",FILT="all";
+function render(){
+ if(!S)return;
+ const ht=heatTier();
+ document.getElementById("hud").innerHTML=`<span class="chip">Day <b>${S.day}</b>/14 · ${SLOTS[Math.min(S.slot,3)]}<span class="slots">${[0,1,2,3].map(i=>`<i class="${i>=S.slot?"on":""}"></i>`).join("")}</span></span><span class="chip">Tide<span class="tide"><i style="width:${S.day/14*100}%"></i></span></span><span class="chip">Coins <b>${S.coins}</b></span><span class="chip">Oil <b>${S.oil}</b></span><span class="chip">Suspicion <b class="heat${ht}">${HT[ht]}</b></span>`;
+ for(const p in pins){pins[p].classList.toggle("cur",S.place===p);pins[p].disabled=p==="cove"&&stormNow()}
+ renderPlace();renderTabs();if(RM)requestAnimationFrame(loop);
+}
+function renderPlace(){
+ const p=S.place,P=PLACES[p],el=document.getElementById("place");
+ if(S.over){el.innerHTML=`<h2>The case is closed</h2><p class="desc">Start a new mystery to play again. Every game draws a new thief, lookout, hiding place and set of lies.</p><div class="acts"><button class="act" id="ng">New mystery</button></div>`;el.querySelector("#ng").onclick=()=>startGame(Date.now()%1e9);return}
+ const A=[];const cl=closed(p);
+ here(p).forEach(id=>{const n=NPC[id];const left=(S.tI[id]||0)<G.testi[id].length;const dis=S.talked[id]||!left;A.push(`<button class="act" data-talk="${id}" ${dis?"disabled":""}><canvas data-por="${id}"></canvas><span><b>${n.name}</b><br><span class="meta">${n.role}</span></span><small>${!left?"nothing more":S.talked[id]?"tomorrow":"talk · 1 slot"}</small></button>`)});
+ if(gone(G.ferry)&&NPC[G.ferry].home===p)A.push(`<p class="meta">${NPC[G.ferry].short} has left the island.</p>`);
+ const di=S.dI[p]||0,dl=G.decks[p].length;
+ if(cl)A.push(`<p class="meta">${p==="cove"?"The storm has cut the cove off.":"Shut for the night."}</p>`);
+ else A.push(`<button class="act" data-a="search" ${di>=dl?"disabled":""}><span><b>Search</b> ${di>=dl?"<span class='meta'>· nothing left to find</span>":`<span class='meta'>· ${dl-di} spot${dl-di>1?"s":""} unchecked</span>`}</span><small>1 slot</small></button>`);
+ Object.entries(S.pz).forEach(([id,st])=>{const pz=G.puzzles[id];if(pz.place!==p||st.solved)return;const jam=st.jam===S.day;A.push(`<button class="act" data-pz="${id}" ${jam||cl?"disabled":""}><span><b>Work on ${PZ[pz.type]}</b>${jam?" <span class='meta'>· jammed till tomorrow</span>":""}</span><small>1 slot</small></button>`)});
+ if(p==="lighthouse"){
+  A.push(`<button class="act" data-a="glass" ${S.oil<1?"disabled":""}><span><b>Use the Truthglass</b> <span class="meta">· test one object or rumour</span></span><small>1 slot · 1 oil</small></button>`);
+  A.push(`<button class="act" data-a="low"><span><b>Lie low</b> <span class="meta">· let suspicion cool</span></span><small>1 slot</small></button>`);
+  A.push(`<button class="act" data-a="sleep"><span><b>Sleep</b> <span class="meta">· end the day</span></span></button>`);
+  if(S.day===14)A.push(`<button class="act" data-a="moot" style="border-color:var(--coral)"><span><b>Call the Moot</b> <span class="meta">· make your accusation</span></span></button>`);
+ }
+ if(p==="tavern")A.push(`<button class="act" data-a="bar" ${S.coins<3?"disabled":""}><span><b>Buy a drink and listen</b> <span class="meta">· a rumour</span></span><small>1 slot · 3c</small></button>`);
+ if(p==="square")A.push(`<button class="act" data-a="kit" ${S.coins<4?"disabled":""}><canvas data-por="kit"></canvas><span><b>Pay Kit for gossip</b><br><span class="meta">a rumour</span></span><small>1 slot · 4c</small></button>`);
+ if(p==="harbour"&&!gone("hale"))A.push(`<button class="act" data-a="oil" ${S.coins<12||S.oilBought>=3?"disabled":""}><span><b>Buy lamp oil</b> <span class="meta">· ${3-S.oilBought} left in stock</span></span><small>12c · free</small></button>`);
+ const sites=SIDS.filter(s=>SITES[s].place===p).map(s=>SITES[s].n);
+ el.innerHTML=`<h2>${P.n}</h2><p class="desc">${P.d}${sites.length?` <br>Possible hiding place${sites.length>1?"s":""}: ${sites.join(", ")}.`:""}</p><div class="acts">${A.join("")}</div>`;
+ el.querySelectorAll("[data-por]").forEach(c=>portrait(c,c.dataset.por==="kit"?KIT.look:NPC[c.dataset.por].look));
+ el.querySelectorAll("[data-talk]").forEach(x=>x.onclick=()=>talk(x.dataset.talk));
+ el.querySelectorAll("[data-pz]").forEach(x=>x.onclick=()=>tryPuzzle(x.dataset.pz));
+ el.querySelectorAll("[data-a]").forEach(x=>x.onclick=()=>({search:()=>search(p),glass:truthglass,low:lieLow,sleep,moot:()=>moot(false),bar:()=>rumour("bar",3),kit:()=>rumour("kit",4),oil:buyOil})[x.dataset.a]());
+}
+function clueCard(it){
+ const tx=it.kind==="testimony"?{title:NPC[it.spk].name,body:"",cl:claim(it.prop,null)}:itemText(it);
+ const bk={journal:["Journal","b-journal","Always true"],evidence:["Evidence","b-evidence","May be planted"],testimony:["Testimony","b-testimony","True unless the speaker is guilty"],rumour:["Rumour","b-rumour","True about half the time"],secret:["Find","b-find","Relevance unknown"]}[it.kind];
+ const v=S.ver[it.id];
+ return `<div class="card"><span class="badge ${bk[1]}">${bk[0]}</span><span class="meta">Day ${S.fd[it.id]||"?"} · ${bk[2]}</span>
+ ${it.kind==="testimony"?`<p><b>${tx.title}</b> says:</p>`:`<p>${tx.body}</p>`}${tx.cl&&it.kind!=="rumour"?`<p class="claimln">${tx.cl}</p>`:""}
+ ${v?`<p class="ver ${v}">${v==="t"?"Truthglass: true":v==="f"?"Truthglass: false":"Truthglass: genuine, but unrelated"}</p>`:""}</div>`}
+function renderTabs(){
+ const tabs=[["case",`Casebook (${S.clues.length})`],["sus","Suspects"],["sites","Hiding places"],["notes","Notes"],["log","Log"]];
+ const tb=document.getElementById("tabs");tb.innerHTML=tabs.map(([k,l])=>`<button class="tab ${TAB===k?"on":""}" data-t="${k}">${l}</button>`).join("");
+ tb.querySelectorAll("[data-t]").forEach(x=>x.onclick=()=>{TAB=x.dataset.t;renderTabs()});
+ const B=document.getElementById("tabbody");
+ if(TAB==="case"){
+  const L=S.clues.map(id=>G.items[id]).filter(it=>FILT==="all"||it.kind===FILT).slice().reverse();
+  B.innerHTML=`<div class="filters">${[["all","All"],["journal","Journal"],["evidence","Evidence"],["testimony","Testimony"],["rumour","Rumours"],["secret","Finds"]].map(([k,l])=>`<button class="${FILT===k?"on":""}" data-f="${k}">${l}</button>`).join("")}</div>${L.length?`<div class="cards">${L.map(clueCard).join("")}</div>`:`<p class="meta">Nothing yet. Search places, talk to people, and work the puzzles.</p>`}`;
+  B.querySelectorAll("[data-f]").forEach(x=>x.onclick=()=>{FILT=x.dataset.f;renderTabs()})}
+ if(TAB==="sus"){
+  B.innerHTML=`<div class="cards">${IDS.map(id=>{const n=NPC[id],m=S.marks[id]||"";return`<div class="card sus"><canvas data-por="${id}"></canvas><div><h3>${n.name}</h3><p class="meta">${n.role} · ${PLACES[n.home].n}${gone(id)?" · left the island":""}</p>
+   ${S.met[id]?`<p>${Object.keys(CATS).map(k=>`${CATL[k]}: <b>${CATS[k][T[id][k]]}</b>`).join("<br>")}</p>`:`<p class="meta">Not yet met. Talk to them to note their traits.</p>`}
+   <p class="meta">Heard ${S.tI[id]||0} of ${G.testi[id].length} statements</p>
+   <div class="marks">${[["","Unsure"],["clear","Cleared"],["thief","Thief?"],["look","Lookout?"],["liar","Liar?"]].map(([k,l])=>`<button class="${m===k?"on":""}" data-m="${id}" data-v="${k}">${l}</button>`).join("")}</div></div></div>`}).join("")}</div>`;
+  B.querySelectorAll("[data-por]").forEach(c=>portrait(c,NPC[c.dataset.por].look));
+  B.querySelectorAll("[data-m]").forEach(x=>x.onclick=()=>{S.marks[x.dataset.m]=x.dataset.v;save();renderTabs()})}
+ if(TAB==="sites"){
+  const yn=v=>v?"Yes":"No";
+  B.innerHTML=`<div class="panel scroll"><table><thead><tr><th>Hiding place</th><th>Where</th><th class="c">Below ground</th><th class="c">Wet</th><th class="c">Holy ground</th><th class="c">In town</th><th>Your mark</th></tr></thead><tbody>${SIDS.map(s=>{const t=SITES[s],m=S.smarks[s]||"";return`<tr><td><b>${t.n}</b></td><td>${PLACES[t.place].n}</td><td class="c">${yn(t.below)}</td><td class="c">${yn(t.wet)}</td><td class="c">${yn(t.holy)}</td><td class="c">${yn(t.town)}</td><td><div class="marks" style="margin:0">${[["","?"],["out","Ruled out"],["lik","Likely"]].map(([k,l])=>`<button class="${m===k?"on":""}" data-s="${s}" data-v="${k}">${l}</button>`).join("")}</div></td></tr>`}).join("")}</tbody></table></div>`;
+  B.querySelectorAll("[data-s]").forEach(x=>x.onclick=()=>{S.smarks[x.dataset.s]=x.dataset.v;save();renderTabs()})}
+ if(TAB==="notes"){B.innerHTML=`<label class="f" for="nt">Your notes</label><textarea id="nt" placeholder="Who contradicts whom? Which clues still need the Truthglass?">${S.notes.replace(/</g,"&lt;")}</textarea>`;B.querySelector("#nt").oninput=e=>{S.notes=e.target.value;save()}}
+ if(TAB==="log"){let last=0;B.innerHTML=`<div class="panel log">${S.log.map(l=>{const h=l.d!==last?`<p class="d">Day ${l.d}</p>`:"";last=l.d;return h+`<p>${SLOTS[Math.min(l.s,3)]}: ${l.t}</p>`}).join("")}</div>`}
+}
+
+/* ---------- boot ---------- */
+const sv=load();
+if(sv&&!sv.over){S=sv;G=gen(S.seed);T=G.T;
+ S.fd=S.fd||{};
+ render();pos={x:PLACES[S.place].x,y:PLACES[S.place].y};
+ modal((b,close)=>{b.innerHTML=`<h2>Welcome back</h2><p>Day ${S.day} of 14. The tide is still rising.</p><div class="row"><button class="btn ghost" id="nw">New mystery</button><button class="btn" id="ct">Continue</button></div>`;b.querySelector("#ct").onclick=close;b.querySelector("#nw").onclick=()=>{close();startGame(Date.now()%1e9)}});
+}else startGame(Date.now()%1e9);
+}
+</script>
+</body>
+</html>

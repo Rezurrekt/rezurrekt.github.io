@@ -1,0 +1,1878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mindflow</title>
+<!--
+  ─────────────────────────────────────────────────────────────────
+  MINDFLOW — Standalone Edition
+  Single-file app. No dependencies. No installation. No build tools.
+  Just open this file in any modern browser (Chrome, Edge, Firefox).
+
+  • All data is stored locally in your browser (localStorage).
+  • The AI summary feature requires an Anthropic API key
+    (Settings ⚙ → AI Configuration). Get one at console.anthropic.com.
+    The key is stored only on your machine and sent only to Anthropic.
+  ─────────────────────────────────────────────────────────────────
+-->
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html,body { height:100%; background:var(--bg,#FAF8F3); }
+
+  .mf { font-family:var(--font); background:var(--bg); color:var(--ink); height:100vh; overflow:hidden; font-size:14px; display:flex; flex-direction:column; transition:background .2s,color .2s; }
+
+  /* Header */
+  .hdr { background:var(--bg); border-bottom:1px solid var(--bd); padding:0 16px; height:52px; display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .logo { font-family:var(--serif); font-size:18px; font-weight:600; color:var(--accent); letter-spacing:-.3px; flex-shrink:0; margin-right:4px; }
+  .admin-pill { font-size:10px; background:var(--ink); color:var(--bg); border-radius:20px; padding:2px 8px; font-weight:500; letter-spacing:.3px; flex-shrink:0; }
+  .hdr-center { display:flex; align-items:center; gap:3px; flex:1; justify-content:center; min-width:0; overflow:hidden; }
+  .hdr-label { font-size:10px; color:var(--ink3); padding:2px 7px; background:var(--bg2); border-radius:10px; letter-spacing:.3px; white-space:nowrap; flex-shrink:0; }
+  .date-disp { font-family:var(--serif); font-size:13px; font-weight:500; color:var(--ink); white-space:nowrap; padding:3px 8px; border-radius:var(--r); cursor:pointer; transition:background .12s; overflow:hidden; text-overflow:ellipsis; border:1px solid transparent; }
+  .date-disp:hover { background:var(--bg3); border-color:var(--bd2); }
+  .ic-btn { background:none; border:1px solid var(--bd2); cursor:pointer; width:26px; height:26px; border-radius:6px; display:flex; align-items:center; justify-content:center; color:var(--ink2); font-size:12px; transition:background .12s; flex-shrink:0; font-family:var(--font); }
+  .ic-btn:hover { background:var(--bg3); }
+  .ic-btn:disabled { opacity:.3; cursor:not-allowed; }
+  .hdr-btn { background:none; border:1px solid var(--bd2); border-radius:7px; padding:4px 10px; font-size:12px; font-family:var(--font); color:var(--ink2); cursor:pointer; white-space:nowrap; flex-shrink:0; transition:all .12s; }
+  .hdr-btn:hover { background:var(--bg2); color:var(--ink); }
+  .hdr-icon { padding:4px 8px; font-size:13px; line-height:1; }
+  .saved-indicator { font-size:10px; color:var(--ink3); white-space:nowrap; margin-right:2px; user-select:none; transition:color .3s; max-width:120px; overflow:hidden; text-overflow:ellipsis; }
+  .saved-indicator.flash { color:var(--accent); }
+  .save-btn-dot { position:relative; }
+  .file-banner { background:var(--accent-muted); border-bottom:1px solid var(--bd2); padding:6px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; font-size:12px; color:var(--accent); flex-shrink:0; }
+  .file-status { font-size:11px; padding:6px 10px; border-radius:7px; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+  .file-status.on { background:color-mix(in srgb,#2E7D32 14%,transparent); color:#3DA35D; }
+  .file-status.off { background:var(--bg2); color:var(--ink3); }
+  .file-status.err { background:color-mix(in srgb,#E24B4A 14%,transparent); color:#E24B4A; }
+
+  /* Date picker dropdown */
+  .date-picker-dropdown { position:fixed; background:var(--bg); border:1px solid var(--bd2); border-radius:12px; box-shadow:0 8px 28px var(--shadow); z-index:300; padding:14px; width:260px; user-select:none; }
+  .dpd-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .dpd-title { font-family:var(--serif); font-size:14px; font-weight:500; color:var(--ink); }
+  .dpd-nav { display:flex; gap:3px; }
+  .dpd-wdays { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; margin-bottom:4px; }
+  .dpd-wd { font-size:9px; color:var(--ink3); padding:2px 0; font-weight:500; }
+  .dpd-days { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+  .dpd-day { aspect-ratio:1; border-radius:5px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:12px; color:var(--ink2); transition:all .1s; position:relative; }
+  .dpd-day:hover { background:var(--bg3); }
+  .dpd-day.om { opacity:.3; pointer-events:none; }
+  .dpd-day.today { background:var(--accent-muted); color:var(--accent); font-weight:700; }
+  .dpd-day.sel { background:var(--accent); color:var(--bg); font-weight:600; }
+  .dpd-day.hn::after { content:''; position:absolute; bottom:2px; left:50%; transform:translateX(-50%); width:4px; height:4px; border-radius:50%; background:var(--accent-l); }
+  .dpd-day.sel.hn::after { background:var(--bg); opacity:.7; }
+  .dpd-legend { font-size:9px; color:var(--ink3); margin-top:6px; display:flex; align-items:center; gap:4px; }
+  .dpd-legend-dot { width:4px; height:4px; border-radius:50%; background:var(--accent-l); display:inline-block; }
+  .dpd-footer { display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:8px; border-top:1px solid var(--bd); }
+  .dpd-today-btn { font-size:11px; color:var(--accent); background:none; border:1px solid var(--bd2); border-radius:5px; padding:3px 9px; cursor:pointer; font-family:var(--font); }
+  .dpd-today-btn:hover { background:var(--accent-muted); }
+  .dpd-sel-label { font-size:10px; color:var(--ink3); }
+
+  /* Time picker */
+  .time-picker { display:flex; align-items:center; border:1px solid var(--bd2); border-radius:8px; background:var(--surface); overflow:hidden; height:36px; }
+  .time-picker:focus-within { border-color:var(--accent-l); }
+  .tp-seg { border:none; background:transparent; font-family:var(--font); font-size:13px; color:var(--ink); text-align:center; outline:none; cursor:pointer; height:100%; padding:0; }
+  .tp-seg:focus { background:var(--accent-muted); }
+  .tp-hr,.tp-min { width:40px; }
+  .tp-colon { color:var(--ink3); font-size:14px; padding:0 1px; pointer-events:none; }
+  .tp-sep { width:1px; background:var(--bd); height:60%; align-self:center; flex-shrink:0; }
+  .tp-ampm { display:flex; height:100%; }
+  .tp-ampm-btn { border:none; background:transparent; font-family:var(--font); font-size:11px; font-weight:500; color:var(--ink3); cursor:pointer; padding:0 8px; height:100%; transition:all .1s; }
+  .tp-ampm-btn.active { background:var(--accent); color:var(--bg); }
+  .tp-ampm-btn:first-child { border-right:1px solid var(--bd); }
+  .tp-clear { border:none; background:transparent; color:var(--ink3); font-size:11px; cursor:pointer; padding:0 7px; height:100%; border-left:1px solid var(--bd); }
+  .tp-clear:hover { color:#E24B4A; }
+
+  /* Layout */
+  .main { display:flex; flex:1; overflow:hidden; }
+  .notes-col { flex:1; display:flex; flex-direction:column; overflow:hidden; border-right:1px solid var(--bd); min-width:0; }
+
+  .notes-toolbar { display:flex; align-items:center; gap:8px; padding:10px 16px 0; flex-shrink:0; }
+  .search-wrap { position:relative; flex:1; }
+  .search-input { width:100%; border:1px solid var(--bd2); border-radius:8px; background:var(--bg2); font-family:var(--font); font-size:12px; color:var(--ink); padding:6px 10px 6px 30px; outline:none; transition:all .15s; }
+  .search-input:focus { border-color:var(--accent-l); background:var(--surface); }
+  .search-input::placeholder { color:var(--ink3); }
+  .search-icon { position:absolute; left:9px; top:50%; transform:translateY(-50%); color:var(--ink3); font-size:12px; pointer-events:none; }
+  .filter-sel { border:1px solid var(--bd2); border-radius:8px; background:var(--bg2); color:var(--ink2); font-family:var(--font); font-size:12px; padding:6px 8px; outline:none; cursor:pointer; }
+
+  .notes-scroll { flex:1; overflow-y:auto; padding:12px 16px; }
+  .notes-scroll::-webkit-scrollbar { width:3px; }
+  .notes-scroll::-webkit-scrollbar-thumb { background:var(--bd2); border-radius:2px; }
+  .sec-lbl { font-size:10px; color:var(--ink3); font-weight:500; text-transform:uppercase; letter-spacing:.8px; margin-bottom:8px; padding-bottom:5px; border-bottom:1px solid var(--bd); display:flex; align-items:center; justify-content:space-between; }
+  .clear-filters { font-size:10px; background:none; border:none; color:var(--accent); cursor:pointer; text-decoration:underline; font-family:var(--font); }
+  .empty-state { text-align:center; padding:40px 20px; color:var(--ink3); }
+  .empty-state p { font-family:var(--serif); font-size:15px; margin-bottom:5px; color:var(--ink2); }
+  .empty-state span { font-size:12px; }
+
+  .notes-input { border-top:1px solid var(--bd); padding:12px 16px; background:var(--bg); flex-shrink:0; }
+  .note-ta { width:100%; border:1px solid var(--bd2); border-radius:var(--r); background:var(--bg2); font-family:var(--font); font-size:13px; color:var(--ink); padding:9px 12px; resize:none; outline:none; transition:border-color .15s,background .15s; min-height:64px; line-height:1.55; }
+  .note-ta::placeholder { color:var(--ink3); }
+  .note-ta:focus { border-color:var(--accent-l); background:var(--surface); }
+  .input-footer { display:flex; align-items:center; justify-content:space-between; margin-top:6px; }
+  .input-hint { font-size:11px; color:var(--ink3); }
+  .date-banner { font-size:11px; color:#C98A2B; margin-bottom:6px; padding:4px 8px; background:color-mix(in srgb,#BA7517 14%,transparent); border-radius:6px; }
+  .rollover-banner { background:var(--accent-muted); border:1px solid var(--bd2); border-radius:var(--r); padding:9px 12px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; font-size:12px; color:var(--accent); }
+  .rollover-acts { display:flex; gap:6px; }
+  .rolled-chip { font-size:9px; color:var(--ink3); background:var(--bg2); border-radius:8px; padding:1px 5px; flex-shrink:0; white-space:nowrap; }
+  .btn-primary { background:var(--accent); color:var(--bg); border:none; border-radius:7px; padding:6px 14px; font-size:12px; font-family:var(--font); cursor:pointer; transition:filter .12s; }
+  .btn-primary:hover { filter:brightness(1.12); }
+  .btn-primary:disabled { opacity:.4; cursor:not-allowed; }
+  .btn-secondary { background:none; border:1px solid var(--bd2); border-radius:7px; padding:6px 12px; font-size:12px; font-family:var(--font); color:var(--ink2); cursor:pointer; transition:all .12s; }
+  .btn-secondary:hover { background:var(--bg2); color:var(--ink); }
+
+  /* Note item */
+  .ni { border:1px solid var(--bd); border-radius:var(--r); padding:10px 12px; margin-bottom:8px; background:var(--surface); transition:border-color .15s,box-shadow .15s; position:relative; }
+  .ni:hover { border-color:var(--bd2); box-shadow:0 2px 10px var(--shadow); }
+  .ni.pinned { border-left:3px solid var(--accent-l); }
+  .ni.pri-3 { box-shadow:inset 4px 0 0 #E24B4A; }
+  .ni.pri-2 { box-shadow:inset 4px 0 0 #D97706; }
+  .ni.pri-1 { box-shadow:inset 4px 0 0 #639922; }
+  .ni.pri-3:hover { box-shadow:inset 4px 0 0 #E24B4A, 0 2px 10px var(--shadow); }
+  .ni.pri-2:hover { box-shadow:inset 4px 0 0 #D97706, 0 2px 10px var(--shadow); }
+  .ni.pri-1:hover { box-shadow:inset 4px 0 0 #639922, 0 2px 10px var(--shadow); }
+  .pri-dot { display:inline-flex; align-items:center; gap:3px; font-size:9px; font-weight:600; padding:2px 6px 2px 5px; border-radius:20px; cursor:pointer; flex-shrink:0; border:none; font-family:var(--font); letter-spacing:.3px; transition:opacity .1s; }
+  .pri-dot:hover { opacity:.75; }
+  .pri-dot .dot { width:6px; height:6px; border-radius:50%; background:currentColor; display:inline-block; }
+  .pri-add { color:var(--ink3); background:none; border:1px dashed var(--bd2); font-size:9px; padding:2px 6px; border-radius:20px; cursor:pointer; flex-shrink:0; font-family:var(--font); opacity:0; transition:opacity .12s; }
+  .ni:hover .pri-add { opacity:1; }
+  .pri-add:hover { color:var(--ink); background:var(--bg2); }
+  .pri-picker { display:inline-flex; gap:3px; align-items:center; background:var(--bg2); border:1px solid var(--bd2); border-radius:20px; padding:2px 4px; }
+  .pri-opt { font-size:9px; font-weight:600; padding:2px 6px; border-radius:12px; cursor:pointer; border:none; font-family:var(--font); background:none; }
+  .pri-opt:hover { filter:brightness(1.05); }
+  .ni.hi { background:var(--accent-muted); border-color:var(--accent-l); }
+  .ni.done .note-body { opacity:.5; }
+  .ni.done .note-text { text-decoration:line-through; }
+  .ni-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:5px; gap:6px; }
+  .ni-left { display:flex; align-items:center; gap:5px; flex-wrap:wrap; min-width:0; flex:1; }
+  .ni-time { font-size:10px; color:var(--ink3); flex-shrink:0; }
+  .cat-badge { font-size:10px; padding:2px 7px; border-radius:20px; font-weight:500; text-transform:uppercase; letter-spacing:.4px; cursor:pointer; transition:opacity .1s; flex-shrink:0; border:none; font-family:var(--font); }
+  .cat-badge:hover { opacity:.75; }
+  .cat-badge.ai-set { outline:1.5px dashed var(--accent-l); outline-offset:1px; }
+  .cat-edit-sel { font-size:10px; border:1px solid var(--bd2); border-radius:5px; background:var(--bg2); color:var(--ink2); padding:2px 5px; cursor:pointer; outline:none; max-width:120px; font-family:var(--font); }
+  .ni-actions { display:flex; gap:2px; opacity:0; transition:opacity .12s; flex-shrink:0; }
+  .ni:hover .ni-actions { opacity:1; }
+  .ni-btn { background:none; border:none; cursor:pointer; width:22px; height:22px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--ink3); transition:all .1s; }
+  .ni-btn:hover { background:var(--bg2); color:var(--ink); }
+  .ni-btn.on { color:var(--accent); }
+  .ni-btn.del:hover { color:#E24B4A; background:color-mix(in srgb,#E24B4A 14%,transparent); }
+  .note-text { font-size:13px; line-height:1.65; color:var(--ink); white-space:pre-wrap; word-break:break-word; }
+  .note-edit-ta { width:100%; border:1px solid var(--accent-l); border-radius:7px; background:var(--surface); font-family:var(--font); font-size:13px; color:var(--ink); padding:7px 10px; resize:none; outline:none; line-height:1.6; min-height:60px; }
+  .note-edit-actions { display:flex; gap:6px; margin-top:6px; justify-content:flex-end; }
+
+  /* Right panel */
+  .right-col { width:340px; flex-shrink:0; display:flex; flex-direction:column; overflow:hidden; background:var(--bg); }
+  .panel-tabs { display:flex; border-bottom:1px solid var(--bd); padding:0 12px; flex-shrink:0; }
+  .ptab { padding:11px 12px; font-size:12px; color:var(--ink3); cursor:pointer; border-bottom:2px solid transparent; transition:all .14s; margin-bottom:-1px; white-space:nowrap; }
+  .ptab.on { color:var(--accent); border-bottom-color:var(--accent); font-weight:500; }
+  .ptab .badge { display:inline-block; background:var(--accent-muted); color:var(--accent); font-size:9px; padding:1px 5px; border-radius:8px; margin-left:4px; font-weight:600; }
+  .pcontent { flex:1; overflow-y:auto; padding:14px; }
+  .pcontent::-webkit-scrollbar { width:3px; }
+  .pcontent::-webkit-scrollbar-thumb { background:var(--bd2); border-radius:2px; }
+
+  /* Summary */
+  .ss { margin-bottom:16px; }
+  .ss-title { font-size:10px; color:var(--ink3); font-weight:500; text-transform:uppercase; letter-spacing:.6px; margin-bottom:6px; }
+  .overview-card { font-family:var(--serif); font-size:13px; line-height:1.75; color:var(--ink); padding:10px 13px; background:var(--accent-muted); border-radius:var(--r); border-left:3px solid var(--accent-l); }
+  .conf-badge { display:inline-flex; align-items:center; gap:3px; font-size:10px; padding:2px 7px; border-radius:20px; background:var(--bg2); color:var(--ink3); margin-top:6px; }
+  .ai-text { font-size:12px; line-height:1.55; flex:1; color:var(--ink); }
+  .src-link { font-size:10px; color:var(--accent); cursor:pointer; text-decoration:underline; margin-top:2px; display:block; }
+  .insight-card { padding:7px 10px; background:var(--surface); border:1px solid var(--bd); border-radius:8px; margin-bottom:5px; font-size:12px; line-height:1.55; color:var(--ink2); }
+  .gen-wrap { text-align:center; padding:32px 0; }
+  .gen-note { font-size:13px; color:var(--ink3); margin-bottom:14px; font-family:var(--serif); line-height:1.65; }
+  .gen-btn { background:var(--accent); color:var(--bg); border:none; border-radius:var(--r); padding:10px 24px; font-family:var(--font); font-size:13px; cursor:pointer; transition:filter .15s; display:inline-flex; align-items:center; gap:8px; }
+  .gen-btn:hover { filter:brightness(1.1); }
+  .gen-btn:disabled { opacity:.45; cursor:not-allowed; }
+  .spin { width:13px; height:13px; border:2px solid rgba(128,128,128,.3); border-top-color:var(--bg); border-radius:50%; animation:sp .7s linear infinite; display:inline-block; }
+  @keyframes sp { to { transform:rotate(360deg); } }
+  .version-bar { background:var(--bg2); border-radius:8px; padding:7px 10px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap; }
+  .ver-info { font-size:11px; color:var(--ink2); }
+  .ver-time { color:var(--ink3); margin-left:5px; }
+  .ver-actions { display:flex; align-items:center; gap:3px; }
+  .sug-nudge { background:var(--accent-muted); border:1px solid var(--bd2); border-radius:8px; padding:8px 11px; font-size:12px; color:var(--accent); margin-top:8px; line-height:1.5; }
+  .err-msg { font-size:12px; color:#E24B4A; margin-top:8px; text-align:center; line-height:1.5; }
+  .err-msg a { color:var(--accent); }
+
+  /* Action checklist */
+  .action-item { display:flex; align-items:flex-start; gap:9px; padding:8px 10px; background:var(--surface); border:1px solid var(--bd); border-radius:8px; margin-bottom:5px; cursor:pointer; transition:all .12s; }
+  .action-item:hover { border-color:var(--bd2); }
+  .action-item.checked { background:var(--surface2); }
+  .action-item.checked .ai-text { text-decoration:line-through; color:var(--ink3); }
+  .action-item.static { cursor:default; }
+  .ai-check { width:16px; height:16px; border-radius:4px; border:2px solid var(--bd2); flex-shrink:0; margin-top:2px; display:flex; align-items:center; justify-content:center; transition:all .12s; }
+  .ai-check.done { background:var(--accent); border-color:var(--accent); }
+  .ai-check.done::after { content:'✓'; color:var(--bg); font-size:10px; line-height:1; }
+  .pri-pill { font-size:10px; padding:1px 6px; border-radius:10px; font-weight:500; flex-shrink:0; }
+  .rem-dot { width:8px; height:8px; border-radius:50%; background:#EF9F27; flex-shrink:0; margin-top:5px; }
+
+  /* Calendar */
+  .cal-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .cal-title { font-family:var(--serif); font-size:13px; font-weight:500; color:var(--ink); }
+  .view-tabs { display:flex; gap:3px; }
+  .vtab { font-size:10px; padding:3px 8px; border-radius:5px; border:1px solid var(--bd2); cursor:pointer; background:none; font-family:var(--font); color:var(--ink2); transition:all .12s; }
+  .vtab.on { background:var(--accent); color:var(--bg); border-color:var(--accent); }
+  .cal-wdays { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; margin-bottom:3px; }
+  .cal-wd { font-size:9px; color:var(--ink3); padding:3px 0; font-weight:500; }
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+  .cal-day { aspect-ratio:1; border-radius:6px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:11px; color:var(--ink2); transition:all .12s; position:relative; }
+  .cal-day:hover { background:var(--bg2); }
+  .cal-day.om { opacity:.35; pointer-events:none; }
+  .cal-day.today { background:var(--accent-muted); color:var(--accent); font-weight:700; }
+  .cal-day.sel { background:var(--accent); color:var(--bg); }
+  .cal-day.has-ev::after { content:''; position:absolute; bottom:2px; width:4px; height:4px; border-radius:50%; background:var(--accent-l); }
+  .cal-day.sel::after { background:var(--bg); opacity:.6; }
+  .ev-list { margin-top:10px; }
+  .ev-row { display:flex; gap:8px; padding:7px 9px; background:var(--surface); border:1px solid var(--bd); border-radius:8px; margin-bottom:5px; align-items:flex-start; }
+  .ev-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; margin-top:4px; }
+  .ev-info { flex:1; min-width:0; }
+  .ev-title { font-size:12px; font-weight:500; color:var(--ink); }
+  .ev-meta { font-size:10px; color:var(--ink3); margin-top:2px; line-height:1.4; }
+  .ev-desc { font-size:11px; color:var(--ink2); margin-top:3px; line-height:1.4; }
+  .ev-actions { display:flex; gap:2px; opacity:0; transition:opacity .12s; flex-shrink:0; }
+  .ev-row:hover .ev-actions { opacity:1; }
+  .ev-btn { background:none; border:none; cursor:pointer; width:20px; height:20px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--ink3); transition:all .1s; }
+  .ev-btn:hover { background:var(--bg2); color:var(--ink); }
+  .ev-btn.del:hover { color:#E24B4A; background:color-mix(in srgb,#E24B4A 14%,transparent); }
+  .no-ev { font-size:11px; color:var(--ink3); text-align:center; padding:10px 0; }
+  .add-ev-btn { width:100%; padding:7px; background:none; border:1px dashed var(--bd2); border-radius:8px; font-family:var(--font); font-size:12px; color:var(--ink3); cursor:pointer; transition:all .12s; margin-top:7px; }
+  .add-ev-btn:hover { background:var(--bg2); color:var(--ink); border-color:var(--accent-l); }
+
+  /* Week view */
+  .wk-hdr { display:grid; grid-template-columns:32px repeat(7,1fr); border-bottom:1px solid var(--bd); }
+  .wk-ch { text-align:center; padding:3px 0; font-size:10px; color:var(--ink3); }
+  .wk-ch.today-col { color:var(--accent); font-weight:700; }
+  .wk-allday { display:grid; grid-template-columns:32px repeat(7,1fr); border-bottom:2px solid var(--bd2); background:var(--bg2); min-height:22px; }
+  .wk-allday-lbl { font-size:8px; color:var(--ink3); text-align:right; padding-right:4px; padding-top:4px; letter-spacing:.3px; text-transform:uppercase; }
+  .wk-allday-cell { border-left:1px solid var(--bd); padding:2px 1px; min-height:22px; min-width:0; overflow:hidden; }
+  .wk-allday-ev { border-radius:3px; padding:1px 3px; font-size:8px; line-height:1.4; overflow:hidden; margin-bottom:1px; border-left:2px solid; white-space:nowrap; text-overflow:ellipsis; max-width:100%; display:block; }
+  .wk-scroll { max-height:220px; overflow-y:auto; }
+  .wk-scroll::-webkit-scrollbar { width:2px; }
+  .wk-scroll::-webkit-scrollbar-thumb { background:var(--bd2); }
+  .wk-hr { display:grid; grid-template-columns:32px repeat(7,1fr); border-bottom:1px solid var(--bd); min-height:26px; }
+  .wk-lbl { font-size:9px; color:var(--ink3); text-align:right; padding-right:4px; line-height:26px; }
+  .wk-cell { border-left:1px solid var(--bd); padding:1px; min-width:0; overflow:hidden; }
+  .wk-ev { border-radius:3px; padding:1px 3px; font-size:9px; line-height:1.3; overflow:hidden; margin-bottom:1px; border-left:2px solid; white-space:nowrap; text-overflow:ellipsis; }
+
+  /* Day view */
+  .dy-scroll { max-height:240px; overflow-y:auto; }
+  .dy-hr { display:flex; gap:6px; min-height:28px; border-bottom:1px solid var(--bd); align-items:flex-start; padding:2px 0; }
+  .dy-lbl { width:32px; flex-shrink:0; color:var(--ink3); font-size:9px; padding-top:3px; text-align:right; }
+  .dy-evs { flex:1; min-width:0; }
+  .dy-ev { border-left:3px solid; border-radius:3px; padding:2px 6px; font-size:11px; margin-bottom:2px; }
+
+  /* Suggestions */
+  .sug-section { margin-top:14px; padding-top:12px; border-top:1px solid var(--bd); }
+  .sug-hdr { font-size:10px; color:var(--ink3); font-weight:500; text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+  .sug-count { background:var(--accent-muted); color:var(--accent); font-size:10px; padding:1px 6px; border-radius:10px; }
+  .sug-card { border:1px solid var(--bd2); border-radius:var(--r); padding:10px 12px; margin-bottom:8px; background:var(--surface); border-left:3px solid var(--accent-l); }
+  .sug-title { font-size:12px; font-weight:500; margin-bottom:3px; color:var(--ink); }
+  .sug-meta { font-size:10px; color:var(--ink3); margin-bottom:5px; line-height:1.5; }
+  .sug-why { font-size:11px; color:var(--ink2); line-height:1.5; margin-bottom:7px; }
+  .sug-missing { font-size:10px; color:#C98A2B; margin-bottom:6px; background:color-mix(in srgb,#BA7517 14%,transparent); padding:3px 7px; border-radius:5px; display:inline-block; }
+  .sug-acts { display:flex; gap:5px; flex-wrap:wrap; }
+  .btn-ok { padding:3px 9px; background:var(--accent); color:var(--bg); border:none; border-radius:5px; font-size:11px; cursor:pointer; font-family:var(--font); }
+  .btn-ok:hover { filter:brightness(1.1); }
+  .btn-edit-sug { padding:3px 9px; background:var(--bg2); color:var(--ink2); border:1px solid var(--bd2); border-radius:5px; font-size:11px; cursor:pointer; font-family:var(--font); }
+  .btn-dismiss { padding:3px 9px; background:none; color:var(--ink3); border:1px solid var(--bd); border-radius:5px; font-size:11px; cursor:pointer; font-family:var(--font); }
+
+  /* Modal */
+  .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.38); display:flex; align-items:center; justify-content:center; z-index:200; padding:16px; }
+  .modal { background:var(--bg); border-radius:14px; padding:22px; width:100%; max-width:460px; box-shadow:0 8px 32px var(--shadow); max-height:92vh; overflow-y:auto; }
+  .modal-title { font-family:var(--serif); font-size:16px; margin-bottom:14px; color:var(--ink); }
+  .form-group { margin-bottom:12px; }
+  .form-label { font-size:11px; color:var(--ink2); margin-bottom:4px; display:block; font-weight:500; }
+  .form-input { width:100%; border:1px solid var(--bd2); border-radius:8px; background:var(--surface); font-family:var(--font); font-size:13px; color:var(--ink); padding:7px 11px; outline:none; transition:border-color .14s; }
+  .form-input:focus { border-color:var(--accent-l); }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+  .modal-footer { display:flex; gap:7px; justify-content:flex-end; margin-top:16px; }
+
+  /* Pinned panel */
+  .pin-bg { position:fixed; inset:0; background:rgba(0,0,0,.22); z-index:150; display:flex; align-items:flex-start; justify-content:flex-end; }
+  .pin-panel { background:var(--bg); width:300px; height:100%; padding:18px; overflow-y:auto; box-shadow:-4px 0 20px var(--shadow); }
+  .pin-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .panel-title { font-family:var(--serif); font-size:15px; color:var(--ink); }
+  .close-btn { background:none; border:none; font-size:18px; cursor:pointer; color:var(--ink3); line-height:1; padding:2px 4px; border-radius:4px; }
+  .close-btn:hover { color:var(--ink); background:var(--bg2); }
+
+  /* Confirm dialog */
+  .confirm-modal { max-width:320px; }
+  .confirm-msg { font-size:13px; color:var(--ink2); line-height:1.6; }
+  .confirm-detail { font-size:12px; color:var(--ink3); background:var(--bg2); border-radius:7px; padding:6px 10px; margin-top:8px; font-style:italic; word-break:break-word; }
+
+  /* Settings */
+  .settings-section { margin-bottom:20px; }
+  .settings-section-title { font-size:11px; color:var(--ink3); font-weight:500; text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px; padding-bottom:5px; border-bottom:1px solid var(--bd); }
+  .plan-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+  .plan-card { border-radius:var(--r); padding:9px 11px; cursor:pointer; transition:all .14s; }
+  .plan-name { font-weight:500; font-size:13px; }
+  .plan-desc { font-size:10px; color:var(--ink3); margin-top:2px; }
+  .range-row { display:flex; align-items:center; gap:10px; }
+  .range-val { font-size:13px; font-weight:500; min-width:32px; text-align:right; color:var(--ink); }
+  .settings-note { font-size:11px; color:var(--ink3); margin-top:4px; line-height:1.5; }
+  .admin-banner { background:var(--ink); color:var(--bg); border-radius:var(--r); padding:11px 14px; margin-bottom:14px; }
+  .admin-banner-title { font-weight:500; font-size:13px; margin-bottom:3px; }
+  .admin-banner-sub { opacity:.55; font-size:11px; }
+  .admin-deact { margin-top:9px; background:rgba(128,128,128,.2); border:1px solid rgba(128,128,128,.3); color:inherit; border-radius:6px; padding:3px 10px; font-size:11px; cursor:pointer; font-family:var(--font); }
+  .admin-access-link { background:none; border:none; font-size:11px; color:var(--ink3); cursor:pointer; font-family:var(--font); text-decoration:underline; }
+  .admin-section { border-top:1px solid var(--bd); padding-top:12px; margin-top:4px; }
+
+  /* Theme picker */
+  .theme-preset-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:6px; }
+  .theme-preset-btn { border:2px solid rgba(0,0,0,.1); border-radius:8px; padding:6px 4px; cursor:pointer; text-align:center; transition:all .12s; font-family:var(--font); }
+  .theme-preset-btn.active { border-width:2px; }
+  .theme-preset-icon { font-size:16px; display:block; margin-bottom:3px; }
+  .theme-preset-label { font-size:9px; font-weight:500; }
+  .theme-token-row { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 0; border-bottom:1px solid var(--bd); }
+  .theme-token-label { font-size:12px; color:var(--ink2); }
+  .theme-token-right { display:flex; align-items:center; gap:6px; }
+  .color-swatch { width:28px; height:28px; border-radius:6px; border:1.5px solid var(--bd2); cursor:pointer; position:relative; overflow:hidden; flex-shrink:0; }
+  .color-swatch input[type=color] { position:absolute; inset:-4px; width:calc(100% + 8px); height:calc(100% + 8px); opacity:0; cursor:pointer; }
+  .color-hex { font-size:10px; color:var(--ink3); font-family:monospace; width:56px; }
+  .font-sel { border:1px solid var(--bd2); border-radius:6px; background:var(--bg2); color:var(--ink2); font-family:var(--font); font-size:11px; padding:4px 6px; outline:none; cursor:pointer; width:100%; margin-top:4px; }
+  .radius-row { display:flex; align-items:center; gap:8px; padding:6px 0; }
+  .radius-preview { width:24px; height:24px; background:var(--accent); border-radius:var(--r); flex-shrink:0; }
+
+  /* Toast */
+  .toast { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:7px 14px; border-radius:8px; font-size:12px; z-index:999; pointer-events:none; white-space:nowrap; animation:fadeout 2.4s forwards; }
+  @keyframes fadeout { 0%{opacity:0;transform:translateX(-50%) translateY(6px)} 10%{opacity:1;transform:translateX(-50%) translateY(0)} 75%{opacity:1} 100%{opacity:0} }
+
+  /* Responsive: stack the split-view on narrow screens */
+  @media (max-width: 760px){
+    .hdr { height:auto; flex-wrap:wrap; padding:8px 12px; gap:6px; }
+    .hdr-center { order:3; flex-basis:100%; justify-content:flex-start; }
+    .date-disp { font-size:12px; }
+    .main { flex-direction:column; }
+    .notes-col { border-right:none; border-bottom:1px solid var(--bd); flex:1 1 55%; min-height:0; }
+    .right-col { width:auto; flex:1 1 45%; min-height:0; }
+    .wk-allday-lbl, .wk-lbl, .dy-lbl { font-size:8px; }
+    .modal { max-width:100%; }
+  }
+  @media (max-width: 420px){
+    .hdr-label { display:none; }
+    .notes-toolbar { flex-wrap:wrap; }
+    .pin-panel { width:100%; }
+  }
+</style>
+</head>
+<body>
+<div id="app" class="mf">
+  <!-- Header -->
+  <div class="hdr">
+    <div style="display:flex;align-items:center;gap:7px;flex-shrink:0">
+      <div class="logo">Mindflow</div>
+      <div id="admin-pill" class="admin-pill" style="display:none">⬡ Admin</div>
+    </div>
+    <div class="hdr-center">
+      <span class="hdr-label">Notes for</span>
+      <button class="ic-btn" onclick="MF.navDate(-1)" title="Previous day" aria-label="Previous day">‹</button>
+      <span id="date-disp" class="date-disp" role="button" tabindex="0" onclick="MF.toggleDatePicker(event)" title="Click to pick a date" aria-label="Pick a date"></span>
+      <button class="ic-btn" onclick="MF.navDate(1)" title="Next day" aria-label="Next day">›</button>
+      <button id="today-btn" class="hdr-btn" style="display:none;font-size:11px" onclick="MF.goToday()">Today's Notes</button>
+    </div>
+    <div style="display:flex;gap:5px;flex-shrink:0;align-items:center">
+      <span id="saved-indicator" class="saved-indicator" title=""></span>
+      <button id="save-btn" class="hdr-btn hdr-icon" onclick="MF.headerSave()" title="Save to data file" aria-label="Save to data file">💾</button>
+      <button id="saveas-btn" class="hdr-btn hdr-icon" onclick="MF.connectDataFile()" title="Save As… (choose / create a data file)" aria-label="Save as">🗂</button>
+      <button id="pin-btn" class="hdr-btn" onclick="MF.openPinned()" aria-label="Pinned notes">📌 Pinned</button>
+      <button class="hdr-btn hdr-icon" onclick="MF.openTheme()" title="Theme" aria-label="Theme">🎨</button>
+      <button class="hdr-btn hdr-icon" onclick="MF.openSettings()" title="Settings" aria-label="Settings">⚙</button>
+    </div>
+  </div>
+
+  <div id="file-banner" class="file-banner" style="display:none"></div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="notes-col">
+      <div class="notes-toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input id="search-input" class="search-input" placeholder="Search notes…" oninput="MF.setSearch(this.value)">
+        </div>
+        <select id="filter-sel" class="filter-sel" onchange="MF.setFilter(this.value)"></select>
+        <button id="sort-pri-btn" class="filter-sel" onclick="MF.toggleSortPriority()" title="Sort tasks by priority" style="cursor:pointer;white-space:nowrap">↓ Priority</button>
+      </div>
+      <div id="notes-list" class="notes-scroll"></div>
+      <div class="notes-input">
+        <div id="date-banner"></div>
+        <textarea id="note-input-ta" class="note-ta" rows="3" placeholder="Capture a thought, task, idea…"
+          onkeydown="if(event.key==='Enter'&&(event.ctrlKey||event.metaKey))MF.addNoteFromInput()"></textarea>
+        <div class="input-footer">
+          <span class="input-hint">✦ AI categorizes on summary · Ctrl+Enter</span>
+          <button class="btn-primary" onclick="MF.addNoteFromInput()">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-col">
+      <div class="panel-tabs">
+        <div id="tab-summary" class="ptab on" role="button" tabindex="0" onclick="MF.setTab('summary')">Summary</div>
+        <div id="tab-calendar" class="ptab" role="button" tabindex="0" onclick="MF.setTab('calendar')">Calendar</div>
+      </div>
+      <div class="pcontent">
+        <div id="panel-summary"></div>
+        <div id="panel-calendar" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="overlay-root"></div>
+<div id="toast-root"></div>
+
+<script>
+"use strict";
+window.MF = {};
+(function(){
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+const CATS = ["uncategorized","idea","task","reminder","question","observation","reference"];
+const CAT_META = {
+  // bg uses a translucent tint of fg so chips adapt to light AND dark themes
+  idea:{label:"Idea",bg:"color-mix(in srgb,#3A6BC8 16%,transparent)",fg:"#5B86D6"},
+  task:{label:"Task",bg:"color-mix(in srgb,#2E7D32 16%,transparent)",fg:"#4CA85A"},
+  reminder:{label:"Reminder",bg:"color-mix(in srgb,#E65100 16%,transparent)",fg:"#F07B2E"},
+  question:{label:"Question",bg:"color-mix(in srgb,#6A1B9A 18%,transparent)",fg:"#A35BC8"},
+  observation:{label:"Observation",bg:"color-mix(in srgb,#1B5E20 18%,transparent)",fg:"#4CA85A"},
+  reference:{label:"Reference",bg:"color-mix(in srgb,#0D47A1 18%,transparent)",fg:"#5B86D6"},
+  uncategorized:{label:"Uncategorized",bg:"",fg:""},
+};
+const EV_COLORS = { appointment:"#378ADD", event:"#1D9E75", reminder:"#BA7517" };
+// Task priority levels (tasks only). 3=Urgent, 2=Soon, 1=Low, null=none.
+const PRIORITY_META = {
+  3:{label:"Urgent",short:"P3",color:"#E24B4A",bg:"color-mix(in srgb,#E24B4A 16%,transparent)"},
+  2:{label:"Soon",  short:"P2",color:"#D97706",bg:"color-mix(in srgb,#D97706 18%,transparent)"},
+  1:{label:"Low",   short:"P1",color:"#639922",bg:"color-mix(in srgb,#639922 18%,transparent)"},
+};
+const PLANS = {
+  free:{label:"Free",iterationsPerDay:1,historyDays:7,color:"#9C9080"},
+  starter:{label:"Starter",iterationsPerDay:3,historyDays:30,color:"#3A6BC8"},
+  pro:{label:"Pro",iterationsPerDay:10,historyDays:90,color:"#639922"},
+  team:{label:"Team",iterationsPerDay:25,historyDays:365,color:"#7C5C3E"},
+};
+const ADMIN_PASSPHRASE = "mindflow-admin";
+const WEEK_LABELS = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+const HOURS = Array.from({length:24},(_,i)=>i); // full day so no timed event is ever hidden
+const SCROLL_TO_HOUR = 7; // week/day grids auto-scroll here on open
+const hourLabel = h => h===0?"12a":h===12?"12p":h>12?(h-12)+"p":h+"a";
+const FONT_OPTIONS = [
+  {label:"System Sans",value:"system-ui,sans-serif"},
+  {label:"Segoe UI",value:"'Segoe UI',system-ui,sans-serif"},
+  {label:"Georgia",value:"Georgia,serif"},
+  {label:"Times",value:"'Times New Roman',serif"},
+  {label:"Courier",value:"'Courier New',monospace"},
+  {label:"Verdana",value:"Verdana,sans-serif"},
+];
+const THEME_PRESETS = {
+  warm:{label:"Warm Paper",icon:"☀",bg:"#FAF8F3",bg2:"#F4F1E8",bg3:"#EDE9DC",surface:"#FFFFFF",surface2:"#F9F7F4",ink:"#2C2820",ink2:"#5C5347",ink3:"#9C9080",accent:"#7C5C3E",accentLight:"#C8A882",accentMuted:"#F0E8DA",border:"rgba(100,80,50,.14)",border2:"rgba(100,80,50,.25)",shadow:"rgba(60,40,20,.12)",font:"'Segoe UI',system-ui,sans-serif",serifFont:"Georgia,serif",radius:"10px"},
+  light:{label:"Clean Light",icon:"◇",bg:"#FFFFFF",bg2:"#F5F5F5",bg3:"#EBEBEB",surface:"#FFFFFF",surface2:"#F9F9F9",ink:"#1A1A1A",ink2:"#4A4A4A",ink3:"#8A8A8A",accent:"#2563EB",accentLight:"#93C5FD",accentMuted:"#EFF6FF",border:"rgba(0,0,0,.1)",border2:"rgba(0,0,0,.18)",shadow:"rgba(0,0,0,.1)",font:"system-ui,sans-serif",serifFont:"Georgia,serif",radius:"8px"},
+  dark:{label:"Dark Mode",icon:"◉",bg:"#1A1A1A",bg2:"#242424",bg3:"#2E2E2E",surface:"#2A2A2A",surface2:"#323232",ink:"#F0EEE9",ink2:"#B8B4AE",ink3:"#706C68",accent:"#D4956A",accentLight:"#8B6348",accentMuted:"#3A2E25",border:"rgba(255,255,255,.08)",border2:"rgba(255,255,255,.15)",shadow:"rgba(0,0,0,.4)",font:"'Segoe UI',system-ui,sans-serif",serifFont:"Georgia,serif",radius:"10px"},
+  midnight:{label:"Midnight",icon:"◆",bg:"#0F1117",bg2:"#161B27",bg3:"#1E2535",surface:"#1A2130",surface2:"#212840",ink:"#E8EAF0",ink2:"#9AA0B4",ink3:"#565E74",accent:"#7C8FE8",accentLight:"#4A5CC4",accentMuted:"#1E2545",border:"rgba(120,140,200,.12)",border2:"rgba(120,140,200,.22)",shadow:"rgba(0,0,0,.5)",font:"'Segoe UI',system-ui,sans-serif",serifFont:"Georgia,serif",radius:"10px"},
+  forest:{label:"Forest",icon:"◈",bg:"#F2F5EF",bg2:"#E8EDE3",bg3:"#D8E0D0",surface:"#FFFFFF",surface2:"#F5F8F2",ink:"#1E2B1A",ink2:"#3D5236",ink3:"#7A9070",accent:"#3A6B32",accentLight:"#7AAD6E",accentMuted:"#E4EFE1",border:"rgba(40,80,30,.12)",border2:"rgba(40,80,30,.22)",shadow:"rgba(20,50,10,.12)",font:"'Segoe UI',system-ui,sans-serif",serifFont:"Georgia,serif",radius:"12px"},
+  rose:{label:"Rose",icon:"❀",bg:"#FDF5F5",bg2:"#F9EDED",bg3:"#F2E0E0",surface:"#FFFFFF",surface2:"#FDF7F7",ink:"#2D1515",ink2:"#5C3535",ink3:"#A07070",accent:"#C0424B",accentLight:"#E8959A",accentMuted:"#FDEAEA",border:"rgba(180,50,50,.12)",border2:"rgba(180,50,50,.22)",shadow:"rgba(120,20,20,.1)",font:"'Segoe UI',system-ui,sans-serif",serifFont:"Georgia,serif",radius:"14px"},
+  slate:{label:"Slate",icon:"▣",bg:"#F4F6F8",bg2:"#EBEEF2",bg3:"#DEE2E8",surface:"#FFFFFF",surface2:"#F8F9FA",ink:"#1C2433",ink2:"#3D4D60",ink3:"#7B8FA6",accent:"#3B5080",accentLight:"#7B9AC4",accentMuted:"#E8EEF6",border:"rgba(40,60,100,.12)",border2:"rgba(40,60,100,.22)",shadow:"rgba(20,40,80,.1)",font:"system-ui,sans-serif",serifFont:"Georgia,serif",radius:"8px"},
+};
+const DEFAULT_MODEL = "claude-haiku-4-5"; // current, low-cost; change in Settings if Anthropic rotates models
+const MODEL_OPTIONS = ["claude-haiku-4-5","claude-sonnet-5","claude-opus-5-5"]; // suggestions only; any valid API model id works
+const RETIRED_MODELS = ["claude-sonnet-4-20250514","claude-3-5-sonnet-20240620","claude-3-5-sonnet-20241022","claude-3-haiku-20240307","claude-3-opus-20240229","claude-3-sonnet-20240229"];
+const DEFAULT_SETTINGS = { plan:"free", iterationsPerDay:1, historyDays:7, isAdmin:false, apiKey:"", model:DEFAULT_MODEL };
+
+// ─── Utils ────────────────────────────────────────────────────────────────────
+const genId = () => Math.random().toString(36).slice(2,10)+Math.random().toString(36).slice(2,6);
+const pad = n => String(n).padStart(2,"0");
+const toDateStr = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const todayStr = () => toDateStr(new Date());
+const parseDateStr = s => { const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); };
+const addDays = (ds,n) => { const d=parseDateStr(ds); d.setDate(d.getDate()+n); return toDateStr(d); };
+const fmtLong = ds => parseDateStr(ds).toLocaleDateString("en-US",{weekday:"short",month:"long",day:"numeric",year:"numeric"});
+const fmtMonthYear = d => d.toLocaleDateString("en-US",{month:"long",year:"numeric"});
+const fmtTimestamp = iso => new Date(iso).toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit",hour12:true});
+function fmtHHMM(t){ if(!t)return""; const[h,m]=t.split(":").map(Number); if(isNaN(h)||isNaN(m))return t; return `${h%12===0?12:h%12}:${pad(m)} ${h>=12?"PM":"AM"}`; }
+const fmtTimeRange = (s,e) => { const a=fmtHHMM(s),b=fmtHHMM(e); return a&&b?`${a} – ${b}`:a||b||""; };
+function fmtProposedDate(ds){ try{ return parseDateStr(ds).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}); }catch{ return ds||""; } }
+const lsGet = (k,fb) => { try{ const v=localStorage.getItem(k); return v?JSON.parse(v):fb; }catch{ return fb; } };
+const lsSet = (k,v) => { try{ localStorage.setItem(k,JSON.stringify(v)); }catch{} };
+const esc = s => String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+const $ = id => document.getElementById(id);
+
+// ─── State ────────────────────────────────────────────────────────────────────
+const S = {
+  notes: lsGet("mf_notes",[]),
+  events: lsGet("mf_events",[]),
+  sumHist: lsGet("mf_sumhist",{}),
+  settings: (()=>{ const s=Object.assign({},DEFAULT_SETTINGS,lsGet("mf_settings",{})); if(!s.model||RETIRED_MODELS.includes(s.model)) s.model=DEFAULT_MODEL; return s; })(),
+  models: lsGet("mf_models",{fetchedAt:0,data:[]}), // cached Anthropic model list for the dropdown
+  modelsLoading: false,
+  modelsStatus: "",
+  theme: Object.assign({},THEME_PRESETS.warm,lsGet("mf_theme",{})),
+  selDate: todayStr(),
+  viewIdx: 0,
+  tab: "summary",
+  hiIds: [],
+  search: "",
+  filterCat: "all",
+  calView: "month",
+  calDate: new Date(),
+  loading: false,
+  genErr: null,
+  editingNoteId: null,
+  editingCatId: null,
+  editingPriId: null,
+  sortByPriority: lsGet("mf_sortpri",false),
+  evForm: null,        // {mode:'new'|'edit'|'sugg', data:{...}, sugId?}
+  hiTimer: null,
+  fileHandle: null,    // FileSystemFileHandle when a data file is connected
+  fileName: "",
+  fileStatus: (typeof window!=="undefined" && "showSaveFilePicker" in window) ? "off" : "unsupported", // off|connected|reconnect|error|unsupported
+  lastFileSave: 0,
+};
+
+function stampAndSchedule(){ lsSet("mf_meta",{savedAt:Date.now()}); scheduleFileSave(); }
+const saveNotes    = () => { lsSet("mf_notes",S.notes); stampAndSchedule(); };
+const saveEvents   = () => { lsSet("mf_events",S.events); stampAndSchedule(); };
+const saveSettings = () => { lsSet("mf_settings",S.settings); stampAndSchedule(); };
+const saveTheme    = () => { lsSet("mf_theme",S.theme); stampAndSchedule(); };
+function saveSumHist(){
+  // Non-destructive: summaries are NEVER deleted here. Plan retention is a VIEW gate
+  // (see renderSummary / summaryGated), so data on disk and in the file is always complete.
+  lsSet("mf_sumhist",S.sumHist);
+  stampAndSchedule();
+}
+// Is the selected date's summary beyond the current plan's retention window?
+// Admin bypasses all limits. Data is retained regardless; this only gates viewing.
+function summaryGated(ds){
+  if(S.settings.isAdmin) return false;
+  const plan=PLANS[S.settings.plan]||PLANS.free;
+  return ds < addDays(todayStr(), -plan.historyDays);
+}
+
+// ─── Theme ────────────────────────────────────────────────────────────────────
+function applyTheme(t){
+  // Vars go on <html> so overlays/toast/date-picker (outside #app) inherit them too
+  const el=document.documentElement;
+  const map={"--bg":t.bg,"--bg2":t.bg2,"--bg3":t.bg3,"--surface":t.surface,"--surface2":t.surface2,"--ink":t.ink,"--ink2":t.ink2,"--ink3":t.ink3,"--accent":t.accent,"--accent-l":t.accentLight,"--accent-muted":t.accentMuted,"--bd":t.border,"--bd2":t.border2,"--shadow":t.shadow,"--font":t.font,"--serif":t.serifFont,"--r":t.radius};
+  for(const[k,v]of Object.entries(map)) el.style.setProperty(k,v);
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+function toast(msg){
+  const root=$("toast-root");
+  root.innerHTML=`<div class="toast">${esc(msg)}</div>`;
+  clearTimeout(root._t);
+  root._t=setTimeout(()=>root.innerHTML="",2500);
+}
+
+// ─── Derived ──────────────────────────────────────────────────────────────────
+const maxIter = () => S.settings.isAdmin?Infinity:Math.min(S.settings.iterationsPerDay,(PLANS[S.settings.plan]||PLANS.free).iterationsPerDay);
+const dateNotes = () => S.notes.filter(n=>n.date===S.selDate);
+function visibleNotes(){
+  let n=dateNotes();
+  if(S.filterCat!=="all") n=n.filter(x=>x.category===S.filterCat);
+  if(S.search.trim()){ const q=S.search.toLowerCase(); n=n.filter(x=>x.text.toLowerCase().includes(q)); }
+  if(S.sortByPriority){
+    // Stable: higher priority first; notes without a priority keep original order below.
+    n=n.map((x,i)=>[x,i]).sort((a,b)=>((b[0].priority||0)-(a[0].priority||0))||(a[1]-b[1])).map(p=>p[0]);
+  }
+  return n;
+}
+const dateHistory = () => S.sumHist[S.selDate]||[];
+const currentSum = () => dateHistory()[S.viewIdx]||null;
+const pendingSugs = () => (currentSum()||{}).pendingSuggestions||[];
+const activeSugCount = () => pendingSugs().filter(s=>!s.dismissed&&!s.approved).length;
+
+// ─── Render: Header ───────────────────────────────────────────────────────────
+function renderHeader(){
+  $("date-disp").textContent=fmtLong(S.selDate);
+  $("today-btn").style.display=S.selDate!==todayStr()?"":"none";
+  $("admin-pill").style.display=S.settings.isAdmin?"":"none";
+  const pc=S.notes.filter(n=>n.pinned).length;
+  $("pin-btn").textContent=pc>0?`📌 ${pc}`:"📌 Pinned";
+  const banner=$("date-banner");
+  banner.innerHTML=S.selDate!==todayStr()?`<div class="date-banner">Adding note to ${esc(fmtLong(S.selDate))}</div>`:"";
+  renderSavedIndicator();
+}
+
+function fmtClock(ms){
+  return new Date(ms).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",hour12:true});
+}
+function renderSavedIndicator(){
+  const ind=$("saved-indicator"), saveBtn=$("save-btn"), saveAsBtn=$("saveas-btn");
+  if(!ind) return;
+  if(S.fileStatus==="unsupported"){
+    // No File System Access API — Save falls back to Export download
+    ind.textContent="";
+    ind.title="";
+    if(saveBtn) saveBtn.title="Download a backup copy";
+    if(saveAsBtn) saveAsBtn.style.display="none";
+    return;
+  }
+  if(S.fileStatus==="connected"){
+    const when=S.lastFileSave?fmtClock(S.lastFileSave):"—";
+    ind.textContent="Saved "+when;
+    ind.title="Auto-saving to "+S.fileName+" · last saved "+when;
+    if(saveBtn) saveBtn.title="Save now to "+S.fileName;
+  } else if(S.fileStatus==="reconnect"){
+    ind.textContent="Reconnect file";
+    ind.title="Your data file needs to be reconnected (see banner)";
+    if(saveBtn) saveBtn.title="Reconnect data file";
+  } else if(S.fileStatus==="error"){
+    ind.textContent="Save failed";
+    ind.title="Couldn't save to the data file — click to retry";
+    if(saveBtn) saveBtn.title="Retry saving";
+  } else { // off
+    ind.textContent="Not saved to file";
+    ind.title="Data is only in this browser. Click Save As to connect a data file.";
+    if(saveBtn) saveBtn.title="Connect a data file to enable saving";
+  }
+}
+function flashSaved(){
+  const ind=$("saved-indicator");
+  if(!ind) return;
+  ind.classList.add("flash");
+  setTimeout(()=>ind.classList.remove("flash"),700);
+}
+
+// ─── Render: Notes ────────────────────────────────────────────────────────────
+function noteItemHtml(n, showDate){
+  const meta=CAT_META[n.category]||CAT_META.uncategorized;
+  const bg=meta.bg||"var(--accent-muted)", fg=meta.fg||"var(--accent)";
+  const isTask=n.category==="task";
+  const hi=S.hiIds.includes(n.id);
+  const catCell = S.editingCatId===n.id
+    ? `<select class="cat-edit-sel" onchange="MF.setCat('${n.id}',this.value)" onblur="MF.cancelCatEdit()">${CATS.map(c=>`<option value="${c}"${c===n.category?" selected":""}>${CAT_META[c].label}</option>`).join("")}</select>`
+    : `<button class="cat-badge${n.aiCategorized?" ai-set":""}" style="background:${bg};color:${fg}" onclick="MF.startCatEdit('${n.id}')" title="${n.aiCategorized?"AI-suggested · click to override":"Click to change"}">${CAT_META[n.category]?.label||n.category}${n.aiCategorized?" ✦":""}</button>`;
+  // Priority cell — tasks only
+  const pri=isTask?(n.priority||null):null;
+  const priClass=pri?` pri-${pri}`:"";
+  let priCell="";
+  if(isTask){
+    if(S.editingPriId===n.id){
+      priCell=`<span class="pri-picker">`
+        +[3,2,1].map(l=>`<button class="pri-opt" style="color:${PRIORITY_META[l].color};background:${PRIORITY_META[l].bg}" onclick="MF.setPriority('${n.id}',${l})" title="${PRIORITY_META[l].label}">${PRIORITY_META[l].short}</button>`).join("")
+        +`<button class="pri-opt" style="color:var(--ink3)" onclick="MF.setPriority('${n.id}',null)" title="No priority">None</button></span>`;
+    } else if(pri){
+      const pm=PRIORITY_META[pri];
+      priCell=`<button class="pri-dot" style="color:${pm.color};background:${pm.bg}" onclick="MF.startPriEdit('${n.id}')" title="Priority: ${pm.label} · click to change"><span class="dot"></span>${pm.short}</button>`;
+    } else {
+      priCell=`<button class="pri-add" onclick="MF.startPriEdit('${n.id}')" title="Set priority">+ priority</button>`;
+    }
+  }
+  const body = S.editingNoteId===n.id
+    ? `<textarea id="edit-ta-${n.id}" class="note-edit-ta" rows="3"
+         onkeydown="if(event.key==='Enter'&&(event.ctrlKey||event.metaKey))MF.saveNoteEdit('${n.id}');if(event.key==='Escape')MF.cancelNoteEdit()">${esc(n.text)}</textarea>
+       <div class="note-edit-actions">
+         <button class="btn-secondary" style="font-size:11px;padding:3px 10px" onclick="MF.cancelNoteEdit()">Cancel</button>
+         <button class="btn-primary" style="font-size:11px;padding:3px 10px" onclick="MF.saveNoteEdit('${n.id}')">Save</button>
+       </div>`
+    : `<p class="note-text">${esc(n.text)}</p>`;
+  return `<div class="ni${n.pinned?" pinned":""}${n.completed?" done":""}${hi?" hi":""}${priClass}" id="ni-${n.id}">
+    <div class="ni-header">
+      <div class="ni-left">
+        <span class="ni-time">${showDate?esc(fmtLong(n.date))+" · ":""}${fmtTimestamp(n.timestamp)}</span>
+        ${n.rolledFrom?`<span class="rolled-chip" title="Rolled over from ${esc(fmtLong(n.rolledFrom))}">↷ ${esc(parseDateStr(n.rolledFrom).toLocaleDateString("en-US",{month:"short",day:"numeric"}))}</span>`:""}
+        ${catCell}
+        ${priCell}
+      </div>
+      <div class="ni-actions">
+        ${isTask?`<button class="ni-btn${n.completed?" on":""}" onclick="MF.doneNote('${n.id}')" title="Complete">✓</button>`:""}
+        <button class="ni-btn${n.pinned?" on":""}" onclick="MF.pinNote('${n.id}')" title="Pin">📌</button>
+        <button class="ni-btn" onclick="MF.copyNote('${n.id}')" title="Copy text">⧉</button>
+        <button class="ni-btn" onclick="MF.startNoteEdit('${n.id}')" title="Edit">✎</button>
+        <button class="ni-btn del" onclick="MF.confirmDelNote('${n.id}')" title="Delete">🗑</button>
+      </div>
+    </div>
+    <div class="note-body">${body}</div>
+  </div>`;
+}
+
+function rolloverBannerHtml(){
+  if(S.selDate!==todayStr()) return "";
+  if(lsGet("mf_rollover_dismissed","")===todayStr()) return "";
+  const tasks=S.notes.filter(n=>n.category==="task"&&!n.completed&&n.date<todayStr());
+  if(!tasks.length) return "";
+  return `<div class="rollover-banner">
+    <span>⟳ ${tasks.length} unfinished task${tasks.length!==1?"s":""} from earlier days</span>
+    <div class="rollover-acts">
+      <button class="btn-primary" style="font-size:11px;padding:3px 10px" onclick="MF.rolloverBring()">Bring to today</button>
+      <button class="btn-secondary" style="font-size:11px;padding:3px 10px" onclick="MF.rolloverDismiss()">Not now</button>
+    </div>
+  </div>`;
+}
+
+function renderNotes(){
+  const all=dateNotes(), vis=visibleNotes();
+  const hasFilters=S.search.trim()||S.filterCat!=="all";
+  const filtered=hasFilters&&vis.length!==all.length;
+  const sortBtn=$("sort-pri-btn");
+  if(sortBtn){
+    sortBtn.style.background=S.sortByPriority?"var(--accent)":"var(--bg2)";
+    sortBtn.style.color=S.sortByPriority?"var(--bg)":"var(--ink2)";
+    sortBtn.style.borderColor=S.sortByPriority?"var(--accent)":"var(--bd2)";
+  }
+  let html=rolloverBannerHtml();
+  if(all.length===0) html+=`<div class="empty-state"><p>Nothing here yet</p><span>Start capturing your thoughts below</span></div>`;
+  else if(vis.length===0) html+=`<div class="empty-state"><p>No matching notes</p><span>Try a different search or filter</span></div>`;
+  else html+=`<div class="sec-lbl">
+      <span>${filtered?`${vis.length} of ${all.length} notes`:`${all.length} note${all.length!==1?"s":""}`}</span>
+      ${filtered?`<button class="clear-filters" onclick="MF.clearFilters()">Clear filters</button>`:""}
+    </div>`+vis.map(n=>noteItemHtml(n,false)).join("");
+  $("notes-list").innerHTML=html;
+  if(S.editingNoteId){ const ta=$(`edit-ta-${S.editingNoteId}`); if(ta){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);} }
+}
+
+// ─── Render: Summary ──────────────────────────────────────────────────────────
+function renderSummary(){
+  const hist=dateHistory(), sum=currentSum(), notes=dateNotes();
+  const el=$("panel-summary");
+  // Plan retention gate — summary exists but is older than this plan allows to view.
+  // The data is intact (never deleted); admin or a higher plan unlocks it.
+  if(hist.length>0 && summaryGated(S.selDate)){
+    const plan=PLANS[S.settings.plan]||PLANS.free;
+    el.innerHTML=`<div class="gen-wrap">
+      <p class="gen-note">🔒 This summary is outside your ${esc(plan.label)} plan's ${plan.historyDays}-day history window.</p>
+      <p class="settings-note" style="text-align:center;max-width:260px;margin:0 auto">Your data is safe and still saved — it's just hidden at this plan level. Upgrade your plan, or enable Admin mode in ⚙ Settings, to view summaries this far back.</p>
+    </div>`;
+    return;
+  }
+  if(!sum&&hist.length===0){
+    const noKey=!S.settings.apiKey;
+    el.innerHTML=`<div class="gen-wrap">
+      <p class="gen-note">${notes.length?`${notes.length} note${notes.length!==1?"s":""} captured`:"No notes yet for this day"}</p>
+      <button class="gen-btn" onclick="MF.generateSummary()" ${(!notes.length||S.loading)?"disabled":""}>
+        ${S.loading?`<span class="spin"></span> Analyzing…`:"✦ Generate summary"}
+      </button>
+      ${noKey?`<p class="err-msg">AI requires an Anthropic API key.<br>Add one in ⚙ Settings → AI Configuration.</p>`:""}
+      ${S.genErr?`<p class="err-msg">${esc(S.genErr)}</p>`:""}
+    </div>`;
+    return;
+  }
+  if(!sum){ el.innerHTML=""; return; }
+  const mi=maxIter(), atLimit=mi!==Infinity&&hist.length>=mi;
+  const planName=(PLANS[S.settings.plan]||PLANS.free).label;
+  const sugN=activeSugCount();
+  const verBar=`<div class="version-bar">
+    <div class="ver-info">${hist.length>1
+      ?`<span style="font-weight:500">Version ${hist.length-S.viewIdx} of ${hist.length}</span><span class="ver-time">${fmtTimestamp(sum.generatedAt)}</span>`
+      :`<span style="font-weight:500">Summary</span><span class="ver-time">${fmtTimestamp(sum.generatedAt)}</span>`}</div>
+    <div class="ver-actions">
+      ${hist.length>1?`<button class="ic-btn" ${S.viewIdx>=hist.length-1?"disabled":""} onclick="MF.setViewIdx(${S.viewIdx+1})">‹</button>
+        <button class="ic-btn" ${S.viewIdx===0?"disabled":""} onclick="MF.setViewIdx(${S.viewIdx-1})">›</button>`:""}
+      ${atLimit?`<span style="font-size:10px;color:var(--ink3);margin-left:4px">${mi}/${mi} on ${esc(planName)}</span>`
+        :`<button class="btn-secondary" style="font-size:11px;padding:3px 9px;margin-left:3px" onclick="MF.generateSummary()" ${S.loading?"disabled":""}>${S.loading?`<span class="spin" style="width:10px;height:10px"></span>`:"↻ Refresh"}</button>`}
+    </div>
+  </div>`;
+  const actions=(sum.actionItems||[]).map((a,i)=>{
+    const priFg=a.priority==="high"?"#E24B4A":a.priority==="medium"?"#D97706":"#639922";
+    const priBg=`color-mix(in srgb,${priFg} 16%,transparent)`;
+    return `<div class="action-item${a.checked?" checked":""}" onclick="MF.toggleActionItem(${i})">
+      <div class="ai-check${a.checked?" done":""}"></div>
+      <div style="flex:1">
+        <div class="ai-text" style="display:flex;align-items:center;gap:6px">
+          <span style="flex:1">${esc(a.text)}</span>
+          <span class="pri-pill" style="background:${priBg};color:${priFg}">${esc(a.priority||"")}</span>
+        </div>
+        ${a.sourceNoteIds?.length?`<span class="src-link" onclick="event.stopPropagation();MF.highlight(${JSON.stringify(a.sourceNoteIds).replace(/"/g,"&quot;")})">↳ View source</span>`:""}
+      </div>
+    </div>`;
+  }).join("");
+  const reminders=(sum.reminders||[]).map(r=>`<div class="action-item static">
+      <div class="rem-dot"></div>
+      <div style="flex:1"><div class="ai-text">${esc(r.text)}</div>
+      ${r.sourceNoteIds?.length?`<span class="src-link" onclick="MF.highlight(${JSON.stringify(r.sourceNoteIds).replace(/"/g,"&quot;")})">↳ View source</span>`:""}</div>
+    </div>`).join("");
+  const insights=(sum.insights||[]).map(i=>`<div class="insight-card">${esc(i)}</div>`).join("");
+  el.innerHTML=verBar
+    +`<div class="ss"><div class="ss-title">Overview</div><div class="overview-card">${esc(sum.overview||"")}</div><div class="conf-badge">◈ ${esc(sum.confidence||"")} confidence</div></div>`
+    +(actions?`<div class="ss"><div class="ss-title">Action items</div>${actions}</div>`:"")
+    +(reminders?`<div class="ss"><div class="ss-title">Reminders</div>${reminders}</div>`:"")
+    +(insights?`<div class="ss"><div class="ss-title">Insights</div>${insights}</div>`:"")
+    +(sugN>0?`<div class="sug-nudge">📅 ${sugN} calendar suggestion${sugN!==1?"s":""} awaiting review — see Calendar tab</div>`:"")
+    +(S.genErr?`<p class="err-msg">${esc(S.genErr)}</p>`:"");
+}
+
+// ─── Render: Calendar ─────────────────────────────────────────────────────────
+function calMonthDays(base){
+  const yr=base.getFullYear(),mo=base.getMonth(),dow=new Date(yr,mo,1).getDay(),days=[];
+  for(let i=0;i<dow;i++)days.push({d:new Date(yr,mo,-dow+i+1),cur:false});
+  for(let i=1;i<=new Date(yr,mo+1,0).getDate();i++)days.push({d:new Date(yr,mo,i),cur:true});
+  while(days.length%7!==0)days.push({d:new Date(days[days.length-1].d.getTime()+86400000),cur:false});
+  return days;
+}
+// Does an event occur on a given date, accounting for recurrence? (F5)
+function occursOn(ev, ds){
+  if(!ev.date) return false;
+  if(ds === ev.date) return true;
+  if(!ev.recurrence || ev.recurrence==="none") return false;
+  if(ds < ev.date) return false; // recurrence starts at the anchor date
+  const t=parseDateStr(ds), o=parseDateStr(ev.date);
+  switch(ev.recurrence){
+    case "daily":   return true;
+    case "weekly":  return t.getDay()===o.getDay();
+    case "monthly": return t.getDate()===o.getDate();
+    case "yearly":  return t.getDate()===o.getDate() && t.getMonth()===o.getMonth();
+    default: return false;
+  }
+}
+const evFor = ds => S.events.filter(e=>occursOn(e,ds));
+
+function evRowHtml(ev){
+  return `<div class="ev-row">
+    <div class="ev-dot" style="background:${EV_COLORS[ev.type]||"var(--ink3)"}"></div>
+    <div class="ev-info">
+      <div class="ev-title">${esc(ev.title)}</div>
+      <div class="ev-meta">${esc([fmtTimeRange(ev.time,ev.endTime),ev.location].filter(Boolean).join(" · "))}${ev.recurrence&&ev.recurrence!=="none"?` <span style="opacity:.6">· ${esc(ev.recurrence)}</span>`:""}</div>
+      ${ev.description?`<div class="ev-desc">${esc(ev.description)}</div>`:""}
+    </div>
+    <div class="ev-actions">
+      <button class="ev-btn" title="Edit" onclick="MF.openEvEdit('${ev.id}')">✎</button>
+      <button class="ev-btn del" title="Delete" onclick="MF.confirmDelEvent('${ev.id}')">🗑</button>
+    </div>
+  </div>`;
+}
+
+function renderCalendar(){
+  const el=$("panel-calendar");
+  const cd=S.calDate, cdStr=toDateStr(cd), today=todayStr();
+  const wdow=cd.getDay();
+  const wdays=Array.from({length:7},(_,i)=>{const d=new Date(cd);d.setDate(cd.getDate()-wdow+i);return d;});
+  const navTitle=S.calView==="month"?fmtMonthYear(cd):S.calView==="week"?`${toDateStr(wdays[0])} – ${toDateStr(wdays[6])}`:fmtLong(cdStr);
+  let body="";
+  if(S.calView==="month"){
+    body=`<div class="cal-wdays">${WEEK_LABELS.map(w=>`<div class="cal-wd">${w}</div>`).join("")}</div>
+    <div class="cal-grid">${calMonthDays(cd).map(it=>{
+      const ds=toDateStr(it.d),iT=ds===today,iS=ds===cdStr&&!iT,hE=evFor(ds).length>0;
+      return `<div class="cal-day${!it.cur?" om":""}${iT?" today":""}${iS?" sel":""}${hE?" has-ev":""}" role="button" tabindex="${it.cur?"0":"-1"}" onclick="MF.setCalDate('${ds}')">${it.d.getDate()}</div>`;
+    }).join("")}</div>
+    <div class="ev-list">${evFor(cdStr).length
+      ?evFor(cdStr).map(evRowHtml).join("")
+      :S.events.length===0
+        ?`<p class="no-ev" style="line-height:1.7;padding:14px 8px">No events yet.<br>Add one below — or generate a <b>Summary</b>, and any dates the AI spots in your notes will appear here as suggestions to approve.</p>`
+        :`<p class="no-ev">No events on this day</p>`}</div>`;
+  } else if(S.calView==="week"){
+    body=`<div class="wk-hdr"><div></div>${wdays.map((d,i)=>`<div class="wk-ch${toDateStr(d)===today?" today-col":""}">${WEEK_LABELS[i]} ${d.getDate()}</div>`).join("")}</div>
+    <div class="wk-allday"><div class="wk-allday-lbl">All day</div>${wdays.map(d=>{
+      const allDay=evFor(toDateStr(d)).filter(e=>!e.time);
+      return `<div class="wk-allday-cell">${allDay.map(ev=>`<div class="wk-allday-ev" style="background:${EV_COLORS[ev.type]}22;border-left-color:${EV_COLORS[ev.type]||"var(--ink3)"};color:${EV_COLORS[ev.type]||"var(--ink2)"}" title="${esc(ev.title)}">${esc(ev.title)}</div>`).join("")}</div>`;
+    }).join("")}</div>
+    <div class="wk-scroll" id="wk-scroll">${HOURS.map(h=>`<div class="wk-hr"><div class="wk-lbl">${hourLabel(h)}</div>${wdays.map(d=>{
+      const evs=evFor(toDateStr(d)).filter(e=>e.time&&parseInt(e.time.split(":")[0])===h);
+      return `<div class="wk-cell">${evs.map(ev=>`<div class="wk-ev" style="background:${EV_COLORS[ev.type]}22;border-left-color:${EV_COLORS[ev.type]||"var(--ink3)"}" title="${esc(ev.title)} · ${esc(fmtTimeRange(ev.time,ev.endTime))}">${esc(ev.title)}</div>`).join("")}</div>`;
+    }).join("")}</div>`).join("")}</div>`;
+  } else {
+    body=`<div class="dy-scroll" id="dy-scroll">${HOURS.map(h=>{
+      const evs=evFor(cdStr).filter(e=>e.time&&parseInt(e.time.split(":")[0])===h);
+      const noTime=h===HOURS[0]?evFor(cdStr).filter(e=>!e.time):[];
+      return `<div class="dy-hr"><div class="dy-lbl">${hourLabel(h)}</div><div class="dy-evs">
+        ${evs.map(ev=>`<div class="dy-ev" style="background:${EV_COLORS[ev.type]}22;border-left-color:${EV_COLORS[ev.type]||"var(--ink3)"}"><span style="font-weight:500">${esc(ev.title)}</span>${ev.time?`<span style="font-size:9px;color:var(--ink3);margin-left:4px">${esc(fmtTimeRange(ev.time,ev.endTime))}</span>`:""}</div>`).join("")}
+        ${noTime.map(ev=>`<div class="dy-ev" style="background:var(--bg2);border-left-color:var(--ink3)"><span style="font-weight:500">${esc(ev.title)}</span><span style="font-size:9px;color:var(--ink3);margin-left:4px">all day</span></div>`).join("")}
+      </div></div>`;
+    }).join("")}</div>`;
+  }
+  const sugs=pendingSugs().filter(s=>!s.dismissed&&!s.approved);
+  const sugsHtml=sugs.length?`<div class="sug-section">
+    <div class="sug-hdr">AI suggestions <span class="sug-count">${sugs.length}</span></div>
+    ${sugs.map(s=>`<div class="sug-card">
+      <div class="sug-title">${esc(s.title)}</div>
+      <div class="sug-meta">${esc([fmtProposedDate(s.proposedDate),fmtHHMM(s.proposedTime),s.type].filter(Boolean).join(" · "))} · <span style="color:${s.confidence==="high"?"#639922":s.confidence==="medium"?"#BA7517":"#E24B4A"}">${esc(s.confidence||"")}</span></div>
+      <div class="sug-why">${esc(s.explanation||"")}</div>
+      ${(s.missingFields||[]).filter(Boolean).length?`<div class="sug-missing">⚠ Missing: ${esc(s.missingFields.join(", "))}</div>`:""}
+      <div class="sug-acts">
+        <button class="btn-ok" onclick="MF.quickApprove('${s.id}')">✓ Approve</button>
+        <button class="btn-edit-sug" onclick="MF.openSugEdit('${s.id}')">Edit &amp; approve</button>
+        <button class="btn-dismiss" onclick="MF.dismissSug('${s.id}')">Dismiss</button>
+      </div>
+    </div>`).join("")}
+  </div>`:"";
+  el.innerHTML=`<div class="cal-nav">
+    <div style="display:flex;align-items:center;gap:4px">
+      <button class="ic-btn" onclick="MF.calNav(-1)">‹</button>
+      <span class="cal-title">${esc(navTitle)}</span>
+      <button class="ic-btn" onclick="MF.calNav(1)">›</button>
+    </div>
+    <div class="view-tabs">${["month","week","day"].map(v=>`<button class="vtab${S.calView===v?" on":""}" onclick="MF.setCalView('${v}')">${v.charAt(0).toUpperCase()+v.slice(1)}</button>`).join("")}</div>
+  </div>${body}
+  <button class="add-ev-btn" onclick="MF.openEvNew()">+ Add event</button>${sugsHtml}`;
+  // Auto-scroll the 24h grid to a sensible starting hour so midnight isn't the default view
+  const wk=$("wk-scroll"); if(wk) wk.scrollTop=SCROLL_TO_HOUR*26;
+  const dy=$("dy-scroll"); if(dy) dy.scrollTop=SCROLL_TO_HOUR*28;
+}
+
+// ─── Render: Tabs ─────────────────────────────────────────────────────────────
+function renderTabs(){
+  $("tab-summary").className=`ptab${S.tab==="summary"?" on":""}`;
+  const n=activeSugCount();
+  $("tab-calendar").innerHTML=`Calendar${n>0?`<span class="badge">${n}</span>`:""}`;
+  $("tab-calendar").className=`ptab${S.tab==="calendar"?" on":""}`;
+  $("panel-summary").style.display=S.tab==="summary"?"":"none";
+  $("panel-calendar").style.display=S.tab==="calendar"?"":"none";
+}
+
+function renderFilterSel(){
+  $("filter-sel").innerHTML=`<option value="all">All</option>`+CATS.map(c=>`<option value="${c}"${S.filterCat===c?" selected":""}>${CAT_META[c].label}</option>`).join("");
+}
+
+function renderAll(){
+  applyTheme(S.theme);
+  renderHeader(); renderNotes(); renderTabs(); renderSummary(); renderCalendar();
+}
+
+// ─── Actions: date/tab/filters ────────────────────────────────────────────────
+MF.navDate = d => { S.selDate=addDays(S.selDate,d); S.viewIdx=0; S.hiIds=[]; renderAll(); };
+MF.goToday = () => { S.selDate=todayStr(); S.viewIdx=0; renderAll(); };
+MF.setTab = t => { S.tab=t; renderTabs(); };
+MF.setSearch = v => { S.search=v; renderNotes(); };
+MF.setFilter = v => { S.filterCat=v; renderNotes(); };
+MF.clearFilters = () => { S.search=""; S.filterCat="all"; $("search-input").value=""; renderFilterSel(); renderNotes(); };
+
+// ─── Actions: notes ───────────────────────────────────────────────────────────
+MF.addNoteFromInput = () => {
+  const ta=$("note-input-ta"); const text=ta.value.trim();
+  if(!text)return;
+  const isToday=S.selDate===todayStr();
+  const now=new Date();
+  let ts;
+  if(isToday) ts=now.toISOString();
+  else { const d=parseDateStr(S.selDate); d.setHours(12,0,0,0); ts=d.toISOString(); }
+  S.notes.unshift({id:genId(),text,timestamp:ts,date:S.selDate,category:"uncategorized",aiCategorized:false,pinned:false,completed:false,linkedSummaryIds:[]});
+  saveNotes(); ta.value=""; ta.focus();
+  renderNotes(); renderHeader(); toast("Note added");
+};
+MF.pinNote = id => { S.notes=S.notes.map(n=>n.id===id?{...n,pinned:!n.pinned}:n); saveNotes(); renderNotes(); renderHeader(); refreshPinnedIfOpen(); };
+MF.doneNote = id => { S.notes=S.notes.map(n=>n.id===id?{...n,completed:!n.completed}:n); saveNotes(); renderNotes(); refreshPinnedIfOpen(); };
+MF.confirmDelNote = id => {
+  const n=S.notes.find(x=>x.id===id); if(!n)return;
+  openConfirm("Delete this note? This cannot be undone.",n.text,()=>{
+    S.notes=S.notes.filter(x=>x.id!==id); saveNotes(); renderNotes(); renderHeader(); refreshPinnedIfOpen(); toast("Note deleted");
+  });
+};
+MF.startNoteEdit = id => { S.editingNoteId=id; renderNotes(); refreshPinnedIfOpen(); };
+MF.cancelNoteEdit = () => { S.editingNoteId=null; renderNotes(); refreshPinnedIfOpen(); };
+MF.saveNoteEdit = id => {
+  const ta=$(`edit-ta-${id}`); if(!ta)return;
+  const text=ta.value.trim(); if(!text)return;
+  S.notes=S.notes.map(n=>n.id===id?{...n,text,editedAt:new Date().toISOString()}:n);
+  S.editingNoteId=null; saveNotes(); renderNotes(); refreshPinnedIfOpen(); toast("Note updated");
+};
+MF.startCatEdit = id => { S.editingCatId=id; S.editingPriId=null; renderNotes(); refreshPinnedIfOpen(); };
+MF.cancelCatEdit = () => { S.editingCatId=null; renderNotes(); refreshPinnedIfOpen(); };
+MF.setCat = (id,cat) => {
+  S.notes=S.notes.map(n=>n.id===id?{...n,category:cat,aiCategorized:false}:n);
+  S.editingCatId=null; saveNotes(); renderNotes(); refreshPinnedIfOpen();
+};
+MF.startPriEdit = id => { S.editingPriId=id; S.editingCatId=null; renderNotes(); refreshPinnedIfOpen(); };
+MF.setPriority = (id,level) => {
+  S.notes=S.notes.map(n=>n.id===id?{...n,priority:level}:n);
+  S.editingPriId=null; saveNotes(); renderNotes(); refreshPinnedIfOpen();
+  if(level) toast("Priority: "+PRIORITY_META[level].label);
+};
+MF.toggleSortPriority = () => { S.sortByPriority=!S.sortByPriority; lsSet("mf_sortpri",S.sortByPriority); renderNotes(); };
+MF.highlight = ids => {
+  S.hiIds=ids; renderNotes();
+  const first=document.getElementById("ni-"+ids[0]); if(first)first.scrollIntoView({behavior:"smooth",block:"center"});
+  clearTimeout(S.hiTimer); S.hiTimer=setTimeout(()=>{S.hiIds=[];renderNotes();},3500);
+};
+MF.rolloverBring = () => {
+  const today=todayStr(); let moved=0;
+  S.notes=S.notes.map(n=>{
+    if(n.category==="task"&&!n.completed&&n.date<today){
+      moved++;
+      return {...n, rolledFrom:n.rolledFrom||n.date, date:today};
+    }
+    return n;
+  });
+  saveNotes(); renderNotes(); renderHeader();
+  toast(moved+" task"+(moved!==1?"s":"")+" moved to today");
+};
+MF.rolloverDismiss = () => { lsSet("mf_rollover_dismissed",todayStr()); renderNotes(); };
+
+// ─── Actions: summary ─────────────────────────────────────────────────────────
+MF.setViewIdx = i => { S.viewIdx=i; renderSummary(); renderCalendar(); renderTabs(); };
+MF.toggleActionItem = idx => {
+  const arr=S.sumHist[S.selDate]; if(!arr||!arr[S.viewIdx])return;
+  const sum=arr[S.viewIdx];
+  sum.actionItems=sum.actionItems.map((a,i)=>i===idx?{...a,checked:!a.checked}:a);
+  saveSumHist(); renderSummary();
+};
+MF.generateSummary = async () => {
+  const notes=dateNotes();
+  if(!notes.length||S.loading)return;
+  if(!S.settings.apiKey){ S.genErr="Add your Anthropic API key in ⚙ Settings → AI Configuration first."; renderSummary(); return; }
+  S.loading=true; S.genErr=null; renderSummary();
+  try{
+    const resp=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "x-api-key":S.settings.apiKey,
+        "anthropic-version":"2023-06-01",
+        "anthropic-dangerous-direct-browser-access":"true"
+      },
+      body:JSON.stringify({
+        model:S.settings.model||DEFAULT_MODEL,max_tokens:4096,
+        system:`You are Mindflow AI. Return ONLY valid JSON (no markdown):
+{"overview":"string","confidence":"high|medium|low","categorizedNotes":[{"id":"string","suggestedCategory":"idea|task|reminder|question|observation|reference|uncategorized","reason":"string"}],"actionItems":[{"text":"string","priority":"high|medium|low","sourceNoteIds":["id"]}],"reminders":[{"text":"string","sourceNoteIds":["id"]}],"insights":["string"],"calendarSuggestions":[{"id":"string","type":"appointment|event|reminder","title":"string","proposedDate":"YYYY-MM-DD or null","proposedTime":"HH:MM or null","confidence":"high|medium|low","explanation":"string","missingFields":["string"],"sourceNoteIds":["id"]}]}
+Rules: infer category from content only; link only real note IDs; never alter note text; calendar suggestions only when date/time is clearly implied; give each suggestion a unique id.`,
+        messages:[{role:"user",content:`Date: ${S.selDate}\nNotes:\n${JSON.stringify(notes.map(n=>({id:n.id,text:n.text,timestamp:n.timestamp})))}`}]
+      })
+    });
+    const data=await resp.json();
+    if(data.error)throw new Error(data.error.message||"API error");
+    const raw=(data.content||[]).find(b=>b.type==="text")?.text||"{}";
+    let parsed;
+    try{
+      parsed=JSON.parse(raw.replace(/```json|```/g,"").trim());
+    }catch(parseErr){
+      // Most common cause: response hit the token ceiling and the JSON got cut off.
+      if(data.stop_reason==="max_tokens") throw new Error("The summary was too long to finish. Try fewer notes for this day, or switch to a larger model in Settings.");
+      throw new Error("The AI returned a response that couldn't be read. Please try again.");
+    }
+    const entry={...parsed,generatedAt:new Date().toISOString(),
+      pendingSuggestions:(parsed.calendarSuggestions||[]).map(s=>({...s,id:s.id||genId(),dismissed:false,approved:false}))};
+    const mi=maxIter(), ex=S.sumHist[S.selDate]||[];
+    S.sumHist[S.selDate]=mi===Infinity?[entry,...ex]:[entry,...ex].slice(0,mi);
+    S.viewIdx=0; saveSumHist();
+    // Apply AI categories
+    if(parsed.categorizedNotes?.length){
+      S.notes=S.notes.map(n=>{
+        const m=parsed.categorizedNotes.find(c=>c.id===n.id);
+        return m?.suggestedCategory&&m.suggestedCategory!==n.category?{...n,category:m.suggestedCategory,aiCategorized:true}:n;
+      });
+      saveNotes();
+    }
+  }catch(e){
+    const msg=String(e.message||"");
+    const low=msg.toLowerCase();
+    if(low.includes("authentication")||low.includes("invalid x-api-key")||low.includes("x-api-key")) S.genErr="Invalid API key. Check ⚙ Settings → AI Configuration.";
+    else if(low.includes("not_found")||low.includes("not found")||msg.trim().startsWith("model:")||low.includes("model:")) S.genErr="The AI model \""+(S.settings.model||DEFAULT_MODEL)+"\" isn't available on your account. Pick a current model in ⚙ Settings → AI Configuration.";
+    else if(low.includes("overloaded")) S.genErr="AI is busy — try again in a moment.";
+    else if(low.includes("credit")||low.includes("billing")||low.includes("quota")) S.genErr="API call rejected for billing/credit reasons. Check your balance at console.anthropic.com.";
+    else if(msg.startsWith("The ")) S.genErr=msg; // authored, user-friendly messages pass through verbatim
+    else S.genErr="Could not generate summary: "+msg;
+  }
+  S.loading=false;
+  renderNotes(); renderSummary(); renderCalendar(); renderTabs();
+};
+
+// ─── Actions: calendar ────────────────────────────────────────────────────────
+MF.setCalView = v => { S.calView=v; renderCalendar(); };
+MF.setCalDate = ds => { S.calDate=parseDateStr(ds); renderCalendar(); };
+MF.calNav = dir => {
+  const d=new Date(S.calDate);
+  if(S.calView==="month")d.setMonth(d.getMonth()+dir);
+  else if(S.calView==="week")d.setDate(d.getDate()+7*dir);
+  else d.setDate(d.getDate()+dir);
+  S.calDate=d; renderCalendar();
+};
+MF.confirmDelEvent = id => {
+  const ev=S.events.find(e=>e.id===id); if(!ev)return;
+  const msg=ev.recurrence&&ev.recurrence!=="none"
+    ?`Delete this recurring event? The entire ${ev.recurrence} series will be removed.`
+    :"Delete this event?";
+  openConfirm(msg,ev.title,()=>{
+    S.events=S.events.filter(e=>e.id!==id); saveEvents(); renderCalendar(); toast("Event removed");
+  });
+};
+MF.quickApprove = sugId => {
+  const s=pendingSugs().find(x=>x.id===sugId); if(!s)return;
+  S.events.unshift({id:genId(),title:s.title,type:s.type||"event",date:s.proposedDate||"",time:s.proposedTime||"",endTime:"",description:"",location:"",recurrence:"none",reminder:"none",confirmed:true,linkedSourceNoteIds:s.sourceNoteIds||[],createdAt:new Date().toISOString()});
+  saveEvents(); markSug(sugId,"approved"); toast("Event added");
+};
+MF.dismissSug = sugId => { markSug(sugId,"dismissed"); toast("Suggestion dismissed"); };
+function markSug(sugId,field){
+  const arr=S.sumHist[S.selDate]; if(!arr||!arr[S.viewIdx])return;
+  const sum=arr[S.viewIdx];
+  sum.pendingSuggestions=sum.pendingSuggestions.map(sg=>sg.id===sugId?{...sg,[field]:true}:sg);
+  saveSumHist(); renderCalendar(); renderTabs(); renderSummary();
+}
+
+// ─── Event form (modal) ───────────────────────────────────────────────────────
+const EMPTY_EV = () => ({title:"",type:"event",date:"",time:"",endTime:"",description:"",location:"",recurrence:"none",reminder:"none"});
+MF.openEvNew = () => { S.evForm={mode:"new",data:{...EMPTY_EV(),date:toDateStr(S.calDate)}}; renderEvForm(); };
+MF.openEvEdit = id => { const ev=S.events.find(e=>e.id===id); if(!ev)return; S.evForm={mode:"edit",data:{...ev}}; renderEvForm(); };
+MF.openSugEdit = sugId => {
+  const s=pendingSugs().find(x=>x.id===sugId); if(!s)return;
+  S.evForm={mode:"sugg",sugId,data:{...EMPTY_EV(),title:s.title||"",type:s.type||"event",date:s.proposedDate||"",time:s.proposedTime||"",linkedSourceNoteIds:s.sourceNoteIds||[]}};
+  renderEvForm();
+};
+MF.evSet = (k,v) => { if(S.evForm) S.evForm.data[k]=v; if(k==="time"||k==="endTime") renderEvForm(); };
+MF.evCancel = () => { S.evForm=null; closeOverlay(); };
+MF.evSave = () => {
+  if(!S.evForm)return;
+  const d=S.evForm.data;
+  d.title=($("ev-title")?.value??d.title).trim();
+  d.location=$("ev-location")?.value??d.location;
+  d.description=$("ev-desc")?.value??d.description;
+  d.date=$("ev-date")?.value??d.date;
+  d.type=$("ev-type")?.value??d.type;
+  d.recurrence=$("ev-rec")?.value??d.recurrence;
+  d.reminder=$("ev-rem")?.value??d.reminder;
+  if(!d.title){ toast("Please enter a title"); return; }
+  if(!d.date){ toast("Please choose a date — an event with no date won't appear on the calendar"); const di=$("ev-date"); if(di)di.focus(); return; }
+  if(d.time&&d.endTime&&d.endTime<d.time){ toast("End time can't be before start time"); return; }
+  if(d.reminder&&d.reminder!=="none"&&"Notification"in window&&Notification.permission==="default"){
+    try{ Notification.requestPermission(); }catch{}
+  }
+  if(S.evForm.mode==="new"){
+    S.events.unshift({id:genId(),...d,confirmed:true,linkedSourceNoteIds:[],createdAt:new Date().toISOString()});
+    toast("Event saved");
+  } else if(S.evForm.mode==="edit"){
+    S.events=S.events.map(e=>e.id===d.id?{...d,updatedAt:new Date().toISOString()}:e);
+    toast("Event updated");
+  } else if(S.evForm.mode==="sugg"){
+    const {linkedSourceNoteIds,...rest}=d;
+    S.events.unshift({id:genId(),...rest,confirmed:true,linkedSourceNoteIds:linkedSourceNoteIds||[],createdAt:new Date().toISOString()});
+    markSug(S.evForm.sugId,"approved");
+    toast("Event added");
+  }
+  saveEvents(); S.evForm=null; closeOverlay(); renderCalendar(); renderTabs();
+};
+
+function timePickerHtml(field,value){
+  let h12=12,min=0,period="AM";
+  if(value){ const[h24,m]=value.split(":").map(Number); h12=h24%12===0?12:h24%12; min=isNaN(m)?0:m; period=h24>=12?"PM":"AM"; }
+  const emit=(nh,nm,np)=>`MF.tpEmit('${field}',${nh},${nm},'${np}')`;
+  const hours=Array.from({length:12},(_,i)=>i+1), mins=[0,5,10,15,20,25,30,35,40,45,50,55];
+  return `<div class="time-picker">
+    <select class="tp-seg tp-hr" onchange="MF.tpEmit('${field}',parseInt(this.value),${min},'${period}')">
+      ${!value?`<option value="" selected>hh</option>`:""}
+      ${hours.map(h=>`<option value="${h}"${value&&h===h12?" selected":""}>${pad(h)}</option>`).join("")}
+    </select>
+    <span class="tp-colon">:</span>
+    <select class="tp-seg tp-min" onchange="MF.tpEmit('${field}',${h12},parseInt(this.value),'${period}')">
+      ${!value?`<option value="" selected>mm</option>`:""}
+      ${mins.map(m=>`<option value="${m}"${value&&m===min?" selected":""}>${pad(m)}</option>`).join("")}
+    </select>
+    <div class="tp-sep"></div>
+    <div class="tp-ampm">
+      <button type="button" class="tp-ampm-btn${value&&period==="AM"?" active":""}" onclick="${emit(h12,min,"AM")}">AM</button>
+      <button type="button" class="tp-ampm-btn${value&&period==="PM"?" active":""}" onclick="${emit(h12,min,"PM")}">PM</button>
+    </div>
+    ${value?`<button type="button" class="tp-clear" onclick="MF.evSet('${field}','')" title="Clear">✕</button>`:""}
+  </div>`;
+}
+MF.tpEmit = (field,h12,min,period) => {
+  if(isNaN(h12))return;
+  let h24=h12%12; if(period==="PM")h24+=12;
+  MF.evSet(field,`${pad(h24)}:${pad(min)}`);
+};
+
+function renderEvForm(){
+  if(!S.evForm)return;
+  const d=S.evForm.data;
+  const title=S.evForm.mode==="new"?"New calendar item":S.evForm.mode==="edit"?"Edit event":"Review AI suggestion";
+  $("overlay-root").innerHTML=`<div class="modal-bg" onclick="if(event.target===this)MF.evCancel()">
+    <div class="modal">
+      <div class="modal-title">${esc(title)}</div>
+      <div class="form-group"><label class="form-label">Title *</label>
+        <input id="ev-title" class="form-input" value="${esc(d.title)}" placeholder="Event title"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Type</label>
+          <select id="ev-type" class="form-input">${["appointment","event","reminder"].map(t=>`<option value="${t}"${d.type===t?" selected":""}>${t.charAt(0).toUpperCase()+t.slice(1)}</option>`).join("")}</select></div>
+        <div class="form-group"><label class="form-label">Date</label>
+          <input id="ev-date" class="form-input" type="date" value="${esc(d.date)}"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Start time</label>${timePickerHtml("time",d.time)}</div>
+        <div class="form-group"><label class="form-label">End time</label>${timePickerHtml("endTime",d.endTime)}</div>
+      </div>
+      <div class="form-group"><label class="form-label">Location</label>
+        <input id="ev-location" class="form-input" value="${esc(d.location)}" placeholder="Optional"></div>
+      <div class="form-group"><label class="form-label">Description</label>
+        <textarea id="ev-desc" class="form-input" rows="2" placeholder="Optional" style="resize:none">${esc(d.description)}</textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Recurrence</label>
+          <select id="ev-rec" class="form-input">${["none","daily","weekly","monthly","yearly"].map(r=>`<option value="${r}"${d.recurrence===r?" selected":""}>${r.charAt(0).toUpperCase()+r.slice(1)}</option>`).join("")}</select></div>
+        <div class="form-group"><label class="form-label">Reminder</label>
+          <select id="ev-rem" class="form-input">${[["none","None"],["10min","10 min"],["30min","30 min"],["1hour","1 hour"],["1day","1 day"]].map(([v,l])=>`<option value="${v}"${d.reminder===v?" selected":""}>${l}</option>`).join("")}</select></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="MF.evCancel()">Cancel</button>
+        <button class="btn-primary" onclick="MF.evSave()">Save event</button>
+      </div>
+    </div>
+  </div>`;
+  // Preserve draft on input for fields that survive re-renders
+  ["ev-title","ev-location","ev-desc","ev-date","ev-type","ev-rec","ev-rem"].forEach(id=>{
+    const el=$(id); if(!el)return;
+    el.addEventListener("input",()=>{ const map={"ev-title":"title","ev-location":"location","ev-desc":"description","ev-date":"date","ev-type":"type","ev-rec":"recurrence","ev-rem":"reminder"}; S.evForm.data[map[id]]=el.value; });
+  });
+}
+
+// ─── Confirm dialog ───────────────────────────────────────────────────────────
+let confirmCb=null, confirmCancelCb=null;
+function openConfirm(msg,detail,cb,label,onCancel){
+  confirmCb=cb; confirmCancelCb=onCancel||null;
+  $("overlay-root").innerHTML=`<div class="modal-bg" onclick="if(event.target===this)MF.confirmCancel()">
+    <div class="modal confirm-modal">
+      <div class="modal-title">Are you sure?</div>
+      <p class="confirm-msg">${esc(msg)}</p>
+      ${detail?`<div class="confirm-detail">"${esc(detail.slice(0,80))}${detail.length>80?"…":""}"</div>`:""}
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="MF.confirmCancel()">Cancel</button>
+        <button class="btn-primary" style="background:#E24B4A" onclick="MF.confirmOk()">${esc(label||"Delete")}</button>
+      </div>
+    </div>
+  </div>`;
+}
+MF.confirmOk = () => { const cb=confirmCb; confirmCb=null; confirmCancelCb=null; closeOverlay(); if(cb)cb(); refreshPinnedIfOpen(); };
+MF.confirmCancel = () => { const cc=confirmCancelCb; confirmCb=null; confirmCancelCb=null; closeOverlay(); if(cc)cc(); else refreshPinnedIfOpen(); };
+function closeOverlay(){ $("overlay-root").innerHTML=""; }
+
+// ─── Pinned panel ─────────────────────────────────────────────────────────────
+let pinnedOpen=false;
+MF.openPinned = () => { pinnedOpen=true; renderPinned(); };
+MF.closePinned = () => { pinnedOpen=false; closeOverlay(); };
+function refreshPinnedIfOpen(){ if(pinnedOpen)renderPinned(); }
+function renderPinned(){
+  const pinned=S.notes.filter(n=>n.pinned);
+  $("overlay-root").innerHTML=`<div class="pin-bg" onclick="if(event.target===this)MF.closePinned()">
+    <div class="pin-panel">
+      <div class="pin-hdr"><div class="panel-title">📌 Pinned notes</div><button class="close-btn" onclick="MF.closePinned()">×</button></div>
+      ${pinned.length===0?`<p style="font-size:12px;color:var(--ink3)">No pinned notes yet</p>`:pinned.map(n=>noteItemHtml(n,true)).join("")}
+    </div>
+  </div>`;
+}
+
+// ─── Date picker dropdown ─────────────────────────────────────────────────────
+let dpOpen=false, dpViewing=null;
+MF.toggleDatePicker = ev => {
+  ev.stopPropagation();
+  if(dpOpen){ MF.closeDatePicker(); return; }
+  dpOpen=true;
+  const [y,m]=S.selDate.split("-").map(Number); dpViewing=new Date(y,m-1,1);
+  renderDatePicker();
+  setTimeout(()=>document.addEventListener("mousedown",dpOutside),0);
+};
+MF.closeDatePicker = () => { dpOpen=false; document.removeEventListener("mousedown",dpOutside); const el=$("dp-dropdown"); if(el)el.remove(); };
+function dpOutside(e){ const el=$("dp-dropdown"); if(el&&!el.contains(e.target)&&e.target.id!=="date-disp") MF.closeDatePicker(); }
+MF.dpNav = dir => { dpViewing.setMonth(dpViewing.getMonth()+dir); renderDatePicker(); };
+MF.dpPick = ds => { S.selDate=ds; S.viewIdx=0; MF.closeDatePicker(); renderAll(); };
+function renderDatePicker(){
+  const anchor=$("date-disp").getBoundingClientRect();
+  const top=anchor.bottom+6, left=Math.min(Math.max(8,anchor.left-60),window.innerWidth-276);
+  const today=todayStr();
+  const noteDates=new Set(S.notes.map(n=>n.date));
+  const daysHtml=calMonthDays(dpViewing).map(it=>{
+    const ds=toDateStr(it.d),iT=ds===today,iS=ds===S.selDate,hN=noteDates.has(ds);
+    return `<div class="dpd-day${!it.cur?" om":""}${iT&&!iS?" today":""}${iS?" sel":""}${hN?" hn":""}" role="button" tabindex="${it.cur?"0":"-1"}" onclick="MF.dpPick('${ds}')">${it.d.getDate()}</div>`;
+  }).join("");
+  let el=$("dp-dropdown");
+  if(!el){ el=document.createElement("div"); el.id="dp-dropdown"; document.body.appendChild(el); }
+  el.innerHTML=`<div class="date-picker-dropdown" style="top:${top}px;left:${left}px">
+    <div class="dpd-header">
+      <span class="dpd-title">${esc(fmtMonthYear(dpViewing))}</span>
+      <div class="dpd-nav"><button class="ic-btn" onclick="MF.dpNav(-1)">‹</button><button class="ic-btn" onclick="MF.dpNav(1)">›</button></div>
+    </div>
+    <div class="dpd-wdays">${WEEK_LABELS.map(w=>`<div class="dpd-wd">${w}</div>`).join("")}</div>
+    <div class="dpd-days">${daysHtml}</div>
+    <div class="dpd-footer">
+      <button class="dpd-today-btn" onclick="MF.dpPick('${today}')">Today's Notes</button>
+      <span class="dpd-sel-label">${esc(fmtLong(S.selDate))}</span>
+    </div>
+    <div class="dpd-legend"><span class="dpd-legend-dot"></span> = has notes</div>
+  </div>`;
+}
+
+// ─── Settings modal ───────────────────────────────────────────────────────────
+let setDraft=null, showAdminField=false;
+const MODELS_TTL = 24*60*60*1000; // refresh the cached list at most once a day automatically
+MF.openSettings = () => {
+  setDraft={...S.settings}; showAdminField=false; S.modelsStatus=""; renderSettings();
+  // Auto-load the model list from Anthropic if we have a key and the cache is empty or stale
+  const stale = Date.now()-(S.models.fetchedAt||0) > MODELS_TTL;
+  if(setDraft.apiKey && (!S.models.data.length || stale)) MF.fetchModels(true);
+};
+MF.setPlan = k => { setDraft.plan=k; renderSettings(); };
+MF.setIter = v => { setDraft.iterationsPerDay=parseInt(v); renderSettings(); };
+MF.setHist = v => { setDraft.historyDays=parseInt(v); renderSettings(); };
+MF.setApiKey = v => { setDraft.apiKey=v.trim(); };
+MF.setModel = v => { setDraft.model=v.trim(); };
+// Fetch the live model list from Anthropic. auto=true suppresses the "no key" toast.
+MF.fetchModels = async (auto) => {
+  const key=(setDraft&&setDraft.apiKey)||S.settings.apiKey;
+  if(!key){ if(!auto) toast("Enter your API key first"); S.modelsStatus="Enter an API key to load models"; renderSettings(); return; }
+  if(S.modelsLoading) return;
+  S.modelsLoading=true; S.modelsStatus="Loading models…"; renderSettings();
+  try{
+    const resp=await fetch("https://api.anthropic.com/v1/models?limit=1000",{
+      method:"GET",
+      headers:{
+        "x-api-key":key,
+        "anthropic-version":"2023-06-01",
+        "anthropic-dangerous-direct-browser-access":"true"
+      }
+    });
+    const data=await resp.json();
+    if(data.error) throw new Error(data.error.message||"API error");
+    const list=(data.data||[])
+      .filter(m=>m.type==="model"&&m.id)
+      .map(m=>({id:m.id, name:m.display_name||m.id, line:m.line||"", lifecycle:m.lifecycle||"active"}));
+    if(!list.length) throw new Error("No models returned");
+    S.models={fetchedAt:Date.now(), data:list};
+    lsSet("mf_models", S.models);
+    S.modelsStatus="Loaded "+list.length+" models from Anthropic";
+  }catch(e){
+    const msg=String(e.message||"").toLowerCase();
+    if(msg.includes("x-api-key")||msg.includes("authentication")) S.modelsStatus="Couldn't load models: invalid API key";
+    else S.modelsStatus="Couldn't load models — using built-in list";
+  }
+  S.modelsLoading=false; renderSettings();
+};
+// Build <option>s for the model dropdown from the fetched list (or the built-in fallback),
+// always including the currently-selected model even if it's not in the list.
+function modelOptionsHtml(selected){
+  selected = selected||DEFAULT_MODEL;
+  let list = S.models.data && S.models.data.length ? S.models.data.slice() : MODEL_OPTIONS.map(id=>({id,name:id,lifecycle:"active"}));
+  if(!list.some(m=>m.id===selected)) list=[{id:selected,name:selected+" (saved)",lifecycle:""}].concat(list);
+  return list.map(m=>{
+    const tag=m.lifecycle==="deprecated"?" — deprecated":"";
+    const label=(m.name&&m.name!==m.id)?`${m.name} (${m.id})${tag}`:`${m.id}${tag}`;
+    return `<option value="${esc(m.id)}"${m.id===selected?" selected":""}>${esc(label)}</option>`;
+  }).join("");
+}
+MF.showAdminInput = () => { showAdminField=true; renderSettings(); };
+MF.tryAdmin = () => {
+  const v=$("admin-pass")?.value||"";
+  if(v===ADMIN_PASSPHRASE){ setDraft.isAdmin=true; renderSettings(); }
+  else { const el=$("admin-err"); if(el)el.textContent="Incorrect passphrase."; }
+};
+MF.deactAdmin = () => { setDraft.isAdmin=false; renderSettings(); };
+MF.saveSettingsModal = () => {
+  const key=$("api-key-input"); if(key)setDraft.apiKey=key.value.trim();
+  const mdl=$("model-input"); if(mdl)setDraft.model=mdl.value.trim()||DEFAULT_MODEL;
+  const draft=setDraft;
+  const finish=()=>{
+    S.settings=draft; setDraft=null; saveSettings(); saveSumHist();
+    closeOverlay(); renderAll(); toast("Settings saved");
+  };
+  // Guard: warn if the new plan's retention window would delete existing summaries (B5)
+  if(!draft.isAdmin){
+    const plan=PLANS[draft.plan]||PLANS.free;
+    const cutoff=addDays(todayStr(),-plan.historyDays);
+    const doomed=Object.keys(S.sumHist).filter(d=>d<cutoff).length;
+    if(doomed>0){
+      openConfirm(
+        `This plan keeps ${plan.historyDays} day${plan.historyDays!==1?"s":""} of summary history. Summaries for ${doomed} older day${doomed!==1?"s":""} will be permanently deleted.`,
+        null, finish, "Continue", ()=>renderSettings()
+      );
+      return;
+    }
+  }
+  finish();
+};
+MF.closeSettings = () => { setDraft=null; closeOverlay(); };
+function renderSettings(){
+  const d=setDraft, plan=PLANS[d.plan]||PLANS.free;
+  const planCards=Object.entries(PLANS).map(([k,p])=>`<div class="plan-card"
+    onclick="MF.setPlan('${k}')"
+    style="border:${d.plan===k?"2":"1"}px solid ${d.plan===k?p.color:"var(--bd2)"};background:${d.plan===k?"var(--accent-muted)":"var(--surface)"}">
+    <div class="plan-name" style="color:${p.color}">${p.label}</div>
+    <div class="plan-desc">${p.iterationsPerDay}v/day · ${p.historyDays}d history</div>
+  </div>`).join("");
+  $("overlay-root").innerHTML=`<div class="modal-bg" onclick="if(event.target===this)MF.closeSettings()">
+    <div class="modal">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div class="modal-title" style="margin:0">Settings</div>
+        ${d.isAdmin?`<div style="font-size:10px;background:var(--ink);color:var(--bg);border-radius:20px;padding:2px 9px;font-weight:500">⬡ Admin</div>`:""}
+      </div>
+      ${d.isAdmin?`<div class="admin-banner">
+        <div class="admin-banner-title">Admin mode active</div>
+        <div class="admin-banner-sub">Unlimited generations · unlimited history · no plan restrictions</div>
+        <button class="admin-deact" onclick="MF.deactAdmin()">Deactivate admin</button>
+      </div>`:""}
+      <div class="settings-section">
+        <div class="settings-section-title">AI Configuration</div>
+        <label class="form-label">Anthropic API key</label>
+        <input id="api-key-input" class="form-input" type="password" value="${esc(d.apiKey||"")}" placeholder="sk-ant-..." oninput="MF.setApiKey(this.value)">
+        <p class="settings-note">Required for AI summaries. Get a key at <b>console.anthropic.com</b>. Stored only on this computer, sent only to Anthropic.</p>
+        <label class="form-label" style="margin-top:10px">Model</label>
+        <div style="display:flex;gap:7px;align-items:center">
+          <select id="model-input" class="form-input" style="flex:1" onchange="MF.setModel(this.value)">${modelOptionsHtml(d.model)}</select>
+          <button class="btn-secondary" style="flex-shrink:0;white-space:nowrap" onclick="MF.fetchModels(false)" ${S.modelsLoading?"disabled":""}>${S.modelsLoading?"…":"↻ Refresh"}</button>
+        </div>
+        <p class="settings-note">${S.modelsStatus?esc(S.modelsStatus)+" · ":""}The list is pulled live from Anthropic using your key, so it always reflects current models. Haiku is cheapest; Sonnet/Opus are higher quality. Your selection is saved.</p>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">Plan</div>
+        <div class="plan-grid" style="${d.isAdmin?"opacity:.45;pointer-events:none":""}">${planCards}</div>
+      </div>
+      ${!d.isAdmin?`
+      <div class="settings-section">
+        <div class="settings-section-title">Summary versions per day</div>
+        <div class="range-row">
+          <input type="range" min="1" max="${plan.iterationsPerDay}" step="1" value="${Math.min(d.iterationsPerDay,plan.iterationsPerDay)}" oninput="MF.setIter(this.value)" style="flex:1">
+          <span class="range-val">${Math.min(d.iterationsPerDay,plan.iterationsPerDay)}</span>
+        </div>
+        <p class="settings-note">Max on ${plan.label}: ${plan.iterationsPerDay}/day</p>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">History retention (days)</div>
+        <div class="range-row">
+          <input type="range" min="1" max="${plan.historyDays}" step="1" value="${Math.min(d.historyDays,plan.historyDays)}" oninput="MF.setHist(this.value)" style="flex:1">
+          <span class="range-val">${Math.min(d.historyDays,plan.historyDays)}d</span>
+        </div>
+      </div>`:""}
+      <div class="settings-section">
+        <div class="settings-section-title">Appearance</div>
+        <button class="btn-secondary" style="width:100%" onclick="MF.closeSettings();MF.openTheme()">🎨 Open theme editor</button>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">Data file (auto-save)</div>
+        ${S.fileStatus==="unsupported"
+          ?`<p class="settings-note">Your browser doesn't support direct file access (Chrome or Edge required). Use Export/Import below to keep a file copy.</p>`
+          :`${S.fileStatus==="connected"
+              ?`<div class="file-status on">✓ Connected to <b>&nbsp;${esc(S.fileName)}&nbsp;</b>${S.lastFileSave?`· saved ${fmtTimestamp(new Date(S.lastFileSave).toISOString())}`:""}</div>`
+              :S.fileStatus==="error"
+                ?`<div class="file-status err">⚠ Save failed — retry from the banner above</div>`
+                :`<div class="file-status off">Not connected — data lives only in this browser</div>`}
+            <div style="display:flex;gap:7px;flex-wrap:wrap">
+              <button class="btn-secondary" style="flex:1" onclick="MF.connectDataFile()">💾 ${S.fileStatus==="connected"?"Change file":"Create data file"}</button>
+              <button class="btn-secondary" style="flex:1" onclick="MF.loadDataFile()">📂 Load data file</button>
+              ${S.fileStatus==="connected"?`<button class="btn-secondary" onclick="MF.disconnectDataFile()">Disconnect</button>`:""}
+            </div>
+            <p class="settings-note">Every change auto-saves to this file on disk. If you move or rename <b>Mindflow.html</b>, your data survives — just Load the data file again. Your API key stays in this browser only, never in the file.</p>`}
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">Backup (portable copy)</div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <button class="btn-secondary" style="flex:1" onclick="MF.exportData()">⬇ Export backup</button>
+          <button class="btn-secondary" style="flex:1" onclick="MF.triggerImport()">⬆ Import backup</button>
+        </div>
+        <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="MF.handleImportFile(this)">
+        <p class="settings-note">One-off snapshot for archiving or moving machines. Your API key is <b>not</b> included.</p>
+        <button class="btn-secondary" style="width:100%;margin-top:6px;color:#E24B4A" onclick="MF.clearAllData()">🗑 Erase all data</button>
+      </div>
+      ${!d.isAdmin?`<div class="admin-section">
+        ${!showAdminField
+          ?`<button class="admin-access-link" onclick="MF.showAdminInput()">Admin access</button>`
+          :`<label class="form-label">Admin passphrase</label>
+            <div style="display:flex;gap:7px">
+              <input id="admin-pass" class="form-input" type="password" placeholder="Enter passphrase" style="flex:1" onkeydown="if(event.key==='Enter')MF.tryAdmin()">
+              <button class="btn-primary" onclick="MF.tryAdmin()">Activate</button>
+            </div>
+            <p id="admin-err" style="font-size:11px;color:#E24B4A;margin-top:4px"></p>`}
+      </div>`:""}
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="MF.closeSettings()">Cancel</button>
+        <button class="btn-primary" onclick="MF.saveSettingsModal()">Save settings</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── Theme modal ──────────────────────────────────────────────────────────────
+const TOKEN_LABELS=[["bg","Background"],["bg2","Surface (inputs)"],["bg3","Hover / muted bg"],["surface","Card background"],["ink","Primary text"],["ink2","Secondary text"],["ink3","Muted text"],["accent","Accent / buttons"],["accentLight","Accent light"],["accentMuted","Accent muted bg"]];
+let themeDraft=null, themePreset="custom";
+MF.openTheme = () => {
+  themeDraft={...S.theme};
+  themePreset=Object.entries(THEME_PRESETS).find(([,p])=>p.accent===S.theme.accent&&p.bg===S.theme.bg)?.[0]||"custom";
+  renderTheme();
+};
+MF.applyPreset = k => { themeDraft={...THEME_PRESETS[k]}; themePreset=k; applyTheme(themeDraft); renderTheme(); };
+MF.setThemeToken = (k,v) => { themeDraft[k]=v; themePreset="custom"; applyTheme(themeDraft); renderTheme(); };
+MF.setThemeFont = (k,v) => { themeDraft[k]=v; themePreset="custom"; applyTheme(themeDraft); };
+MF.setRadius = v => { themeDraft.radius=v+"px"; themePreset="custom"; applyTheme(themeDraft); const el=$("radius-val"); if(el)el.textContent=v+"px"; };
+MF.saveThemeModal = () => { S.theme=themeDraft; themeDraft=null; saveTheme(); applyTheme(S.theme); closeOverlay(); toast("Theme saved"); };
+MF.cancelTheme = () => { themeDraft=null; applyTheme(S.theme); closeOverlay(); };
+function renderTheme(){
+  const t=themeDraft;
+  const presets=Object.entries(THEME_PRESETS).map(([k,p])=>`<button class="theme-preset-btn${themePreset===k?" active":""}"
+    style="background:${p.bg};border-color:${themePreset===k?p.accent:"rgba(128,128,128,.2)"}"
+    onclick="MF.applyPreset('${k}')">
+    <span class="theme-preset-icon" style="color:${p.accent}">${p.icon}</span>
+    <span class="theme-preset-label" style="color:${p.ink2}">${p.label}</span>
+  </button>`).join("");
+  const tokens=TOKEN_LABELS.map(([k,label])=>`<div class="theme-token-row">
+    <span class="theme-token-label">${label}</span>
+    <div class="theme-token-right">
+      <span class="color-hex">${t[k]?.startsWith("#")?t[k]:""}</span>
+      <div class="color-swatch" style="background:${t[k]}">
+        <input type="color" value="${t[k]?.startsWith("#")?t[k]:"#888888"}" oninput="MF.setThemeToken('${k}',this.value)">
+      </div>
+    </div>
+  </div>`).join("");
+  const fontOpts=f=>FONT_OPTIONS.map(o=>`<option value="${esc(o.value)}"${t[f]===o.value?" selected":""}>${o.label}</option>`).join("");
+  $("overlay-root").innerHTML=`<div class="modal-bg" onclick="if(event.target===this)MF.cancelTheme()">
+    <div class="modal" style="max-width:520px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div class="modal-title" style="margin:0">Theme</div>
+        <div style="font-size:11px;color:var(--ink3)">Changes preview live</div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">Presets</div>
+        <div class="theme-preset-grid">${presets}</div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">Typography</div>
+        <div class="form-row">
+          <div><label class="form-label">Body font</label>
+            <select class="font-sel" onchange="MF.setThemeFont('font',this.value)">${fontOpts("font")}</select></div>
+          <div><label class="form-label">Heading font</label>
+            <select class="font-sel" onchange="MF.setThemeFont('serifFont',this.value)">${fontOpts("serifFont")}</select></div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">Corner radius</div>
+        <div class="radius-row">
+          <div class="radius-preview"></div>
+          <input type="range" min="0" max="20" step="1" value="${parseInt(t.radius)||10}" oninput="MF.setRadius(this.value)" style="flex:1">
+          <span id="radius-val" style="font-size:12px;color:var(--ink2);min-width:32px">${t.radius}</span>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">Colours</div>
+        ${tokens}
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="MF.cancelTheme()">Cancel</button>
+        <button class="btn-primary" onclick="MF.saveThemeModal()">Apply theme</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── Data file sync (File System Access API) ──────────────────────────────────
+// The app can connect to a real .json file on disk and auto-save every change.
+// The file — not the browser — becomes the source of truth, so moving the
+// HTML file around never loses data: just Load the data file again.
+
+// IndexedDB stores the file handle so the connection survives reloads.
+// (IDB is origin-bound like localStorage; if it's lost, the data file on disk
+// is still intact — the user just re-picks it once.)
+function idbOpen(){
+  return new Promise((res,rej)=>{
+    try{
+      const r=indexedDB.open("mindflow-fs",1);
+      r.onupgradeneeded=()=>r.result.createObjectStore("kv");
+      r.onsuccess=()=>res(r.result);
+      r.onerror=()=>rej(r.error);
+    }catch(e){ rej(e); }
+  });
+}
+async function idbSet(k,v){ try{ const db=await idbOpen(); return new Promise((res,rej)=>{ const tx=db.transaction("kv","readwrite"); tx.objectStore("kv").put(v,k); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); }); }catch{} }
+async function idbGet(k){ try{ const db=await idbOpen(); return new Promise((res)=>{ const tx=db.transaction("kv","readonly"); const rq=tx.objectStore("kv").get(k); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>res(undefined); }); }catch{ return undefined; } }
+async function idbDel(k){ try{ const db=await idbOpen(); return new Promise((res)=>{ const tx=db.transaction("kv","readwrite"); tx.objectStore("kv").delete(k); tx.oncomplete=()=>res(); tx.onerror=()=>res(); }); }catch{} }
+
+function buildPayload(){
+  const {apiKey,...safeSettings}=S.settings; // API key never leaves localStorage
+  return {
+    app:"mindflow", version:2, savedAt:Date.now(), savedAtISO:new Date().toISOString(),
+    notes:S.notes, events:S.events, sumHist:S.sumHist,
+    settings:safeSettings, theme:S.theme,
+    rolloverDismissed:lsGet("mf_rollover_dismissed","")
+  };
+}
+function validPayload(o){
+  return o && o.app==="mindflow" && Array.isArray(o.notes) && Array.isArray(o.events) && typeof o.sumHist==="object";
+}
+function applyPayload(obj){
+  S.notes=obj.notes; S.events=obj.events; S.sumHist=obj.sumHist||{};
+  if(obj.theme) S.theme=Object.assign({},THEME_PRESETS.warm,obj.theme);
+  S.settings=Object.assign({},DEFAULT_SETTINGS,obj.settings||{},{apiKey:S.settings.apiKey}); if(!S.settings.model||RETIRED_MODELS.includes(S.settings.model))S.settings.model=DEFAULT_MODEL;
+  if(obj.rolloverDismissed!==undefined) lsSet("mf_rollover_dismissed",obj.rolloverDismissed);
+  S.viewIdx=0; setDraft=null;
+  lsSet("mf_notes",S.notes); lsSet("mf_events",S.events); lsSet("mf_sumhist",S.sumHist);
+  lsSet("mf_settings",S.settings); lsSet("mf_theme",S.theme);
+  lsSet("mf_meta",{savedAt:obj.savedAt||Date.now()});
+  renderAll();
+}
+
+async function writeToFile(){
+  if(!S.fileHandle) return;
+  try{
+    const w=await S.fileHandle.createWritable();
+    await w.write(JSON.stringify(buildPayload(),null,2));
+    await w.close();
+    S.lastFileSave=Date.now();
+    if(S.fileStatus!=="connected"){ S.fileStatus="connected"; renderFileBanner(); }
+    renderSavedIndicator(); flashSaved();
+  }catch(e){
+    S.fileStatus="error"; renderFileBanner(); renderSavedIndicator();
+  }
+}
+let fileSaveTimer=null;
+function scheduleFileSave(){
+  if(!S.fileHandle) return;
+  clearTimeout(fileSaveTimer);
+  fileSaveTimer=setTimeout(writeToFile, 1200); // debounce bursts of edits
+}
+
+const FILE_PICKER_OPTS={
+  suggestedName:"mindflow-data.json",
+  types:[{description:"Mindflow data",accept:{"application/json":[".json"]}}]
+};
+
+MF.connectDataFile = async () => {
+  if(!("showSaveFilePicker" in window)){ toast("Not supported in this browser — use Export backup"); return; }
+  try{
+    const handle=await window.showSaveFilePicker(FILE_PICKER_OPTS);
+    S.fileHandle=handle; S.fileName=handle.name; S.fileStatus="connected";
+    await writeToFile();
+    await idbSet("dataFileHandle",handle);
+    renderFileBanner(); renderSavedIndicator();
+    if(setDraft) renderSettings();
+    toast("Data file connected — auto-saving");
+  }catch(e){ /* user cancelled picker */ }
+};
+
+// Header "Save now" button: behaviour depends on current sync state
+MF.headerSave = async () => {
+  if(S.fileStatus==="unsupported"){ MF.exportData(); return; }      // no FS API → download a copy
+  if(S.fileStatus==="connected"){ clearTimeout(fileSaveTimer); await writeToFile(); toast("Saved to "+S.fileName); return; }
+  if(S.fileStatus==="reconnect"){ MF.reconnectFile(); return; }
+  if(S.fileStatus==="error"){ await writeToFile(); return; }
+  MF.connectDataFile(); // "off" → prompt to choose a file
+};
+
+MF.loadDataFile = async () => {
+  if(!("showOpenFilePicker" in window)){ toast("Not supported in this browser — use Import backup"); return; }
+  try{
+    const [handle]=await window.showOpenFilePicker({types:FILE_PICKER_OPTS.types,multiple:false});
+    const file=await handle.getFile();
+    const obj=JSON.parse(await file.text());
+    if(!validPayload(obj)){ toast("Not a valid Mindflow data file"); return; }
+    openConfirm(
+      "Load this data file? Current notes, events, and summaries in this browser will be replaced by the file's contents, and the file will become the auto-save target.",
+      `${obj.notes.length} notes · ${obj.events.length} events · ${Object.keys(obj.sumHist||{}).length} summary day(s)`,
+      async ()=>{
+        applyPayload(obj);
+        S.fileHandle=handle; S.fileName=handle.name; S.fileStatus="connected";
+        await idbSet("dataFileHandle",handle);
+        renderFileBanner();
+        toast("Data loaded — auto-saving to "+handle.name);
+      },
+      "Load file", ()=>{ if(setDraft) renderSettings(); }
+    );
+  }catch(e){ /* user cancelled picker */ }
+};
+
+MF.disconnectDataFile = async () => {
+  clearTimeout(fileSaveTimer);
+  S.fileHandle=null; S.fileName=""; S.fileStatus="off";
+  await idbDel("dataFileHandle");
+  renderFileBanner();
+  if(setDraft) renderSettings();
+  toast("Data file disconnected (file kept on disk)");
+};
+
+MF.retryFileSave = () => writeToFile();
+
+// Startup: try to reconnect to a previously used data file
+async function initFileSync(){
+  if(!("showSaveFilePicker" in window)) return;
+  const handle=await idbGet("dataFileHandle");
+  if(!handle) return;
+  S.fileHandle=handle; S.fileName=handle.name||"mindflow-data.json";
+  let perm="prompt";
+  try{ if(handle.queryPermission) perm=await handle.queryPermission({mode:"readwrite"}); }catch{}
+  if(perm==="granted"){ await readAndSyncFile(); }
+  else { S.fileStatus="reconnect"; renderFileBanner(); }
+}
+MF.reconnectFile = async () => {
+  if(!S.fileHandle) return;
+  try{
+    let perm="denied";
+    if(S.fileHandle.requestPermission) perm=await S.fileHandle.requestPermission({mode:"readwrite"});
+    if(perm==="granted"){ await readAndSyncFile(); }
+    else { toast("Permission declined — data file not connected"); }
+  }catch(e){ S.fileStatus="error"; renderFileBanner(); }
+};
+// Newer side wins: load the file if it's newer than local, else push local to file
+async function readAndSyncFile(){
+  try{
+    const file=await S.fileHandle.getFile();
+    let obj=null;
+    try{ obj=JSON.parse(await file.text()); }catch{}
+    const localSavedAt=(lsGet("mf_meta",{}).savedAt)||0;
+    const fileSavedAt=(obj&&obj.savedAt)||file.lastModified||0;
+    S.fileStatus="connected";
+    if(validPayload(obj) && fileSavedAt>localSavedAt){
+      applyPayload(obj);
+      toast("Loaded newer data from "+S.fileName);
+    } else {
+      await writeToFile();
+      if(validPayload(obj)) toast("Data file updated from this browser");
+    }
+    renderFileBanner();
+  }catch(e){ S.fileStatus="error"; renderFileBanner(); }
+}
+
+function renderFileBanner(){
+  renderSavedIndicator();
+  const el=$("file-banner");
+  if(!el) return;
+  if(S.fileStatus==="reconnect"){
+    el.style.display="";
+    el.innerHTML=`<span>💾 Your data file <b>${esc(S.fileName)}</b> is ready to reconnect</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn-primary" style="font-size:11px;padding:3px 10px" onclick="MF.reconnectFile()">Reconnect</button>
+        <button class="btn-secondary" style="font-size:11px;padding:3px 10px" onclick="MF.disconnectDataFile()">Ignore</button>
+      </div>`;
+  } else if(S.fileStatus==="error"){
+    el.style.display="";
+    el.innerHTML=`<span>⚠ Couldn't save to <b>${esc(S.fileName||"data file")}</b></span>
+      <div style="display:flex;gap:6px">
+        <button class="btn-primary" style="font-size:11px;padding:3px 10px" onclick="MF.retryFileSave()">Retry</button>
+        <button class="btn-secondary" style="font-size:11px;padding:3px 10px" onclick="MF.connectDataFile()">Pick new file</button>
+      </div>`;
+  } else {
+    el.style.display="none"; el.innerHTML="";
+  }
+}
+
+// ─── Data backup: export / import / clear ─────────────────────────────────────
+MF.exportData = () => {
+  const payload=buildPayload(); // API key already excluded
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`mindflow-backup-${todayStr()}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  toast("Backup downloaded");
+};
+MF.triggerImport = () => $("import-file")?.click();
+MF.handleImportFile = el => {
+  const f=el.files&&el.files[0]; if(!f)return;
+  const reader=new FileReader();
+  reader.onload=()=>MF._importText(String(reader.result));
+  reader.readAsText(f);
+  el.value="";
+};
+MF._importText = text => {
+  let obj;
+  try{ obj=JSON.parse(text); }catch{ toast("Invalid backup file"); return; }
+  if(!obj||obj.app!=="mindflow"||!Array.isArray(obj.notes)||!Array.isArray(obj.events)||typeof obj.sumHist!=="object"){
+    toast("Invalid backup file"); return;
+  }
+  openConfirm(
+    "Importing will REPLACE all current notes, events, and summaries with the backup contents.",
+    `${obj.notes.length} notes · ${obj.events.length} events · ${Object.keys(obj.sumHist||{}).length} summary day(s)`,
+    ()=>{
+      S.notes=obj.notes; S.events=obj.events; S.sumHist=obj.sumHist||{};
+      if(obj.theme) S.theme=Object.assign({},THEME_PRESETS.warm,obj.theme);
+      // Merge settings but always keep this machine's API key
+      S.settings=Object.assign({},DEFAULT_SETTINGS,obj.settings||{},{apiKey:S.settings.apiKey}); if(!S.settings.model||RETIRED_MODELS.includes(S.settings.model))S.settings.model=DEFAULT_MODEL;
+      S.viewIdx=0; setDraft=null;
+      saveNotes(); saveEvents(); saveSettings(); saveTheme(); lsSet("mf_sumhist",S.sumHist);
+      renderAll(); toast("Backup imported");
+    },
+    "Import", ()=>renderSettings()
+  );
+};
+MF.clearAllData = () => {
+  openConfirm(
+    "Erase ALL Mindflow data in this browser? Notes, events, summaries, settings, and theme will be permanently deleted."+(S.fileHandle?" Your connected data file on disk will be kept intact and disconnected.":""),
+    null,
+    async ()=>{
+      // Disconnect FIRST so a pending auto-save can't overwrite the file with emptiness
+      clearTimeout(fileSaveTimer);
+      S.fileHandle=null; S.fileName=""; S.fileStatus=("showSaveFilePicker" in window)?"off":"unsupported";
+      await idbDel("dataFileHandle");
+      ["mf_notes","mf_events","mf_sumhist","mf_settings","mf_theme","mf_meta","mf_rollover_dismissed"].forEach(k=>{try{localStorage.removeItem(k);}catch{}});
+      S.notes=[]; S.events=[]; S.sumHist={};
+      S.settings={...DEFAULT_SETTINGS}; S.theme={...THEME_PRESETS.warm};
+      S.selDate=todayStr(); S.viewIdx=0; setDraft=null;
+      renderFileBanner(); renderAll(); toast("All data erased");
+    },
+    "Erase everything", ()=>renderSettings()
+  );
+};
+
+// ─── Copy note ────────────────────────────────────────────────────────────────
+MF.copyNote = id => {
+  const n=S.notes.find(x=>x.id===id); if(!n)return;
+  const done=()=>toast("Copied to clipboard");
+  const fallback=()=>{
+    const ta=document.createElement("textarea");
+    ta.value=n.text; ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); done(); }catch{ toast("Copy failed"); }
+    ta.remove();
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(n.text).then(done).catch(fallback);
+  } else fallback();
+};
+
+// ─── Reminder notifications (fire while app is open) ──────────────────────────
+const REMINDER_LEAD = { "10min":10*60e3, "30min":30*60e3, "1hour":3600e3, "1day":86400e3 };
+const notifFired = new Set();
+function checkReminders(){
+  if(!("Notification" in window) || Notification.permission!=="granted") return;
+  const now=Date.now();
+  for(const ev of S.events){
+    if(!ev.reminder || ev.reminder==="none" || !ev.date) continue;
+    const lead=REMINDER_LEAD[ev.reminder]||0;
+    // Check today..+2 days so recurring occurrences and 1-day leads are covered
+    for(let off=0; off<=2; off++){
+      const ds=addDays(todayStr(),off);
+      if(!occursOn(ev,ds)) continue;
+      const [h,m]=(ev.time||"09:00").split(":").map(Number);
+      const dt=parseDateStr(ds); dt.setHours(isNaN(h)?9:h, isNaN(m)?0:m, 0, 0);
+      const target=dt.getTime()-lead;
+      const key=ev.id+"|"+ds+"|"+ev.reminder;
+      if(now>=target && now<target+90e3 && !notifFired.has(key)){
+        notifFired.add(key);
+        try{
+          new Notification("Mindflow · "+ev.title,{
+            body:(fmtHHMM(ev.time)||"All day")+(ev.location?" · "+ev.location:"")+(ev.description?"\n"+ev.description:"")
+          });
+        }catch{}
+      }
+    }
+  }
+}
+
+// ─── Keyboard shortcuts ───────────────────────────────────────────────────────
+document.addEventListener("keydown", e => {
+  const el=document.activeElement||{};
+  const tag=el.tagName;
+  const typing=tag==="INPUT"||tag==="TEXTAREA"||tag==="SELECT";
+  const overlayOpen=$("overlay-root").innerHTML.length>0;
+  const dpOpenNow=!!$("dp-dropdown");
+
+  // Enter/Space activate any role="button" element (accessibility for non-<button> clickables)
+  if((e.key==="Enter"||e.key===" ") && el.getAttribute && el.getAttribute("role")==="button"){
+    e.preventDefault(); el.click(); return;
+  }
+  // Escape closes the top overlay or the date picker
+  if(e.key==="Escape"){
+    if(dpOpenNow){ MF.closeDatePicker(); return; }
+    if(overlayOpen){ const bg=$("overlay-root").querySelector(".modal-bg,.pin-bg"); if(bg) bg.click(); return; }
+  }
+
+  if(e.key==="/" && !typing && !overlayOpen && !dpOpenNow){ e.preventDefault(); $("search-input").focus(); return; }
+  if(typing||overlayOpen||dpOpenNow) return;
+  if(e.key==="t"||e.key==="T") MF.goToday();
+  else if(e.key==="ArrowLeft") MF.navDate(-1);
+  else if(e.key==="ArrowRight") MF.navDate(1);
+});
+
+// When a modal/overlay appears, move focus into it (and restore on close)
+let lastFocusBeforeOverlay=null;
+(new MutationObserver(()=>{
+  const root=$("overlay-root"); if(!root) return;
+  const hasModal=root.querySelector(".modal, .pin-panel");
+  if(hasModal){
+    if(!root._focused){
+      lastFocusBeforeOverlay=document.activeElement;
+      const f=hasModal.querySelector("input:not([type=hidden]),select,textarea,button,[tabindex]");
+      if(f) setTimeout(()=>{try{f.focus();}catch{}},10);
+      root._focused=true;
+    }
+  } else {
+    root._focused=false;
+    if(lastFocusBeforeOverlay){ try{lastFocusBeforeOverlay.focus();}catch{} lastFocusBeforeOverlay=null; }
+  }
+})).observe($("overlay-root"),{childList:true});
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+renderFilterSel();
+saveSumHist(); // prune on startup
+renderAll();
+checkReminders();
+setInterval(checkReminders, 30e3);
+initFileSync(); // reconnect to a previously used data file, if any
+
+})();
+</script>
+</body>
+</html>

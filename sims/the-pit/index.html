@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Pit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE work: a market-structure lab, dense and exact like a trading-desk screen
+   IDEA the open-outcry pit: every trader type wears a coloured jacket, and the order book is the floor they fight over
+   PICTURE the live session chart with the dealer gamma strike map and the depth ladder beside it, then the crowd of 800 prop accounts as cells
+   COLOUR white or night ground, ink, bid green and ask red for the book, one jacket colour per trader class
+   TYPE Archivo 800 for titles and figures, Archivo for text
+   LAYOUT chart and ladder side by side on a laptop, ladder under the chart at 720px, everything stacked on a phone */
+:root{color-scheme:light;--bg:#ffffff;--ink:#15171c;--mute:#5b616e;--line:#e2e4e9;--panel:#f4f5f7;--band:#15171c;--bandInk:#ffffff;--bandMute:#b9bec8;
+--bid:#0d8a5d;--ask:#d0392a;--mm:#2f5bd3;--dl:#b8327a;--dlL:#e7a9c9;--mo:#df6d16;--va:#10878a;--pr:#c49700;--in:#6b48b5;--no:#8b919c;--cell:#e6e8ec}
+:root[data-theme=dark]{color-scheme:dark;--bg:#111318;--ink:#eceef2;--mute:#a0a6b2;--line:#2b2f38;--panel:#1a1d24;--band:#07080b;--bandInk:#ffffff;--bandMute:#9aa0ab;
+--bid:#2fbf86;--ask:#ff6a5a;--mm:#7092f2;--dl:#e468a8;--dlL:#6b3a55;--mo:#ff9a4d;--va:#3cc4c6;--pr:#f2c230;--in:#a68cf2;--no:#8b919c;--cell:#262a33}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){color-scheme:dark;--bg:#111318;--ink:#eceef2;--mute:#a0a6b2;--line:#2b2f38;--panel:#1a1d24;--band:#07080b;--bandInk:#ffffff;--bandMute:#9aa0ab;
+--bid:#2fbf86;--ask:#ff6a5a;--mm:#7092f2;--dl:#e468a8;--dlL:#6b3a55;--mo:#ff9a4d;--va:#3cc4c6;--pr:#f2c230;--in:#a68cf2;--no:#8b919c;--cell:#262a33}}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 Archivo,system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-weight:800;line-height:1.05;letter-spacing:-.02em;margin:0;text-wrap:balance}
+h1{font-size:clamp(40px,6vw,52px)}
+h2{font-size:clamp(26px,3.4vw,34px);margin-bottom:8px}
+h3{font-size:17px;letter-spacing:0;margin-bottom:8px}
+p{margin:0 0 10px;max-width:70ch}
+.band{padding:clamp(24px,3.5vw,48px) max(4vw,16px)}
+.wrap{max-width:1240px;margin:0 auto}
+.top{background:var(--band);color:var(--bandInk);padding-bottom:0}
+.top p{color:var(--bandMute);font-size:17px}
+.jackets{display:flex;flex-wrap:wrap;gap:0;margin-top:22px}
+.jk{flex:1 1 120px;padding:10px 12px 12px;border-top:6px solid var(--c);font-size:14px;line-height:1.3;color:var(--bandInk)}
+.jk b{display:block;font-size:22px;font-weight:800}
+.jk span{color:var(--bandMute)}
+nav.scroll{display:flex;gap:4px;overflow-x:auto;padding:10px max(4vw,16px);border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+nav a{flex:none;color:var(--ink);text-decoration:none;font-weight:600;font-size:15px;padding:8px 12px;border-radius:6px}
+nav a:hover{background:var(--panel)}
+button,select,input{font:inherit;font-size:16px;color:var(--ink)}
+button{min-height:44px;padding:0 16px;border-radius:8px;border:1px solid var(--line);background:var(--panel);font-weight:600;cursor:pointer}
+button:hover{border-color:var(--mute)}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--mm);outline-offset:2px}
+button.pri{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+button.shock{background:var(--ask);color:#fff;border-color:var(--ask)}
+button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+select,input{min-height:44px;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg)}
+label{font-size:14px;color:var(--mute);display:grid;gap:4px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;min-width:48px;padding:0 10px}
+.figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(8.5em,1fr));gap:2px;margin:14px 0}
+.fig1{background:var(--panel);padding:10px 12px}
+.fig1 small{display:block;font-size:13px;color:var(--mute)}
+.fig1 b{font-size:clamp(20px,2.2vw,24px);font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums}
+.fig1 i{display:block;font-style:normal;font-size:13px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.live{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:16px}
+.fig{position:relative;min-height:340px}
+.fig>canvas{position:absolute;inset:0;width:100%;height:100%}
+.chart{height:440px}
+.ladder{font-size:13px;font-variant-numeric:tabular-nums;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.ladder .hd,.ladder .lr{display:grid;grid-template-columns:1fr 78px 1fr;align-items:center}
+.ladder .hd{font-weight:600;color:var(--mute);padding:6px 8px;border-bottom:1px solid var(--line)}
+.ladder .hd span:nth-child(2){text-align:center}.ladder .hd span:last-child{text-align:right}
+.lr{height:19px}
+.lr .p{text-align:center;font-weight:600}
+.lr.last .p{background:var(--ink);color:var(--bg)}
+.lr .b,.lr .a{height:13px;display:flex;position:relative}
+.lr .b{justify-content:flex-end}
+.lr .b i,.lr .a i{display:block;height:100%}
+.lr .b i.o{background:color-mix(in srgb,var(--bid) 45%,transparent)}.lr .b i.m{background:var(--bid)}
+.lr .a i.o{background:color-mix(in srgb,var(--ask) 45%,transparent)}.lr .a i.m{background:var(--ask)}
+.key{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--mute);margin-top:8px}
+.key i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.under{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:24px;margin-top:22px}
+.crowd{height:230px;min-height:0}
+.pnl .r{display:grid;grid-template-columns:8.5em minmax(0,1fr) 6.5em;gap:8px;align-items:center;font-size:14px;min-height:30px;line-height:1.2}
+.pnl .bar{position:relative;height:14px;background:var(--panel)}
+.pnl .bar i{position:absolute;top:0;height:100%}
+.pnl .bar:after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--mute)}
+.pnl .v{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tape{list-style:none;margin:12px 0 0;padding:0;font-size:14px}
+.tape li{display:grid;grid-template-columns:6.4em minmax(0,1fr);gap:8px;padding:5px 0;border-top:1px solid var(--line)}
+.tape time{color:var(--mute);font-variant-numeric:tabular-nums;white-space:nowrap}
+.rules{margin-top:22px;background:var(--panel);border-radius:10px;padding:16px}
+.rules .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(11em,1fr));gap:12px;margin:10px 0 12px}
+.alt{background:var(--panel)}
+.alt .card{background:var(--bg)}
+.card{border-radius:10px;padding:16px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:13px;color:var(--mute);font-weight:600}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ok{color:var(--bid);font-weight:800}.no{color:var(--ask);font-weight:800}
+.lead{font-size:18px;max-width:62ch}
+.prog{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin:10px 0}
+.prog i{display:block;height:100%;width:0;background:var(--ink);transition:width .2s}
+.note{font-size:14px;color:var(--mute)}
+.mid{height:300px}.short{height:240px}
+form.agent{display:grid;grid-template-columns:repeat(auto-fit,minmax(10.5em,1fr));gap:12px;margin:12px 0}
+.big{font-size:clamp(34px,5vw,48px);font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.res{display:grid;grid-template-columns:repeat(auto-fit,minmax(9em,1fr));gap:2px;margin:12px 0}
+.res div{background:var(--panel);padding:12px}
+.res small{display:block;color:var(--mute);font-size:13px}
+.alt .res div{background:var(--bg)}
+svg text,canvas{font-family:Archivo,system-ui,sans-serif}
+@media(max-width:1000px){.live{grid-template-columns:minmax(0,1fr)}.ladder{display:grid;grid-template-columns:1fr}}
+@media(max-width:820px){.under,.two{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.chart{height:340px}.crowd{height:auto;aspect-ratio:25/32}table{font-size:13px}th,td{padding:6px 4px}.jk{flex-basis:30%}.jk b{font-size:18px}.pnl .r{grid-template-columns:6.8em minmax(0,1fr) 5.6em}}
+@media(prefers-reduced-motion:reduce){.prog i{transition:none}}
+</style>
+</head>
+<body>
+<header class="band top">
+ <div class="wrap">
+  <h1>The Pit</h1>
+  <p>About 2,000 simulated traders share one NQ-style futures order book. No price is fed in: it comes out of their orders. Change who is in the room and the market's behaviour changes with it.</p>
+  <div class="jackets" id="jackets"></div>
+ </div>
+</header>
+<nav class="scroll" aria-label="Sections"><a href="#live">Live session</a><a href="#compare">Same shock, different rules</a><a href="#facts">Real-market check</a><a href="#survival">Who survives</a><a href="#agent">Test your agent</a><a href="#notes">How it works</a></nav>
+
+<section class="band" id="live"><div class="wrap">
+ <div class="row" style="justify-content:space-between;gap:12px">
+  <h2 id="clock" style="margin:0">Day 2, 10:59</h2>
+  <div class="row">
+   <button id="play" class="pri" aria-label="Pause">Pause</button>
+   <div class="seg" role="group" aria-label="Speed" id="speed"></div>
+   <button id="shockBtn" class="shock">News shock −3%</button>
+   <button id="skip">Skip to next day</button>
+  </div>
+ </div>
+ <div class="figs" id="figs"></div>
+ <div class="live">
+  <div>
+   <div class="fig chart"><canvas id="pc" role="img" aria-label="Today's one-minute price candles with fundamental value, dealer gamma by strike and volume"></canvas></div>
+   <div class="key"><span><i style="background:var(--va)"></i>Fundamental value (dashed)</span><span><i style="background:var(--dl)"></i>Dealers short gamma at strike</span><span><i style="background:var(--dlL)"></i>Dealers long gamma at strike</span><span><i style="background:var(--pr)"></i>Volume in minutes with 10+ stops fired</span><span><i style="background:var(--line)"></i>Trading halted</span></div>
+  </div>
+  <div>
+   <div class="ladder" aria-label="Order book depth"><div class="hd"><span>Bids</span><span>Price</span><span>Asks</span></div><div id="ladder"></div></div>
+   <div class="key"><span><i style="background:var(--bid)"></i>Market-maker quotes (solid)</span><span><i style="background:color-mix(in srgb,var(--bid) 45%,transparent)"></i>Other resting orders</span></div>
+  </div>
+ </div>
+ <div class="under">
+  <div>
+   <h3>The crowd: 800 prop-firm accounts</h3>
+   <div class="fig crowd"><canvas id="crowd" role="img" aria-label="Grid of prop accounts coloured by position and status"></canvas></div>
+   <div class="key"><span><i style="background:var(--cell)"></i>Flat</span><span><i style="background:var(--bid)"></i>Long</span><span><i style="background:var(--ask)"></i>Short</span><span><i style="background:var(--ink)"></i>Blown today (replaced overnight)</span><span><i style="background:var(--pr);border-radius:50%"></i>Has taken a payout</span></div>
+  </div>
+  <div>
+   <h3>Today's profit and loss by trader type</h3>
+   <div class="pnl" id="pnl"></div>
+   <h3 style="margin-top:18px">Tape</h3>
+   <ul class="tape" id="tape"></ul>
+  </div>
+ </div>
+ <div class="rules">
+  <h3>Rules of this market</h3>
+  <div class="grid">
+   <label>Dealer gamma<select id="s-gamma"><option value="long">Long gamma (damps moves)</option><option value="flip" selected>Flip: long above, short below</option><option value="flat">No options book</option><option value="short">Short gamma (chases moves)</option></select></label>
+   <label>Market-maker presence<select id="s-mm"><option value="0.5">Half</option><option value="1" selected>Normal</option><option value="2">Double</option></select></label>
+   <label>Prop drawdown rule<select id="s-prop"><option value="intraday" selected>Intraday trailing</option><option value="eod">End-of-day trailing</option><option value="static">Static</option></select></label>
+   <label>Velocity halts<select id="s-breaker"><option value="1" selected>On (2% in 5 min)</option><option value="0">Off</option></select></label>
+   <label>Tick size<select id="s-tick"><option value="0.05">0.05 point</option><option value="0.25" selected>0.25 point (NQ)</option><option value="1">1 point</option></select></label>
+   <label>Leverage cap for funds<select id="s-lev"><option value="2">2×</option><option value="4" selected>4×</option><option value="8">8×</option></select></label>
+   <label>Random seed<input id="s-seed" type="number" value="7" min="1" max="9999" inputmode="numeric"></label>
+  </div>
+  <div class="row"><button id="apply" class="pri">Restart with these rules</button><span class="note">The sections below use these rules too when you rerun them.</span></div>
+ </div>
+</div></section>
+
+<section class="band alt" id="compare"><div class="wrap">
+ <h2 id="cmpTitle">Same shock, different rules</h2>
+ <p class="lead" id="cmpLead">Each version replays the same six random histories with one rule changed, then hits fundamental value with the same news shock at 11:30 on day 2.</p>
+ <div class="row" style="margin:12px 0">
+  <label>Change one rule<select id="c-key"><option value="gamma">Dealer gamma</option><option value="prop">Prop drawdown rule</option><option value="breaker">Velocity halts</option><option value="mm">Market-maker presence</option><option value="tick">Tick size</option><option value="lev">Leverage cap</option></select></label>
+  <label>Shock to value<select id="c-size"><option value="-0.015">−1.5%</option><option value="-0.03" selected>−3%</option><option value="-0.05">−5%</option><option value="0.03">+3%</option></select></label>
+  <button id="c-run" class="pri" style="align-self:end">Run comparison</button>
+ </div>
+ <div class="prog"><i id="c-prog"></i></div>
+<div class="card"><h3>How far price strayed from fundamental value around the shock</h3><div class="fig mid"><canvas id="cc" role="img" aria-label="Average gap between price and fundamental value around the shock for each rule"></canvas></div><p class="note">Price minus fundamental value, in percent, averaged over six histories, by minute from the shock. Zero means price sits exactly at value; below zero is an overshoot.</p></div>
+ <div class="card" style="margin-top:16px"><h3>What changed</h3><div class="scroll"><table id="ct"></table></div><p class="note">Averages over the six histories. Overshoot is how far price went past the new fundamental value. Accounts blown and stops fired count the whole shock day, including normal trading.</p></div>
+</div></section>
+
+<section class="band" id="facts"><div class="wrap">
+ <h2 id="factsTitle">Does it behave like a real market?</h2>
+ <p class="lead">A market model earns trust only if it reproduces the statistical habits of real prices, the "stylized facts" (Cont, 2001). These are measured on the simulated one-minute bars and compared with typical values for index futures.</p>
+ <div class="row" style="margin:12px 0"><label>Days to simulate<select id="f-days"><option>10</option><option selected>20</option><option>40</option></select></label><button id="f-run" class="pri" style="align-self:end">Rerun the check</button></div>
+ <div class="prog"><i id="f-prog"></i></div>
+ <div class="scroll"><table id="ft"></table></div>
+ <div class="two" style="margin-top:20px">
+  <div><h3>Volatility clusters: autocorrelation by lag</h3><div class="fig short"><canvas id="fa" role="img" aria-label="Autocorrelation of absolute and raw one-minute returns by lag"></canvas></div><p class="note">Bars: absolute returns (size of moves). Line: raw returns (direction). Big moves follow big moves; direction does not.</p></div>
+  <div><h3>Fat tails: one-minute returns vs a bell curve</h3><div class="fig short"><canvas id="fh" role="img" aria-label="Histogram of standardized one-minute returns on a log scale against a normal curve"></canvas></div><p class="note">Log scale. Bars: simulated returns in standard deviations. Line: normal distribution.</p></div>
+ </div>
+</div></section>
+
+<section class="band alt" id="survival"><div class="wrap">
+ <h2 id="survTitle">Who survives</h2>
+ <p class="lead">Over many sessions, momentum and value funds that lose 40% are shut down and replaced, and 1% of funds switch strategy each day, with new money leaning toward whichever strategy earned more over the last month. Prop accounts that blow are replaced by new traders every morning.</p>
+ <div class="row" style="margin:12px 0"><label>Sessions<select id="v-days"><option>30</option><option selected>60</option><option>120</option></select></label><button id="v-run" class="pri" style="align-self:end">Rerun</button></div>
+ <div class="prog"><i id="v-prog"></i></div>
+ <div class="res" id="vres"></div>
+ <div class="two">
+  <div class="card"><h3>Price vs fundamental value, daily close</h3><div class="fig short"><canvas id="vp" role="img" aria-label="Daily closing price and fundamental value"></canvas></div></div>
+  <div class="card"><h3>Cumulative profit by trader type</h3><div class="fig short"><canvas id="vc" role="img" aria-label="Cumulative profit by class over sessions"></canvas></div><p class="note">Includes closed-out funds and blown accounts. Prop includes payouts taken. Dealers' options P&amp;L is not modelled, so they are left out.</p></div>
+  <div class="card"><h3>Strategy mix of the funds</h3><div class="fig short"><canvas id="vm" role="img" aria-label="Number of momentum and value funds by session"></canvas></div></div>
+  <div class="card"><h3>Prop accounts by position size</h3><div class="scroll"><table id="vt"></table></div><p class="note">Size in micro contracts (10 micros = 1 NQ). "Blown" is the share of accounts started that hit their drawdown limit during the run.</p></div>
+ </div>
+</div></section>
+
+<section class="band" id="agent"><div class="wrap">
+ <h2 id="agTitle">Test your agent</h2>
+ <p class="lead">Define a prop trader, then run 1,000 account lives on the simulated sessions from "Who survives". Each life starts on a random day with a fresh $50,000 account and runs up to 30 sessions.</p>
+ <form class="agent" id="ag" onsubmit="return false">
+  <label>Entry rule<select id="a-style"><option value="brk" selected>Breakout of N-minute range</option><option value="fade">Fade an N-minute move of X points</option><option value="trend">Moving-average cross (N and 4N)</option></select></label>
+  <label>N (minutes)<input id="a-lb" type="number" value="15" min="2" max="120"></label>
+  <label>X (points, fade only)<input id="a-x" type="number" value="40" min="5" max="300"></label>
+  <label>Direction<select id="a-dir"><option value="both" selected>Long and short</option><option value="long">Long only</option><option value="short">Short only</option></select></label>
+  <label>Stop (points)<input id="a-stop" type="number" value="25" min="2" max="300"></label>
+  <label>Target (× stop)<input id="a-r" type="number" value="2" min="0.5" max="10" step="0.5"></label>
+  <label>Size (micro contracts)<input id="a-q" type="number" value="3" min="1" max="50"></label>
+  <label>Max trades per day<input id="a-mt" type="number" value="3" min="1" max="20"></label>
+  <label>Drawdown rule<select id="a-rule"><option value="intraday" selected>Intraday trailing</option><option value="eod">End-of-day trailing</option><option value="static">Static</option></select></label>
+  <label>Max drawdown ($)<input id="a-dd" type="number" value="2000" min="500" max="10000" step="100"></label>
+  <label>Daily loss limit ($)<input id="a-dll" type="number" value="1000" min="100" max="10000" step="100"></label>
+  <label>Account cost ($)<input id="a-fee" type="number" value="150" min="0" max="2000" step="10"></label>
+ </form>
+ <div class="row"><button id="a-run" class="pri">Run 1,000 lives</button><span class="note" id="a-src"></span></div>
+ <div class="res" id="ares"></div>
+ <div class="two">
+  <div><h3>Payouts per account life</h3><div class="fig short"><canvas id="ah" role="img" aria-label="Histogram of total payouts per account life"></canvas></div></div>
+  <div><h3>How lives ended</h3><div class="fig short"><canvas id="ae" role="img" aria-label="Share of lives blown, still running and paid by session"></canvas></div><p class="note">By session since the account started: share already blown (red), share that has taken at least one payout (gold).</p></div>
+ </div>
+ <p class="note">Your agent is a price taker: its orders are filled at the bar's price plus a quarter-point of slippage and don't move the simulated market. When a bar touches both the stop and the target, the stop is assumed to come first. Fees are $0.50 per micro per side.</p>
+</div></section>
+
+<section class="band alt" id="notes"><div class="wrap">
+ <h2>How it works</h2>
+ <p class="lead">Every 5 simulated seconds, liquidity is refreshed, market makers requote, and each trader that is due to act sends orders into a limit order book. Market orders walk the book, so price impact, spreads and stop cascades come out of the queue itself.</p>
+ <div class="scroll"><table class="stack" id="nt"><thead><tr><th>Trader</th><th class="n">Count</th><th>What it does</th></tr></thead><tbody></tbody></table></div>
+ <div class="two" style="margin-top:20px">
+  <div><h3>Built in (assumptions)</h3>
+   <p>Fundamental value is a random walk (about 1% a day) with news jumps that arrive in bursts. About 85% of a news move is priced in straight away by quote revisions; the rest has to be traded in by value funds.</p>
+   <p>Background liquidity refills toward a depth profile around the last trade and thins out when volatility rises. Order flow is heavier at the open and close. Market orders cannot walk more than 12 points (like exchange protection points).</p>
+   <p>The options book is stylised: open interest is bunched around the opening price, heavier on round strikes, with one implied volatility (20%) and expiry about a day and a third away. Dealers re-hedge their delta every 15 seconds.</p>
+   <p>Trait ranges (lookbacks, thresholds, stops, sizes) are hand-chosen, not measured. Contract values follow NQ ($20 a point).</p>
+  </div>
+  <div><h3>Emergent (not programmed)</h3>
+   <p>The price path, spreads, depth, stop runs, flash moves, the volatility clustering and fat tails in the table above, which accounts blow up, and which fund strategy grows.</p>
+   <h3 style="margin-top:16px">Known limits</h3>
+   <p>One instrument, no overnight session (the open gaps by part of the overnight value change). Dealers' option P&amp;L is not tracked. Market makers' quotes are refreshed only every 5 seconds, so they get picked off more than real ones would. Each run is one random history; compare regimes across several seeds, not from a single run. This is a lab for comparing rules, not a forecast of real prices.</p>
+  </div>
+ </div>
+ <p class="note">All prices, accounts and results on this page are simulated.</p>
+</div></section>
+
+<script>
+// The Pit — agent-based limit order book engine
+const PV=20,SPM=12,MPD=390,SPD=SPM*MPD,NB=1<<15;
+function mul(seed){let s=seed>>>0;return()=>{s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function mk(seed){const u=mul(seed);const r=()=>u();r.g=()=>{const a=u()||1e-12,b=u();return Math.sqrt(-2*Math.log(a))*Math.cos(6.283185307*b)};r.e=m=>-Math.log(u()||1e-12)*m;r.p=l=>{if(l>25)return Math.max(0,Math.round(l+Math.sqrt(l)*r.g()));const L=Math.exp(-l);let k=0,p=u();while(p>L){k++;p*=u()}return k};r.i=n=>Math.floor(u()*n);return r}
+function ncdf(x){const t=1/(1+0.2316419*Math.abs(x)),d=0.3989423*Math.exp(-x*x/2),p=d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));return x>0?1-p:p}
+const DEF={seed:7,gamma:'flip',mm:1,prop:'intraday',breaker:true,tick:0.25,lev:4,nProp:800,nMom:150,nVal:150,nInst:8,gex:1,shock:null,P0:21000,evolve:true};
+// tunable constants
+const KD={noiseL:3.2,noiseSz:2.2,D0:3,res:0.6,band:30,ramp:3,thin:1.2,mmQ:10,tox:1.0,mmLim:40,mmPull:2.4,instMed:300,gexBase:750,momCap:3e5,valCap:3.5e6,Fvol:0.00028,newsRate:0.6,newsSz:0.0015,hawk:3,newsVol:1.5,pub:0.85};
+function Sim(cfg){
+ const c=Object.assign({},DEF,cfg||{});
+ const K=Object.assign({},KD,c.K||{});const T=c.tick,rn=mk(c.seed*7+1),rq=mk(c.seed*13+2),rl=mk(c.seed*17+3),ra=mk(c.seed*19+4),ri=mk(c.seed*23+5),ro=mk(c.seed*29+6);
+ const bo=new Float64Array(NB),bm=new Float64Array(NB),ao=new Float64Array(NB),am=new Float64Array(NB);
+ let base=0,bb=0,ba=0,last=0,st=0,day=0,F=c.P0,vS=0.0007**2,vN=0.0007**2,vr=1,halt=0,limitHit=false,prevClose=c.P0,bar=null;
+ const bars=[],allBars=[],closes=[],days=[],events=[],sellStops=new Map(),buyStops=new Map(),q=[];
+ let nI=0,pubAcc=0,lastSide=1,stopQ=[],busy=false,mmWd=false,cascade=0,flow=0,flowE=0;
+ const ev=(kind,txt)=>{events.push({day,min:Math.floor(st/SPM),kind,txt});if(events.length>400)events.shift()};
+ const px=()=>last*T;
+ // agents
+ const mm={cls:'mm',cash:0,pos:0,cap0:5e6,quotes:[],scale:1};
+ const pas={cls:'pas',cash:0,pos:0};
+ const noise={cls:'noise',cash:0,pos:0};
+ const dealer={cls:'dealer',cash:0,pos:0,K:[],q:[],H0:0,gex:0,flip:null};
+ const mom=[],val=[],prop=[],inst=[];
+ const buckets=Array.from({length:SPM},()=>[]);
+ let propStarted=0,propBlown=0,propPaid=0,propPaidUsd=0,blownToday=0,paidToday=0,dayStops=0,replaced={mom:0,val:0};
+ const classHist=[];
+ function newMom(){const a={cls:'mom',L:Math.round(Math.exp(Math.log(10)+ra()*Math.log(30))),th:1+ra()*1.5,every:1+ra.i(15),cnt:0,cap0:K.momCap*Math.exp(0.5*ra.g()),pos:0,cool:0,off:ra.i(SPM),alive:true};a.cash=a.cap0;a.peak=a.cap0;return a}
+ function newVal(){const a={cls:'val',m:0.002+ra()*0.008,every:1+Math.floor(ra()*ra()*20),cnt:0,bias:0.002*ra.g(),cap0:K.valCap*Math.exp(0.5*ra.g()),pos:0,off:ra.i(SPM),alive:true,Fh:F};a.cash=a.cap0;return a}
+ function newProp(){propStarted++;const style=ra()<0.55?'brk':'fade';const a={cls:'prop',style,qty:[0.1,0.2,0.2,0.3,0.5,0.5,1][ra.i(7)],stopPts:12+ra()*38,R:1+ra()*2,maxT:2+ra.i(5),lb:style==='brk'?5+ra.i(26):5+ra.i(16),fadePts:25+ra()*60,cash:50000,pos:0,hwm:50000,thr:48000,alive:true,stopId:0,entry:0,tgt:0,tr:0,dayStart:50000,off:ra.i(SPM),days:0,paid:0,born:day};return a}
+ function newInst(){return{cls:'inst',cash:0,pos:0,rem:0,acc:0,rate:0,off:0}}
+ const reg=a=>{buckets[a.off].push(a)};
+ for(let i=0;i<c.nMom;i++){const a=newMom();mom.push(a);reg(a)}
+ for(let i=0;i<c.nVal;i++){const a=newVal();val.push(a);reg(a)}
+ for(let i=0;i<c.nProp;i++){const a=newProp();prop.push(a);reg(a)}
+ for(let i=0;i<c.nInst;i++)inst.push(newInst());
+ const maxPos=a=>Math.max(1,Math.floor(a.cap0*c.lev/(px()*PV)));
+ const eq=a=>a.cash+a.pos*px()*PV;
+ // book
+ function initBook(abs){bo.fill(0);bm.fill(0);ao.fill(0);am.fill(0);mm.quotes=[];base=abs-NB/2;const m=NB/2;
+  const far=Math.floor(NB/2-20);for(let d=0;d<far;d++){const qv=K.D0*Math.min(1,0.3+d*T/K.ramp)*Math.max(1,T/0.25)**0.5*(d*T>K.band?0.5:1);bo[m-1-d]=qv;ao[m+d]=qv}
+  bb=m-1;ba=m;last=abs}
+ function recenter(){const m=Math.round((bb+ba)/2),sh=m-NB/2;if(Math.abs(sh)<NB/4)return;
+  for(const A of[bo,bm,ao,am]){if(sh>0){A.copyWithin(0,sh);A.fill(0,NB-sh)}else{A.copyWithin(-sh,0,NB+sh);A.fill(0,0,-sh)}}
+  base+=sh;bb-=sh;ba-=sh;mm.quotes=[]}
+ const fixB=()=>{while(bb>0&&bo[bb]+bm[bb]<=1e-9)bb--;while(ba<NB-1&&ao[ba]+am[ba]<=1e-9)ba++};
+ // market order
+ const PROT=Math.round(12/T);
+ function take(side,qty,who,lim){if(qty<=0||halt>0)return 0;const LIM=lim===undefined?(side>0?Infinity:-Infinity):lim-base;let rem=qty,cost=0,mq=0,mv=0,pq=0,pv=0,i=side>0?ba:bb,w=0,lastI=i;const old=last;
+  if(side>0){while(rem>1e-9&&i<NB-1&&w<PROT&&i<=LIM){const Q=ao[i]+am[i];if(Q>1e-9){const t=Math.min(rem,Q),f=am[i]/Q;am[i]-=t*f;ao[i]-=t*(1-f);const p=base+i;mq+=t*f;mv+=t*f*p;pq+=t*(1-f);pv+=t*(1-f)*p;cost+=t*p;rem-=t;lastI=i}if(rem>1e-9){i++;w++}}}
+  else{while(rem>1e-9&&i>0&&w<PROT&&i>=LIM){const Q=bo[i]+bm[i];if(Q>1e-9){const t=Math.min(rem,Q),f=bm[i]/Q;bm[i]-=t*f;bo[i]-=t*(1-f);const p=base+i;mq+=t*f;mv+=t*f*p;pq+=t*(1-f);pv+=t*(1-f)*p;cost+=t*p;rem-=t;lastI=i}if(rem>1e-9){i--;w++}}}
+  const fill=qty-rem;if(fill<=0)return 0;fixB();flow+=side*fill;
+  who.pos+=side*fill;who.cash-=side*cost*T*PV;
+  mm.pos-=side*mq;mm.cash+=side*mv*T*PV;pas.pos-=side*pq;pas.cash+=side*pv*T*PV;
+  last=base+lastI;lastSide=side;const P=last*T;if(bar){bar.v+=fill;if(P>bar.h)bar.h=P;if(P<bar.l)bar.l=P;bar.c=P;if(who.cls==='dealer')bar.dh+=side*fill}
+  if(last!==old)checkStops(old,last);
+  if(!busy)runStops();
+  return cost/fill}
+ function addStop(a,abs,side,kind){const M=side<0?sellStops:buyStops;let L=M.get(abs);if(!L){L=[];M.set(abs,L)}L.push({a,id:a.stopId,kind})}
+ function checkStops(o,n){if(n<o){for(let L=o-1;L>=n;L--){const s=sellStops.get(L);if(s){sellStops.delete(L);for(const e of s)stopQ.push(e)}}}
+  else{for(let L=o+1;L<=n;L++){const s=buyStops.get(L);if(s){buyStops.delete(L);for(const e of s)stopQ.push(e)}}}}
+ function runStops(){busy=true;let n=0;while(stopQ.length&&halt===0){const e=stopQ.shift(),a=e.a;if(!a.alive||a.stopId!==e.id||a.pos===0)continue;a.stopId++;n++;const qn=Math.abs(a.pos);take(a.pos>0?-1:1,qn,a);a.cash-=2.5*qn;if(e.kind==='liq')blow(a)}
+  busy=false;if(n){cascade+=n;dayStops+=n;if(bar)bar.stops+=n}}
+ function blow(a){if(a.pos!==0){const qn=Math.abs(a.pos);a.stopId++;take(a.pos>0?-1:1,qn,a)}a.alive=false;a.blown=true;propBlown++;blownToday++;propDead+=eq(a)-50000+a.paid;life.push({days:a.days,paid:a.paid,style:a.style,qty:a.qty,stopPts:a.stopPts})}
+ // passive liquidity
+ function passive(m,u){const thin=Math.max(0.35,1/(1+K.thin*Math.max(0,vr-1))),D=K.D0*thin*Math.min(1.3,u)*Math.max(1,T/0.25)**0.5,r=K.res,W=Math.ceil(K.band/T),L=last-base,s1=T/K.ramp;
+  const ob=lastSide>0?1:0;for(let d=0;d<W;d++){const tg=D*Math.min(1,0.3+d*s1);let i=L-ob-d;if(i>0&&i<ba){const x=tg*(0.5+rl());bo[i]+=r*(x-bo[i]);if(bo[i]>1e-6&&i>bb)bb=i}
+   i=L+1-ob+d;if(i<NB-1&&i>bb){const x=tg*(0.5+rl());ao[i]+=r*(x-ao[i]);if(ao[i]>1e-6&&i<ba)ba=i}}}
+ function cancel(){fixB()}
+ function shiftBook(dt){if(!dt)return;const W=600,lo=Math.max(1,Math.min(bb,ba)-W),hi=Math.min(NB-2,Math.max(bb,ba)+W);
+  for(const A of[bo,bm,ao,am]){if(dt>0){for(let i=Math.min(hi,NB-2-dt);i>=lo;i--)A[i+dt]=A[i];for(let i=lo;i<lo+dt;i++)A[i]=0}else{for(let i=Math.max(lo,1-dt);i<=hi;i++)A[i+dt]=A[i];for(let i=hi+dt+1;i<=hi;i++)A[i]=0}}
+  bb+=dt;ba+=dt;const o=last;last+=dt;for(const q of mm.quotes)q[0]+=dt;fixB();checkStops(o,last);if(!busy&&halt===0)runStops()}
+ // market makers
+ function mmQuote(){for(const qt of mm.quotes){if(qt[1]<0)bm[qt[0]]=0;else am[qt[0]]=0}mm.quotes=[];fixB();
+  const lim=K.mmLim*c.mm*c.lev/4;const wd=vr>K.mmPull||Math.abs(mm.pos)>lim*1.6;
+  if(wd!==mmWd){mmWd=wd;ev(wd?'mm':'mmback',wd?'Market makers pulled quotes (vol '+vr.toFixed(1)+'x normal)':'Market makers back in the book')}
+  if(Math.abs(mm.pos)>lim*1.2&&halt===0){const s=mm.pos>0?-1:1;take(s,Math.round((Math.abs(mm.pos)-lim)*0.25)+1,mm)}
+  if(c.mm<=0)return;
+  flowE=flowE*0.85+flow;flow=0;const tox=Math.min(1,Math.abs(flowE)/(K.mmQ*6));const h=Math.max(1,Math.round((0.25+0.6*Math.max(0,vr-1)+0.75*tox)*(wd?3:1)/T)),mid=(ba-bb>Math.max(8,4/T))?last-base:(bb+ba)/2,skew=-mm.pos/lim*3*h+Math.sign(flowE)*tox*K.tox/T;
+  const Q=K.mmQ*c.mm*mm.scale*(wd?0.12:1)/(1+0.6*Math.max(0,vr-1))*Math.max(1,T/0.25);
+  const st2=Math.max(1,Math.round(0.5/T));
+  for(let k=0;k<5;k++){let i=Math.floor(mid-h+skew)-k*st2;if(i>=ba)i=ba-1;if(i>0){bm[i]+=Q;mm.quotes.push([i,-1]);if(i>bb)bb=i}
+   let j=Math.ceil(mid+h+skew)+k*st2;if(j<=bb)j=bb+1;if(j<NB-1){am[j]+=Q;mm.quotes.push([j,1]);if(j<ba)ba=j}}}
+ // dealers
+ function buildOptions(){const S=px();dealer.K=[];dealer.q=[];const lo=Math.floor(S*0.9/50)*50,hi=Math.ceil(S*1.1/50)*50;let norm=0;const Tt=1.35/252,sg=0.2;
+  for(let k=lo;k<=hi;k+=50){let w=Math.exp(-0.5*((k-S)/(0.025*S))**2)*(k%250===0?2:1)*(k%1000===0?1.6:1);
+   let s=c.gamma==='long'?1:c.gamma==='short'?-1:c.gamma==='flip'?(k>=S*0.992?1:-1.5):0;
+   const d1=(Math.log(S/k)+0.5*sg*sg*Tt)/(sg*Math.sqrt(Tt));norm+=w*Math.exp(-d1*d1/2)/(2.5066*S*sg*Math.sqrt(Tt))*S*0.01;
+   dealer.K.push(k);dealer.q.push(s*w)}
+  const A=norm>0?K.gexBase*c.gex/norm:0;dealer.q=dealer.q.map(v=>v*A);dealer.H0=0;dealer.H0=dealer.pos-dHedge(S,0);dealer.gex=gexAt(S,0)}
+ function tLeft(m){return(0.35+(MPD-m)/MPD)/252}
+ function dHedge(S,m){const Tt=tLeft(m),sg=0.2,sq=sg*Math.sqrt(Tt);let D=0;for(let k=0;k<dealer.K.length;k++){if(!dealer.q[k])continue;D+=dealer.q[k]*ncdf((Math.log(S/dealer.K[k])+0.5*sg*sg*Tt)/sq)}return dealer.H0-D}
+ function gexAt(S,m){const Tt=tLeft(m),sg=0.2,sq=sg*Math.sqrt(Tt);let G=0;for(let k=0;k<dealer.K.length;k++){if(!dealer.q[k])continue;const d1=(Math.log(S/dealer.K[k])+0.5*sg*sg*Tt)/sq;G+=dealer.q[k]*Math.exp(-d1*d1/2)/(2.5066*S*sq)*S*0.01}return G}
+ function gexProfile(m){const S=px(),out=[];for(let x=S*0.96;x<=S*1.04;x+=S*0.002)out.push([x,gexAt(x,m)]);return out}
+ function hedge(m){if(c.gamma==='flat')return;const tgt=Math.round(dHedge(px(),m)),d=tgt-dealer.pos;if(Math.abs(d)>=1)take(d>0?1:-1,Math.abs(d),dealer)}
+ // agent decisions
+ function actMom(a){if(a.cool>0){a.cool--;return}if(++a.cnt<a.every)return;a.cnt=0;const L=closes.length;if(L<=a.L)return;const z=Math.log(px()/closes[L-1-a.L])/(Math.sqrt(vN*a.L));const mp=maxPos(a);let tg=a.pos;
+  if(Math.abs(z)>a.th)tg=Math.sign(z)*mp;else if(Math.abs(z)<a.th/3)tg=0;const e=eq(a);if(e>a.peak)a.peak=e;if(e<a.peak*0.9&&a.pos!==0){tg=0;a.cool=30;a.peak=e}
+  const d=tg-a.pos;if(d){take(Math.sign(d),Math.abs(d),a)}}
+ function actVal(a){if(++a.cnt<a.every)return;a.cnt=0;a.Fh=F;const mis=Math.log(a.Fh*(1+a.bias)/px());const mp=maxPos(a),tg=Math.round(mp*Math.tanh(mis/a.m)),d=tg-a.pos;if(Math.abs(d)>=1){const fv=a.Fh*(1+a.bias)/T,sd=Math.sign(d);take(sd,Math.min(Math.abs(d),Math.ceil(mp*0.5)),a,Math.round(fv-sd*a.m*0.25*fv))}}
+ function placeProtect(a){a.stopId++;const P=last;if(a.pos>0){addStop(a,Math.min(P-1,Math.floor(a.stop/T)),-1,'stop');const lq=(a.thr-a.cash)/(a.pos*T*PV);addStop(a,Math.min(P-1,Math.floor(lq)),-1,'liq')}
+  else if(a.pos<0){addStop(a,Math.max(P+1,Math.ceil(a.stop/T)),1,'stop');const lq=(a.thr-a.cash)/(a.pos*T*PV);addStop(a,Math.max(P+1,Math.ceil(lq)),1,'liq')}}
+ function actProp(a,m){if(!a.alive)return;const e=eq(a);
+  let moved=false;if(c.prop==='intraday'&&e>a.hwm){a.hwm=e;const nt=Math.min(a.hwm-2000,50100);if(nt>a.thr+50){a.thr=nt;moved=true}}
+  if(e<=a.thr){blow(a);return}
+  if(a.pos!==0){if(m>=384||(a.pos>0&&px()>=a.tgt)||(a.pos<0&&px()<=a.tgt)){const qn=Math.abs(a.pos);a.stopId++;take(a.pos>0?-1:1,qn,a);a.cash-=2.5*qn}else if(moved)placeProtect(a);return}
+  if(m<3||m>=380||a.tr>=a.maxT||e<a.dayStart-1000||bars.length<a.lb+1)return;let side=0;
+  if(a.style==='brk'){let hi=-1e9,lo=1e9;for(let k=bars.length-1-a.lb;k<bars.length-1;k++){if(bars[k].h>hi)hi=bars[k].h;if(bars[k].l<lo)lo=bars[k].l}if(px()>hi)side=1;else if(px()<lo)side=-1}
+  else{const mv=px()-bars[bars.length-1-a.lb].c;if(mv<-a.fadePts)side=1;else if(mv>a.fadePts)side=-1}
+  if(!side)return;const ap=take(side,a.qty,a);if(!ap)return;a.cash-=2.5*a.qty;a.tr++;const P=ap*T;a.stop=P-side*a.stopPts;a.tgt=P+side*a.stopPts*a.R;placeProtect(a)}
+ function u(m){return 0.75+0.9*Math.exp(-m/25)+0.7*Math.exp(-(MPD-m)/20)}
+ // day lifecycle
+ function startDay(first){blownToday=0;paidToday=0;dayStops=0;limitHit=false;cascade=0;
+  if(!first){const g=K.newsSz*1.2*rn.g();F*=Math.exp(g);const open=Math.round(prevClose*Math.exp(0.65*g+0.0015*rn.g())/T);const old=last;initBook(open);halt=0;checkStops(old,open);runStops()}
+  else initBook(Math.round(c.P0/T));
+  for(const a of inst){const s=rq()<0.5?-1:1;a.rem=Math.round(s*K.instMed*Math.exp(0.8*rq.g())-0.4*a.pos);a.rate=Math.abs(a.rem)/SPD;a.acc=0}
+  for(const a of prop){a.tr=0;a.dayStart=eq(a)}
+  buildOptions();st=0;bars.length=0}
+ function beginMinute(m){const P=px();bar={day,m,o:P,h:P,l:P,c:P,v:0,sp:0,dh:0,stops:0,wd:0,F:0};bars.push(bar);allBars.push(bar)}
+ function endMinute(m){bar.c=px();bar.sp/=SPM;bar.F=F;bar.gex=gexAt(px(),m);const pc=closes.length?closes[closes.length-1]:bar.o;const r=Math.log(bar.c/pc);
+  vS+=(1-2**(-1/12))*(r*r-vS);vN+=(1-2**(-1/2000))*(Math.min(r*r,25*vN)-vN);vr=Math.min(12,Math.sqrt(vS/vN));closes.push(bar.c);
+  if(c.breaker&&halt===0){if(closes.length>6&&Math.abs(Math.log(bar.c/closes[closes.length-6]))>0.02){halt=2*SPM;ev('halt','Velocity halt: '+(bar.c>closes[closes.length-6]?'+':'')+(100*Math.log(bar.c/closes[closes.length-6])).toFixed(1)+'% in 5 min, 2-minute pause')}
+   if(!limitHit&&bar.c<prevClose*0.93){limitHit=true;halt=15*SPM;ev('halt','7% below yesterday\'s close: 15-minute halt')}}
+  if(cascade>=25){ev('stops',cascade+' stops fired in one minute')}cascade=0}
+ function endDay(){const o=bars[0].o,cl=px();let hi=-1e9,lo=1e9,v=0;for(const b of bars){if(b.h>hi)hi=b.h;if(b.l<lo)lo=b.l;v+=b.v}
+  // prop EOD
+  for(let i=0;i<prop.length;i++){const a=prop[i];if(a.alive){a.days++;const e=eq(a);if(c.prop==='eod'){if(e>a.hwm)a.hwm=e;a.thr=Math.min(a.hwm-2000,50100)}
+    if(e<=a.thr){blow(a)}else if(e>=53000){const p=e-51000;a.cash-=p;a.paid+=p;propPaid++;propPaidUsd+=p;paidToday++}}}
+  for(let i=0;i<prop.length;i++)if(!prop[i].alive){const b=buckets[prop[i].off];b.splice(b.indexOf(prop[i]),1);const n=newProp();prop[i]=n;reg(n)}
+  // evolution
+  const cr=x=>{let s=0,c0=0;for(const a of x){s+=eq(a);c0+=a.cap0}return s/c0-1};const rm=cr(mom),rv=cr(val);
+  const ce={day,mom:0,val:0,mm:eq(mm),prop:0,dealer:eq(dealer),inst:0,noise:eq(noise),nMom:mom.length,nVal:val.length};for(const a of mom)ce.mom+=eq(a)-a.cap0;for(const a of val)ce.val+=eq(a)-a.cap0;for(const a of prop)ce.prop+=eq(a)-50000+a.paid;ce.prop+=propDead;ce.mom+=momDead;ce.val+=valDead;for(const a of inst)ce.inst+=eq(a);
+  classHist.push(ce);
+  if(c.evolve){const lb=classHist.length>20?classHist[classHist.length-21]:null;const g=x=>x;let pm=0.5;if(lb){const dm=(ce.mom-lb.mom)/(mom.length*K.momCap+1),dv=(ce.val-lb.val)/(val.length*K.valCap+1);pm=0.5+0.3*Math.tanh((dm-dv)*60)}
+   const pool=mom.concat(val);for(const a of pool){const dead=eq(a)<a.cap0*0.6,rot=ra()<0.01;if(dead||rot){if(a.pos!==0){take(a.pos>0?-1:1,Math.abs(a.pos),a)}a.alive=false;const arr=a.cls==='mom'?mom:val;arr.splice(arr.indexOf(a),1);const b=buckets[a.off];b.splice(b.indexOf(a),1);if(dead)replaced[a.cls]++;
+     const n=ra()<pm?newMom():newVal();(n.cls==='mom'?mom:val).push(n);reg(n);if(a.cls==='mom')momDead+=eq(a)-a.cap0;else valDead+=eq(a)-a.cap0}}}
+  
+  sellStops.clear();buyStops.clear();for(const a of prop)if(a.alive&&a.pos!==0)placeProtect(a);
+  days.push({day,o,h:hi,l:lo,c:cl,v,blown:blownToday,paid:paidToday,stops:dayStops,F});prevClose=cl;day++}
+ const dead_=[],life=[];let propDead=0,momDead=0,valDead=0;
+ function step(){const m=Math.floor(st/SPM),s=st%SPM;if(st===0)startDay(day===0&&!bars.length&&!days.length);
+  if(s===0){beginMinute(m);const F0=F;nI*=0.989;F*=Math.exp(K.Fvol*Math.sqrt(1+nI*K.newsVol)*rn.g());if(rn()<(K.newsRate+nI)/MPD){nI+=K.hawk;const j=K.newsSz*rn.g()*2;F*=Math.exp(j);if(Math.abs(j)>0.006)ev('news','News: fundamental value '+(j>0?'+':'')+(100*j).toFixed(1)+'%')}
+   if(c.shock&&c.shock.day===day&&c.shock.min===m){F*=Math.exp(c.shock.size);ev('news','Shock: fundamental value '+(100*c.shock.size).toFixed(1)+'%')}
+   pubAcc+=K.pub*(F-F0)/T;const dt=Math.trunc(pubAcc);if(dt&&halt===0){pubAcc-=dt;const o=last;shiftBook(dt);if(bar){bar.o=bar.o;}}}
+  const uu=u(m);if(st%2===0)passive(m,uu);mmQuote();bar.sp+=(ba-bb)*T;
+  if(halt>0){halt--;bar.ht=1;if(halt===0)runStops()}else{
+   const n=rq.p(K.noiseL*uu*Math.min(3,0.7+0.3*vr));for(let k=0;k<n;k++)take(rq()<0.5?1:-1,Math.max(1,Math.round(rq.e(K.noiseSz))),noise);
+   for(const a of inst){if(!a.rem)continue;a.acc+=a.rate*uu;if(a.acc>=3){const qn=Math.min(Math.abs(a.rem),Math.round(a.acc));const s2=Math.sign(a.rem);take(s2,qn,a);a.rem-=s2*qn;a.acc-=qn}}
+   if(st%3===0)hedge(m);
+   for(const a of buckets[s]){if(halt>0)break;if(a.cls==='mom')actMom(a);else if(a.cls==='val')actVal(a);else actProp(a,m)}}
+  if(mmWd)bar.wd=1;
+  if(bb<NB/8||ba>NB*7/8)recenter();
+  st++;if(s===SPM-1)endMinute(m);if(st===SPD){endDay();st=0}}
+ function runDays(n){for(let d=0;d<n*SPD;d++)step()}
+ function ladder(n){const out=[];const mid=Math.round((bb+ba)/2);for(let i=mid+n;i>=mid-n;i--){out.push({p:(base+i)*T,b:bo[i]+bm[i],bmm:bm[i],a:ao[i]+am[i],amm:am[i]})}return out}
+ function shock(sz){F*=Math.exp(sz);ev('news','Shock: fundamental value '+(sz>0?'+':'')+(100*sz).toFixed(1)+'%')}
+ function strikeGex(){const m=Math.min(389,Math.floor(st/SPM)),S=px(),Tt=tLeft(m),sg=0.2,sq=sg*Math.sqrt(Tt);return dealer.K.map((k,i)=>{const d1=(Math.log(S/k)+0.5*sg*sg*Tt)/sq;return{K:k,g:dealer.q[i]*Math.exp(-d1*d1/2)/(2.5066*S*sq)*S*0.01}})}
+ function flipPoint(){const m=Math.min(389,Math.floor(st/SPM)),S=px();let prev=null,best=null;for(let x=S*0.95;x<=S*1.05;x+=S*0.0005){const g=gexAt(x,m);if(prev&&Math.sign(g)!==Math.sign(prev[1])&&g!==0){const p=(x+prev[0])/2;if(!best||Math.abs(p-S)<Math.abs(best-S))best=p}prev=[x,g]}return best}
+ function snap(){const m=Math.floor(st/SPM);return{day,min:m,step:st,price:px(),F,bb:(base+bb)*T,ba:(base+ba)*T,vr,halt,mmWd,dealerPos:dealer.pos,gex:gexAt(px(),Math.min(m,389)),mmInv:mm.pos}}
+ return{shock,strikeGex,flipPoint,_dbg:()=>({bo,ao,bm,am,base,bb,ba,last,T,vr}),c,step,runDays,ladder,snap,bars,allBars,closes,days,events,classHist,gexProfile,get dayN(){return day},get st(){return st},
+  prop,mom,val,mm,dealer,inst,noise,pas,eq,dead:dead_,life,stats:()=>({propStarted,propBlown,propPaid,propPaidUsd,replaced})};
+}
+// stylized facts
+function facts(sim){const bs=[];for(const b of sim.allBars)bs.push(b);return factsFrom(bs)}
+function factsFrom(bars){const r=[],v=[];for(let i=1;i<bars.length;i++){if(bars[i].day!==bars[i-1].day)continue;r.push(Math.log(bars[i].c/bars[i-1].c));v.push(bars[i].v)}
+ const n=r.length,mean=r.reduce((a,b)=>a+b,0)/n;let m2=0,m4=0;for(const x of r){const d=x-mean;m2+=d*d;m4+=d*d*d*d}m2/=n;m4/=n;const kurt=m4/(m2*m2)-3;
+ const acf=(x,l)=>{const mu=x.reduce((a,b)=>a+b,0)/x.length;let num=0,den=0;for(let i=0;i<x.length;i++){den+=(x[i]-mu)**2;if(i>=l)num+=(x[i]-mu)*(x[i-l]-mu)}return num/den};
+ const ab=r.map(Math.abs);const acfAbs=[];for(let l=1;l<=60;l++)acfAbs.push(acf(ab,l));
+ const corr=(x,y)=>{const mx=x.reduce((a,b)=>a+b,0)/x.length,my=y.reduce((a,b)=>a+b,0)/y.length;let sxy=0,sx=0,sy=0;for(let i=0;i<x.length;i++){sxy+=(x[i]-mx)*(y[i]-my);sx+=(x[i]-mx)**2;sy+=(y[i]-my)**2}return sxy/Math.sqrt(sx*sy)};
+ // 30-min returns
+ const r30=[];for(let i=30;i<bars.length;i+=30){if(bars[i].day===bars[i-30].day)r30.push(Math.log(bars[i].c/bars[i-30].c))}
+ const srt=r30.slice().sort((a,b)=>a-b);const qq=p=>srt[Math.max(0,Math.min(srt.length-1,Math.floor(p*srt.length)))];
+ const mu3=r30.reduce((a,b)=>a+b,0)/r30.length;let s2=0,s3=0;for(const x of r30){s2+=(x-mu3)**2;s3+=(x-mu3)**3}s2/=r30.length;s3/=r30.length;
+ // U-shape
+ const vm=new Array(390).fill(0),cnt=new Array(390).fill(0);for(const b of bars){vm[b.m]+=b.v;cnt[b.m]++}const avg=(a,b2)=>{let s=0,k=0;for(let i=a;i<b2;i++){if(cnt[i]){s+=vm[i]/cnt[i];k++}}return s/Math.max(1,k)};
+ return{n,sd:Math.sqrt(m2),kurt,acf1:acf(r,1),acfAbs,volCorr:corr(ab,v),skew30:s3/Math.pow(s2,1.5),tailRatio:-qq(0.01)/qq(0.99),uShape:(avg(0,30)+avg(360,390))/2/avg(150,240),r}}
+
+
+</script>
+<script>
+{
+const $=i=>document.getElementById(i);
+const R=document.documentElement;
+const col=n=>getComputedStyle(R).getPropertyValue('--'+n).trim();
+const fmt=(x,d=0)=>Number(x).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const money=x=>(x<0?'−$':'$')+fmt(Math.abs(x));
+const moneyK=x=>{const a=Math.abs(x),s=x<0?'−$':'$';return a>=1e6?s+fmt(a/1e6,1)+'M':a>=1e3?s+fmt(a/1e3,0)+'k':s+fmt(a)};
+const pct=(x,d=1)=>(x>0?'+':x<0?'−':'')+fmt(Math.abs(x),d)+'%';
+const hm=m=>{const t=570+m;return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')};
+const wait=()=>new Promise(r=>setTimeout(r,0));
+const CLS=[['mm','Market makers','6 firms'],['dl','Options dealers','1 book'],['mo','Momentum funds','150'],['va','Value funds','150'],['pr','Prop accounts','800'],['in','Institutions','8'],['no','Noise traders','random']];
+$('jackets').innerHTML=CLS.map(c=>`<div class="jk" style="--c:var(--${c[0]})"><b>${c[2]}</b>${c[1]}</div>`).join('');
+function cv(id){const c=$(id),W=c.clientWidth,H=c.clientHeight,d=window.devicePixelRatio||1;if(c.width!==Math.round(W*d)||c.height!==Math.round(H*d)){c.width=Math.round(W*d);c.height=Math.round(H*d)}const g=c.getContext('2d');g.setTransform(d,0,0,d,0,0);g.clearRect(0,0,W,H);g.font='13px Archivo, system-ui, sans-serif';return{g,W,H}}
+function txt(g,s,x,y,al,c){g.fillStyle=c||col('mute');g.textAlign=al||'left';g.fillText(s,x,y)}
+function niceTicks(lo,hi,n){const r=(hi-lo)/n,p=Math.pow(10,Math.floor(Math.log10(r))),m=r/p,st=(m<1.5?1:m<3?2:m<7?5:10)*p;const out=[];for(let v=Math.ceil(lo/st)*st;v<=hi+1e-9;v+=st)out.push(+v.toFixed(10));return out}
+
+// settings
+let cfg={seed:7,gamma:'flip',mm:1,prop:'intraday',breaker:true,tick:0.25,lev:4};
+function readCfg(){cfg={seed:Math.max(1,parseInt($('s-seed').value)||7),gamma:$('s-gamma').value,mm:+$('s-mm').value,prop:$('s-prop').value,breaker:$('s-breaker').value==='1',tick:+$('s-tick').value,lev:+$('s-lev').value}}
+
+// live sim
+let sim,play=!matchMedia('(prefers-reduced-motion: reduce)').matches,spd=4,dayEq=null,seenDay=-1,dirty=true;
+const SPEEDS=[[1,'1×'],[4,'4×'],[16,'16×'],[64,'64×']];
+$('speed').innerHTML=SPEEDS.map(s=>`<button data-s="${s[0]}" aria-pressed="${s[0]===spd}">${s[1]}</button>`).join('');
+$('speed').onclick=e=>{const b=e.target.closest('button');if(!b)return;spd=+b.dataset.s;for(const x of $('speed').children)x.setAttribute('aria-pressed',x===b)};
+function setPlay(p){play=p;$('play').textContent=p?'Pause':'Play';$('play').setAttribute('aria-label',p?'Pause':'Play')}
+$('play').onclick=()=>setPlay(!play);
+$('shockBtn').onclick=()=>{sim.shock(-0.03);dirty=true;if(!play)setPlay(true)};
+$('skip').onclick=()=>{const d=sim.dayN;let k=0;while(sim.dayN===d&&k<6000){sim.step();k++}checkDay();dirty=true};
+function classEq(){const s=sim,o={mm:s.eq(s.mm),mo:0,va:0,pr:0,in:0,no:s.eq(s.noise)};for(const a of s.mom)o.mo+=s.eq(a);for(const a of s.val)o.va+=s.eq(a);for(const a of s.prop)o.pr+=s.eq(a)+a.paid;for(const a of s.inst)o.in+=s.eq(a);return o}
+function checkDay(){if(sim.dayN!==seenDay){seenDay=sim.dayN;dayEq=classEq()}}
+function boot(){sim=Sim(Object.assign({},cfg,{evolve:true}));sim.runDays(1);for(let i=0;i<90*12;i++)sim.step();seenDay=-1;checkDay();
+ // day-start equity is not known mid-day after a fast-forward; rebuild it from the day's first step
+ dirty=true}
+function bootClean(){sim=Sim(Object.assign({},cfg,{evolve:true}));sim.runDays(1);seenDay=-1;checkDay();for(let i=0;i<90*12;i++)sim.step();dirty=true}
+$('apply').onclick=()=>{readCfg();bootClean();runCompare();runFacts();runSurvival()};
+
+function drawPrice(){const {g,W,H}=cv('pc');const bars=sim.bars;if(!bars.length)return;const narrow=W<520;
+ const gut=narrow?72:132,L=6,Rt=W-gut,T=10,B=H-24,volH=Math.round((B-T)*0.17),PB=B-volH-8;
+ let lo=1e9,hi=-1e9;for(const b of bars){lo=Math.min(lo,b.l,b.F||b.l);hi=Math.max(hi,b.h,b.F||b.h)}const snap=sim.snap();lo=Math.min(lo,snap.F,snap.price);hi=Math.max(hi,snap.F,snap.price);
+ const minR=snap.price*0.006;if(hi-lo<minR){const m=(hi+lo)/2;lo=m-minR/2;hi=m+minR/2}const pad=(hi-lo)*0.08;lo-=pad;hi+=pad;
+ const X=m=>L+(Rt-L)*(m+0.5)/390,Y=p=>T+(PB-T)*(hi-p)/(hi-lo),cw=Math.max(1,(Rt-L)/390*0.7);
+ // halts
+ g.fillStyle=col('line');for(const b of bars)if(b.ht)g.fillRect(X(b.m)-(Rt-L)/780,T,(Rt-L)/390+0.5,B-T);
+ // grid + price ticks
+ const tk=niceTicks(lo,hi,narrow?4:6);g.strokeStyle=col('line');g.lineWidth=1;for(const v of tk){const y=Math.round(Y(v))+0.5;g.beginPath();g.moveTo(L,y);g.lineTo(Rt,y);g.stroke();txt(g,fmt(v,v%1?2:0),Rt+6,y+4)}
+ for(let m=0;m<=390;m+=60){if(narrow&&m%120)continue;txt(g,hm(m),Math.min(Math.max(X(m),L+16),Rt-16),H-6,'center')}
+ // strike gamma
+ const sg=sim.strikeGex().filter(s=>s.K>lo&&s.K<hi);if(!narrow&&sg.length&&sim.c.gamma!=='flat'){const mx=Math.max(...sg.map(s=>Math.abs(s.g)))||1;const x0=Rt+62,bw=W-x0-4,bh=Math.max(2,Math.min(9,(PB-T)/((hi-lo)/50)*0.6));
+  for(const s of sg){const w=Math.abs(s.g)/mx*bw;g.fillStyle=s.g<0?col('dl'):col('dlL');g.fillRect(x0,Y(s.K)-bh/2,Math.max(1,w),bh)}}
+ // flip line
+ const fp=sim.c.gamma==='flip'||sim.c.gamma==='short'||sim.c.gamma==='long'?sim.flipPoint():null;if(fp&&fp>lo&&fp<hi){g.strokeStyle=col('dl');g.setLineDash([2,4]);g.beginPath();g.moveTo(L,Y(fp));g.lineTo(Rt,Y(fp));g.stroke();g.setLineDash([]);g.font='600 13px Archivo, system-ui';g.lineWidth=4;g.strokeStyle=col('bg');g.strokeText('Gamma flip',L+4,Y(fp)-5);txt(g,'Gamma flip',L+4,Y(fp)-5,'left',col('dl'));g.font='13px Archivo, system-ui';g.lineWidth=1}
+ // candles
+ const up=col('bid'),dn=col('ask');for(const b of bars){const x=X(b.m),c=b===bars[bars.length-1]?snap.price:b.c;g.strokeStyle=g.fillStyle=c>=b.o?up:dn;g.beginPath();g.moveTo(x,Y(b.h));g.lineTo(x,Y(b.l));g.stroke();const y1=Y(Math.max(b.o,c)),y2=Y(Math.min(b.o,c));g.fillRect(x-cw/2,y1,cw,Math.max(1,y2-y1))}
+ // F line
+ g.strokeStyle=col('va');g.lineWidth=2;g.setLineDash([5,4]);g.beginPath();bars.forEach((b,i)=>{const f=i===bars.length-1?snap.F:b.F||snap.F;i?g.lineTo(X(b.m),Y(f)):g.moveTo(X(b.m),Y(f))});g.stroke();g.setLineDash([]);g.lineWidth=1;
+ // last price tag
+ const yl=Y(snap.price),tw=g.measureText(fmt(snap.price,2)).width+8;g.fillStyle=col('ink');g.fillRect(Rt+2,yl-10,tw,20);txt(g,fmt(snap.price,2),Rt+6,yl+4,'left',col('bg'));
+ // volume
+ let mv=1;for(const b of bars)mv=Math.max(mv,b.v);for(const b of bars){const h=b.v/mv*volH;g.fillStyle=b.stops>=10?col('pr'):col('no');g.globalAlpha=b.stops>=10?1:0.55;g.fillRect(X(b.m)-cw/2,B-h,cw,h)}g.globalAlpha=1}
+function drawLadder(){const rows=sim.ladder(10);let mx=1;for(const r of rows)mx=Math.max(mx,r.b,r.a);const lp=sim.snap().price;
+ $('ladder').innerHTML=rows.map(r=>{const bo=(r.b-r.bmm)/mx*100,bm=r.bmm/mx*100,ao=(r.a-r.amm)/mx*100,am=r.amm/mx*100;return `<div class="lr${Math.abs(r.p-lp)<1e-6?' last':''}"><div class="b"><i class="o" style="width:${bo}%"></i><i class="m" style="width:${bm}%"></i></div><div class="p">${fmt(r.p,2)}</div><div class="a"><i class="m" style="width:${am}%"></i><i class="o" style="width:${ao}%"></i></div></div>`}).join('')}
+function drawCrowd(){const {g,W,H}=cv('crowd');const P=sim.prop,n=P.length,cols=W<520?25:40,rows=Math.ceil(n/cols),cs=Math.min(W/cols,H/rows),gap=cs>8?1.5:1;
+ const cF=col('cell'),cL=col('bid'),cS=col('ask'),cB=col('ink'),cP=col('pr');
+ for(let i=0;i<n;i++){const a=P[i],x=(i%cols)*cs,y=Math.floor(i/cols)*cs;g.fillStyle=!a.alive?cB:a.pos>0?cL:a.pos<0?cS:cF;g.fillRect(x+gap/2,y+gap/2,cs-gap,cs-gap);if(a.paid>0&&a.alive){g.fillStyle=cP;g.beginPath();g.arc(x+cs*0.5,y+cs*0.5,Math.max(1.5,cs*0.18),0,7);g.fill()}}}
+function drawPnl(){const now=classEq(),rows=[['mm','Market makers'],['mo','Momentum'],['va','Value'],['pr','Prop accounts'],['in','Institutions']];const d=rows.map(r=>[r,now[r[0]]-dayEq[r[0]]]);const mx=Math.max(1e4,...d.map(x=>Math.abs(x[1])));
+ $('pnl').innerHTML=d.map(([r,v])=>{const w=Math.abs(v)/mx*50;return `<div class="r"><span>${r[1]}</span><div class="bar"><i style="background:var(--${r[0]});${v<0?`right:50%`:`left:50%`};width:${w}%"></i></div><span class="v">${moneyK(v)}</span></div>`}).join('')}
+function drawTape(){const ev=sim.events.slice(-5).reverse();$('tape').innerHTML=ev.length?ev.map(e=>`<li><time>${e.day===sim.dayN?hm(e.min):'D'+(e.day+1)+' '+hm(e.min)}</time><span>${e.txt}</span></li>`).join(''):'<li><time></time><span>Quiet so far.</span></li>'}
+function drawFigs(){const s=sim.snap(),b=sim.bars;const o=b.length?b[0].o:s.price,chg=(s.price/o-1)*100;let v=0,n=0;for(let i=Math.max(1,b.length-30);i<b.length;i++){v+=Math.log(b[i].c/b[i-1].c)**2;n++}const sd=n?Math.sqrt(v/n)*1e4:0;
+ const P=sim.prop;let live=0,bl=0,paid=0;for(const a of P){if(a.alive)live++;else bl++;if(a.paid>0&&a.alive)paid++}
+ const gx=s.gex;$('figs').innerHTML=[['Price',fmt(s.price,2),pct(chg,2)+' today'],['Price vs value',(s.price-s.F>=0?'+':'−')+fmt(Math.abs(s.price-s.F),1)+' pts','value '+fmt(s.F,0)],['Spread',fmt(s.ba-s.bb,2)+' pts',s.mmWd?'market makers out':'quoted'],['1-min volatility',fmt(sd,1)+' bp','last 30 minutes'],['Dealer gamma',(gx>=0?'+':'−')+fmt(Math.abs(gx),0),gx>=0?'long: hedges damp moves':'short: hedges chase moves'],['Prop accounts',fmt(live)+' live',bl+' blown today'+(s.halt>0?' · halted':'')]].map(f=>`<div class="fig1"><small>${f[0]}</small><b>${f[1]}</b><i>${f[2]}</i></div>`).join('');
+ $('clock').textContent='Day '+(s.day+1)+', '+hm(Math.min(389,s.min))+(s.halt>0?' — halted':'')}
+function drawAll(){drawFigs();drawPrice();drawLadder();drawCrowd();drawPnl();drawTape()}
+let lastDraw=0;
+function frame(t){if(play){for(let i=0;i<spd;i++){sim.step();if(sim.st===0)checkDay()}dirty=true}if(dirty&&t-lastDraw>30){drawAll();dirty=false;lastDraw=t}requestAnimationFrame(frame)}
+new ResizeObserver(()=>{dirty=true;redrawStatic()}).observe(document.body);
+new MutationObserver(()=>{dirty=true;redrawStatic()}).observe(R,{attributes:true,attributeFilter:['data-theme','class']});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{dirty=true;redrawStatic()});
+
+// ---------- comparison
+const VARS={gamma:[['long','Long gamma'],['flip','Flip (put-heavy)'],['flat','No options'],['short','Short gamma']],prop:[['intraday','Intraday trailing'],['eod','End-of-day trailing'],['static','Static']],breaker:[[true,'Halts on'],[false,'Halts off']],mm:[[0.5,'Half MMs'],[1,'Normal MMs'],[2,'Double MMs']],tick:[[0.05,'0.05 tick'],[0.25,'0.25 tick'],[1,'1 point tick']],lev:[[2,'2× cap'],[4,'4× cap'],[8,'8× cap']]};
+const VCOL=['va','ink','mo','dl'];let cmp=null,cmpTok=0;
+async function runCompare(){const tok=++cmpTok,key=$('c-key').value,size=+$('c-size').value,opts=VARS[key],seeds=[11,12,13,14,15,16],SM=120;const res=[];let k=0;
+ for(const [v,lab] of opts){const M={lab,v,drop:0,over:0,first:0,vol:0,blown:0,stops:0,mmOut:0,halts:0,path:new Array(211).fill(0)};
+  for(const sd of seeds){if(tok!==cmpTok)return;const s=Sim(Object.assign({},cfg,{seed:sd*31+cfg.seed,[key]:v,evolve:false,shock:{day:1,min:SM,size}}));for(let d=0;d<2;d++){for(let q=0;q<4680;q++)s.step();await wait()}
+   const b=s.allBars.filter(x=>x.day===1),pre=b[SM-1].c,dn=size<0;let ext=pre,ov=0;for(let i=SM;i<Math.min(b.length,SM+180);i++){if(dn){if(b[i].l<ext)ext=b[i].l;ov=Math.min(ov,b[i].l/b[i].F-1)}else{if(b[i].h>ext)ext=b[i].h;ov=Math.max(ov,b[i].h/b[i].F-1)}}
+   let v2=0;for(let i=SM+1;i<SM+60;i++)v2+=Math.log(b[i].c/b[i-1].c)**2;for(let i=-30;i<=180;i++){const j=SM+i;M.path[i+30]+=(j>=0&&j<b.length?b[j].c/b[j].F-1:0)*100/seeds.length}
+   M.drop+=(ext/pre-1)*100/seeds.length;M.over+=ov*100/seeds.length;M.first+=(b[SM].c/pre-1)*100/seeds.length;M.vol+=Math.sqrt(v2/59)*1e4/seeds.length;M.blown+=s.days[1].blown/seeds.length;M.stops+=s.days[1].stops/seeds.length;M.mmOut+=b.filter(x=>x.wd).length/seeds.length;M.halts+=s.events.filter(e=>e.day===1&&e.kind==='halt').length/seeds.length;
+   k++;$('c-prog').style.width=(k/(opts.length*seeds.length)*100)+'%'}
+  res.push(M)}
+ cmp={key,size,res};drawCompare()}
+function drawCompare(){if(!cmp)return;const {res,size}=cmp,dn=size<0;
+ const by=f=>res.slice().sort((a,b)=>dn?a[f]-b[f]:b[f]-a[f]);const worst=by('drop')[0],best=by('drop')[res.length-1];
+ $('cmpTitle').textContent=Math.abs(worst.drop-best.drop)<0.15?'Same shock, different rules: this rule barely changes the move':`${worst.lab}: the ${pct(size*100,1)} shock moved price ${fmt(Math.abs(worst.drop),1)}%, vs ${fmt(Math.abs(best.drop),1)}% with ${best.lab.toLowerCase()}`;
+ const rows=[['Biggest move from pre-shock price','drop',v=>pct(v,2)],['Overshoot past new value','over',v=>pct(v,2)],['Move in the first minute','first',v=>pct(v,2)],['1-min volatility, hour after','vol',v=>fmt(v,1)+' bp'],['Stops fired that day','stops',v=>fmt(v)],['Prop accounts blown that day','blown',v=>fmt(v)],['Minutes market makers were out','mmOut',v=>fmt(v)],['Velocity halts','halts',v=>fmt(v,1)]];
+ $('ct').innerHTML=`<thead><tr><th></th>${res.map((r,i)=>`<th class="n"><span style="color:var(--${VCOL[i]})">■</span> ${r.lab}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr><td>${r[0]}</td>${res.map(x=>`<td class="n">${r[2](x[r[1]])}</td>`).join('')}</tr>`).join('')}</tbody>`;
+ const {g,W,H}=cv('cc');const L=W<520?40:48,Rt=W-(W<520?8:130),T=12,B=H-26;let lo=-0.1,hi=0.1;for(const r of res)for(const p of r.path){lo=Math.min(lo,p);hi=Math.max(hi,p)}const pd=(hi-lo)*0.08||0.5;lo-=pd;hi+=pd;
+ const X=i=>L+(Rt-L)*i/210,Y=v=>T+(B-T)*(hi-v)/(hi-lo);g.strokeStyle=col('line');for(const v of niceTicks(lo,hi,5)){const y=Math.round(Y(v))+0.5;g.beginPath();g.moveTo(L,y);g.lineTo(Rt,y);g.stroke();txt(g,fmt(v,1)+'%',L-6,y+4,'right')}
+ g.strokeStyle=col('mute');g.beginPath();g.moveTo(L,Math.round(Y(0))+0.5);g.lineTo(Rt,Math.round(Y(0))+0.5);g.stroke();for(const m of[0,60,120,180]){txt(g,(m?'+':'')+m,X(m+30),H-8,'center')}g.strokeStyle=col('mute');g.setLineDash([3,3]);g.beginPath();g.moveTo(X(30),T);g.lineTo(X(30),B);g.stroke();g.setLineDash([]);
+ const ends=[];res.forEach((r,ri)=>{g.strokeStyle=col(VCOL[ri]);g.lineWidth=ri===res.indexOf(worst)?3:2;g.beginPath();r.path.forEach((p,i)=>i?g.lineTo(X(i),Y(p)):g.moveTo(X(i),Y(p)));g.stroke();ends.push({y:Y(r.path[210]),t:r.lab,c:VCOL[ri]})});g.lineWidth=1;
+ if(W>=520){ends.sort((a,b)=>a.y-b.y);for(let i=1;i<ends.length;i++)if(ends[i].y-ends[i-1].y<16)ends[i].y=ends[i-1].y+16;g.font='600 13px Archivo, system-ui';for(const e of ends)txt(g,e.t,Rt+8,e.y+4,'left',col(e.c));g.font='13px Archivo, system-ui'}}
+$('c-run').onclick=runCompare;$('c-key').onchange=runCompare;$('c-size').onchange=runCompare;
+
+// ---------- facts
+let F=null,fTok=0;
+async function runFacts(){const tok=++fTok,n=+$('f-days').value;const s=Sim(Object.assign({},cfg,{evolve:false}));for(let d=0;d<n;d++){if(tok!==fTok)return;for(let q=0;q<4680;q++)s.step();$('f-prog').style.width=((d+1)/n*100)+'%';await wait()}F=factsFrom(s.allBars);F.days=n;drawFacts()}
+function drawFacts(){if(!F)return;const t=[
+ ['Fat tails','Excess kurtosis of 1-min returns','Well above 0; often 10+',fmt(F.kurt,1),F.kurt>5],
+ ['No linear predictability','Lag-1 autocorrelation of 1-min returns','Near zero (within ±0.1)',fmt(F.acf1,3),Math.abs(F.acf1)<0.1],
+ ['Volatility clustering','Autocorrelation of |returns|, lag 1 and lag 30','0.15–0.4, still positive at lag 30',fmt(F.acfAbs[0],2)+' / '+fmt(F.acfAbs[29],2),F.acfAbs[0]>0.1&&F.acfAbs[29]>0.04],
+ ['Volume follows volatility','Correlation of |return| with volume','Positive, around 0.3–0.6',fmt(F.volCorr,2),F.volCorr>0.25],
+ ['Crashes beat rallies','30-min returns: 1st percentile size ÷ 99th','Above 1 for stock indexes',fmt(F.tailRatio,2),F.tailRatio>1],
+ ['Busy open and close','Volume, first and last 30 min ÷ midday','About 1.5–2×',fmt(F.uShape,2)+'×',F.uShape>1.3]];
+ const pass=t.filter(x=>x[4]).length;$('factsTitle').textContent=`It passes ${pass} of ${t.length} real-market checks`;
+ $('ft').innerHTML=`<thead><tr><th>Fact</th><th>Measure</th><th>Real index futures (about)</th><th class="n">This run (${F.days} days)</th><th class="n">Pass</th></tr></thead><tbody>${t.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td><td class="n">${r[3]}</td><td class="n ${r[4]?'ok':'no'}">${r[4]?'Yes':'No'}</td></tr>`).join('')}</tbody>`;
+ {const {g,W,H}=cv('fa');const L=36,Rt=W-8,T=10,B=H-24,n=60;const lo=-0.1,hi=Math.max(0.4,...F.acfAbs);const X=i=>L+(Rt-L)*(i+0.5)/n,Y=v=>T+(B-T)*(hi-v)/(hi-lo);
+  g.strokeStyle=col('line');for(const v of niceTicks(lo,hi,4)){const y=Math.round(Y(v))+0.5;g.beginPath();g.moveTo(L,y);g.lineTo(Rt,y);g.stroke();txt(g,fmt(v,1),L-6,y+4,'right')}
+  g.fillStyle=col('mo');const bw=(Rt-L)/n*0.7;F.acfAbs.forEach((v,i)=>{const y0=Y(0),y1=Y(v);g.fillRect(X(i)-bw/2,Math.min(y0,y1),bw,Math.abs(y1-y0))});
+  const r=F.r,mu=r.reduce((a,b)=>a+b,0)/r.length;let den=0;for(const x of r)den+=(x-mu)**2;const ac=[];for(let l=1;l<=n;l++){let s=0;for(let i=l;i<r.length;i++)s+=(r[i]-mu)*(r[i-l]-mu);ac.push(s/den)}
+  g.strokeStyle=col('ink');g.lineWidth=2;g.beginPath();ac.forEach((v,i)=>i?g.lineTo(X(i),Y(v)):g.moveTo(X(i),Y(v)));g.stroke();g.lineWidth=1;for(const l of[1,15,30,45,60])txt(g,'lag '+l,X(l-1),H-6,'center')}
+ {const {g,W,H}=cv('fh');const L=40,Rt=W-8,T=10,B=H-24;const r=F.r,sd=F.sd,mu=r.reduce((a,b)=>a+b,0)/r.length;const bins=new Array(41).fill(0);for(const x of r){const z=(x-mu)/sd,i=Math.round(z*2)+20;if(i>=0&&i<41)bins[i]++}
+  const N=r.length,dens=bins.map(c=>c/N/0.5),lmin=-5,lmax=0;const X=z=>L+(Rt-L)*(z+10)/20,Y=v=>T+(B-T)*(lmax-Math.log10(Math.max(v,1e-5)))/(lmax-lmin);
+  g.strokeStyle=col('line');for(let e=lmin;e<=lmax;e++){const y=Math.round(Y(10**e))+0.5;g.beginPath();g.moveTo(L,y);g.lineTo(Rt,y);g.stroke();txt(g,e===0?'1':'1e'+e,L-6,y+4,'right')}
+  g.fillStyle=col('mo');dens.forEach((d,i)=>{if(!d)return;const z=(i-20)/2,x0=X(z-0.25),x1=X(z+0.25),y=Y(d);g.fillRect(x0+0.5,y,x1-x0-1,B-y)});
+  g.strokeStyle=col('ink');g.lineWidth=2;g.beginPath();for(let z=-10;z<=10;z+=0.1){const d=Math.exp(-z*z/2)/2.5066,y=Y(d);if(y>B)continue;z<=-9.95?g.moveTo(X(z),y):g.lineTo(X(z),y)}g.stroke();g.lineWidth=1;for(const z of[-10,-5,0,5,10])txt(g,(z>0?'+':'')+z+'σ',X(z),H-6,'center')}}
+$('f-run').onclick=runFacts;
+
+// ---------- survival
+let V=null,vTok=0;
+async function runSurvival(){const tok=++vTok,n=+$('v-days').value;const s=Sim(Object.assign({},cfg,{evolve:true}));for(let d=0;d<n;d++){if(tok!==vTok)return;for(let q=0;q<4680;q++)s.step();$('v-prog').style.width=((d+1)/n*100)+'%';await wait()}V={s,n};drawSurvival();runAgent()}
+function lineChart(id,series,fmtY){const {g,W,H}=cv(id);const L=W<520?58:72,Rt=W-(W<520?8:100),T=10,B=H-24;let lo=1e18,hi=-1e18,n=0;for(const s of series){for(const v of s.d){lo=Math.min(lo,v);hi=Math.max(hi,v)}n=Math.max(n,s.d.length)}if(lo===hi){lo-=1;hi+=1}const pd=(hi-lo)*0.06;lo-=pd;hi+=pd;
+ const X=i=>L+(Rt-L)*i/Math.max(1,n-1),Y=v=>T+(B-T)*(hi-v)/(hi-lo);g.strokeStyle=col('line');for(const v of niceTicks(lo,hi,4)){const y=Math.round(Y(v))+0.5;g.beginPath();g.moveTo(L,y);g.lineTo(Rt,y);g.stroke();txt(g,fmtY(v),L-6,y+4,'right')}
+ const step=n>60?20:10;for(let i=0;i<n;i+=step)txt(g,'Day '+(i+1),X(i),H-6,i?'center':'left');
+ const ends=[];for(const s of series){g.strokeStyle=col(s.c);g.lineWidth=s.w||2;if(s.dash)g.setLineDash(s.dash);g.beginPath();s.d.forEach((v,i)=>i?g.lineTo(X(i),Y(v)):g.moveTo(X(i),Y(v)));g.stroke();g.setLineDash([]);ends.push({y:Y(s.d[s.d.length-1]),s})}
+ g.lineWidth=1;if(W>=520){ends.sort((a,b)=>a.y-b.y);for(let i=1;i<ends.length;i++)if(ends[i].y-ends[i-1].y<15)ends[i].y=ends[i-1].y+15;for(const e of ends)txt(g,e.s.n,Rt+6,Math.min(B,e.y+4),'left',col(e.s.c))}}
+function drawSurvival(){if(!V)return;const {s,n}=V,h=s.classHist,st=s.stats();
+ const life=s.life,alive=s.prop,started=life.length+alive.length;let paidAcc=0;for(const a of life)if(a.paid>0)paidAcc++;for(const a of alive)if(a.paid>0)paidAcc++;
+ const last=h[h.length-1];const mw=last.mom>=last.val;
+ $('survTitle').textContent=`After ${n} sessions, ${fmt(life.length/started*100,0)}% of prop accounts had blown, and ${mw?'momentum':'value'} funds finished ahead of ${mw?'value':'momentum'} funds (${moneyK(mw?last.mom:last.val)} vs ${moneyK(mw?last.val:last.mom)})`;
+ $('vres').innerHTML=[['Prop accounts started',fmt(started)],['Blown',fmt(life.length)+' ('+fmt(life.length/started*100,0)+'%)'],['Took at least one payout',fmt(paidAcc)+' ('+fmt(paidAcc/started*100,0)+'%)'],['Total payouts',moneyK(st.propPaidUsd)],['Funds closed after −40%',fmt(st.replaced.mom+st.replaced.val)],['Momentum : value funds now',last.nMom+' : '+last.nVal]].map(x=>`<div><small>${x[0]}</small><b class="big" style="font-size:clamp(22px,2.6vw,28px)">${x[1]}</b></div>`).join('');
+ lineChart('vp',[{n:'Price',c:'ink',d:s.days.map(d=>d.c)},{n:'Value',c:'va',dash:[5,4],d:s.days.map(d=>d.F)}],v=>fmt(v,0));
+ lineChart('vc',[{n:'Market makers',c:'mm',d:h.map(x=>x.mm)},{n:'Momentum',c:'mo',d:h.map(x=>x.mom)},{n:'Value',c:'va',d:h.map(x=>x.val)},{n:'Prop',c:'pr',d:h.map(x=>x.prop)}],moneyK);
+ lineChart('vm',[{n:'Momentum',c:'mo',d:h.map(x=>x.nMom)},{n:'Value',c:'va',d:h.map(x=>x.nVal)}],v=>fmt(v,0));
+ const grp={};const add=(a,b)=>{const k=Math.round(a.qty*10);grp[k]=grp[k]||{n:0,b:0,p:0};grp[k].n++;if(b)grp[k].b++;if(a.paid>0)grp[k].p++};for(const a of life)add(a,1);for(const a of alive)add(a,0);
+ const sty={brk:{n:0,b:0,p:0},fade:{n:0,b:0,p:0}};for(const a of life){sty[a.style].n++;sty[a.style].b++;if(a.paid>0)sty[a.style].p++}for(const a of alive){sty[a.style].n++;if(a.paid>0)sty[a.style].p++}
+ $('vt').innerHTML=`<thead><tr><th>Size</th><th class="n">Accounts</th><th class="n">Blown</th><th class="n">Took a payout</th></tr></thead><tbody>${Object.keys(grp).sort((a,b)=>a-b).map(k=>`<tr><td>${k} micro${k>1?'s':''}${k==10?' (1 NQ)':''}</td><td class="n">${fmt(grp[k].n)}</td><td class="n">${fmt(grp[k].b/grp[k].n*100,0)}%</td><td class="n">${fmt(grp[k].p/grp[k].n*100,0)}%</td></tr>`).join('')}<tr><td>Breakout traders</td><td class="n">${fmt(sty.brk.n)}</td><td class="n">${fmt(sty.brk.b/Math.max(1,sty.brk.n)*100,0)}%</td><td class="n">${fmt(sty.brk.p/Math.max(1,sty.brk.n)*100,0)}%</td></tr><tr><td>Fade traders</td><td class="n">${fmt(sty.fade.n)}</td><td class="n">${fmt(sty.fade.b/Math.max(1,sty.fade.n)*100,0)}%</td><td class="n">${fmt(sty.fade.p/Math.max(1,sty.fade.n)*100,0)}%</td></tr></tbody>`}
+$('v-run').onclick=runSurvival;
+
+// ---------- agent tester
+let A=null;
+function backtest(bars,p,lives){const days=[];for(const b of bars){(days[b.day]=days[b.day]||[]).push(b)}const D=days.length,rnd=mk(99),PVN=20,q=p.q*0.1,slip=0.25,fee=p.q*1.0;const out=[];
+ for(let L=0;L<lives;L++){const start=rnd.i(Math.max(1,D-3));let bal=50000,hwm=50000,thr=50000-p.dd,paid=0,blown=false,first=null,dl=0;
+  for(let d=start;d<Math.min(D,start+30)&&!blown;d++){const B=days[d];dl++;let pos=0,ent=0,stp=0,tgt=0,tr=0;const dayStart=bal;let ef=null,es=null;
+   for(let i=0;i<B.length&&!blown;i++){const b=B[i];
+    if(p.style==='trend'){const af=2/(p.lb+1),as=2/(4*p.lb+1);const pf=ef,ps=es;ef=ef===null?b.c:ef+af*(b.c-ef);es=es===null?b.c:es+as*(b.c-es);b._x=pf!==null&&ps!==null?(Math.sign(pf-ps)!==Math.sign(ef-es)?Math.sign(ef-es):0):0}
+    if(pos){const sg=Math.sign(pos),adv=sg>0?b.l:b.h,fav=sg>0?b.h:b.l;const liq=ent-sg*(bal-thr)/(q*PVN);
+     const hitL=p.rule!=='eod'&&(sg>0?adv<=liq:adv>=liq)&&(sg>0?liq>=stp:liq<=stp);const hitS=sg>0?adv<=stp:adv>=stp,hitT=sg>0?fav>=tgt:fav<=tgt;
+     if(hitL){bal=thr-fee;blown=true;break}
+     if(hitS){bal+=sg*(stp-sg*slip-ent)*q*PVN-fee;pos=0}else if(hitT){bal+=sg*(tgt-ent)*q*PVN-fee;pos=0}else if(i>=384){bal+=sg*(b.c-sg*slip-ent)*q*PVN-fee;pos=0}
+     else if(p.rule==='intraday'){const e=bal+sg*(fav-ent)*q*PVN;if(e>hwm){hwm=e;thr=Math.min(hwm-p.dd,50100)}}
+     if(!pos&&p.rule==='intraday'&&bal<=thr){blown=true;break}continue}
+    if(i<Math.max(3,p.lb)||i>=378||tr>=p.mt||bal<=dayStart-p.dll)continue;let side=0;
+    if(p.style==='brk'){let hi=-1e9,lo=1e9;for(let k=i-p.lb;k<i;k++){if(B[k].h>hi)hi=B[k].h;if(B[k].l<lo)lo=B[k].l}if(b.c>hi)side=1;else if(b.c<lo)side=-1}
+    else if(p.style==='fade'){const mv=b.c-B[i-p.lb].c;if(mv<-p.x)side=1;else if(mv>p.x)side=-1}else side=b._x||0;
+    if(p.dir==='long'&&side<0)side=0;if(p.dir==='short'&&side>0)side=0;if(!side)continue;
+    pos=side;ent=b.c+side*slip;stp=ent-side*p.stop;tgt=ent+side*p.stop*p.r;tr++}
+   if(!blown){if(p.rule==='eod'){if(bal>hwm){hwm=bal;thr=Math.min(hwm-p.dd,50100)}}if(bal<=thr)blown=true;else if(bal>=53000){const x=bal-51000;paid+=x;bal=51000;if(first===null)first=dl}}}
+  out.push({paid,blown,days:dl,first})}
+ return out}
+function readAgent(){const v=id=>+$(id).value;return{style:$('a-style').value,lb:Math.max(2,v('a-lb')|0),x:v('a-x'),dir:$('a-dir').value,stop:Math.max(1,v('a-stop')),r:Math.max(0.5,v('a-r')),q:Math.max(1,v('a-q')|0),mt:Math.max(1,v('a-mt')|0),rule:$('a-rule').value,dd:v('a-dd'),dll:v('a-dll'),fee:v('a-fee')}}
+function runAgent(){if(!V){$('a-src').textContent='Waiting for the "Who survives" run to finish…';return}const p=readAgent();const out=backtest(V.s.allBars,p,1000);A={out,p};drawAgent()}
+function drawAgent(){if(!A)return;const {out,p}=A,n=out.length;const paidN=out.filter(o=>o.paid>0).length,bl=out.filter(o=>o.blown).length,avgPaid=out.reduce((a,o)=>a+o.paid,0)/n,net=avgPaid-p.fee;
+ const bd=out.filter(o=>o.blown).map(o=>o.days).sort((a,b)=>a-b),med=bd.length?bd[Math.floor(bd.length/2)]:null;
+ $('agTitle').textContent=`Your agent: ${fmt(paidN/n*100,0)}% of lives got paid, ${fmt(bl/n*100,0)}% blew up`;
+ $('a-src').textContent=`Ran on ${V.n} simulated sessions with the current market rules.`;
+ $('ares').innerHTML=[['Lives with a payout',fmt(paidN/n*100,0)+'%'],['Lives blown',fmt(bl/n*100,0)+'%'],['Median sessions to blow',med===null?'none':fmt(med)],['Average payouts per life',money(avgPaid)],['Net after account cost',money(net)]].map(x=>`<div><small>${x[0]}</small><b class="big" style="font-size:clamp(22px,2.6vw,30px)">${x[1]}</b></div>`).join('');
+ {const {g,W,H}=cv('ah');const L=44,Rt=W-8,T=10,B=H-26;const mx=Math.max(1000,...out.map(o=>o.paid));const nb=12,bw=Math.ceil(mx/nb/500)*500||500;const bins=new Array(nb+1).fill(0);for(const o of out)bins[Math.min(nb,Math.floor(o.paid/bw))]++;const top=Math.max(...bins);
+  const X=i=>L+(Rt-L)*i/(nb+1),Y=v=>T+(B-T)*(1-v/top);g.strokeStyle=col('line');for(const v of niceTicks(0,top,4)){const y=Math.round(Y(v))+0.5;g.beginPath();g.moveTo(L,y);g.lineTo(Rt,y);g.stroke();txt(g,fmt(v),L-6,y+4,'right')}
+  bins.forEach((c,i)=>{g.fillStyle=i===0?col('ask'):col('pr');g.fillRect(X(i)+1,Y(c),(Rt-L)/(nb+1)-2,B-Y(c))});txt(g,'$0',X(0.5),H-8,'center');txt(g,moneyK(bw*Math.floor(nb/2)),X(nb/2+0.5),H-8,'center');txt(g,moneyK(bw*nb)+'+',X(nb+0.5),H-8,'center')}
+ {const {g,W,H}=cv('ae');const L=40,Rt=W-8,T=10,B=H-26,N=30;const X=d=>L+(Rt-L)*(d-1)/(N-1),Y=v=>T+(B-T)*(1-v);g.strokeStyle=col('line');for(const v of[0,0.25,0.5,0.75,1]){const y=Math.round(Y(v))+0.5;g.beginPath();g.moveTo(L,y);g.lineTo(Rt,y);g.stroke();txt(g,fmt(v*100)+'%',L-6,y+4,'right')}
+  const sb=[],sp=[];for(let d=1;d<=N;d++){sb.push(out.filter(o=>o.blown&&o.days<=d).length/n);sp.push(out.filter(o=>o.first!==null&&o.first<=d).length/n)}
+  for(const [arr,c] of[[sb,'ask'],[sp,'pr']]){g.strokeStyle=col(c);g.lineWidth=3;g.beginPath();arr.forEach((v,i)=>i?g.lineTo(X(i+1),Y(v)):g.moveTo(X(i+1),Y(v)));g.stroke()}g.lineWidth=1;for(const d of[1,10,20,30])txt(g,'Session '+d,X(d),H-8,d===1?'left':d===30?'right':'center')}}
+$('a-run').onclick=runAgent;
+
+// notes table
+const NT=[['Market makers','6 firms (pooled)','Quote five price levels each side around the mid every 5 seconds. They lean quotes against their inventory and against recent one-sided order flow, widen when volatility or flow toxicity rises, and pull most size when volatility is 2.4× normal or inventory gets too big, dumping excess inventory with market orders.'],
+ ['Options dealers','1 book','Hold an options book around ~85 strikes (50-point spacing) and delta-hedge in futures every 15 seconds. Long gamma: they sell rallies and buy dips. Short gamma: they buy rallies and sell dips. "Flip" means long gamma above about 0.8% under the open and short below it, like a put-heavy book.'],
+ ['Momentum funds','150','Each has a lookback of 10–300 minutes and a z-score threshold, checks every 1–15 minutes, and goes fully long or short with a market order. Cuts risk after a 10% drawdown from peak.'],
+ ['Value funds','150','Each sees fundamental value with a small persistent bias, checks every 1–20 minutes, and trades toward a target that grows with the mispricing, using limit prices so it never pays more than its own estimate of value.'],
+ ['Prop accounts','800','$50,000 funded accounts with a $2,000 drawdown, $1,000 daily loss limit and payouts above +$3,000. 55% trade breakouts of a 5–30 minute range and 45% fade sharp moves, with resting stop orders 12–50 points away, 1–10 micros each. Flat by 3:54 pm. Blown accounts are replaced the next morning.'],
+ ['Institutions','8','Each works a daily parent order (median 300 contracts) through the session in proportion to the volume curve, partly unwinding what it already holds.'],
+ ['Noise traders','random','Send small market orders at random, more often at the open and close and when volatility is high.']];
+document.querySelector('#nt tbody').innerHTML=NT.map(r=>`<tr><td data-l="Trader"><b>${r[0]}</b></td><td data-l="Count" class="n">${r[1]}</td><td data-l="What it does">${r[2]}</td></tr>`).join('');
+
+function redrawStatic(){if(cmp)drawCompare();if(F)drawFacts();if(V)drawSurvival();if(A)drawAgent()}
+readCfg();bootClean();setPlay(play);requestAnimationFrame(frame);
+(async()=>{await runCompare();await runFacts();await runSurvival()})();
+}
+</script>
+</body>
+</html>

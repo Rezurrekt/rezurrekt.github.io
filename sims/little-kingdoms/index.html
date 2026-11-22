@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Little Kingdoms</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jacquard+12&family=Pixelify+Sans:wght@500;700&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: a royal chronicler, wry and exact; history told as it happens.
+   IDEA: a living war-table map with a chronicle pinned beside it.
+   PICTURE: the pixel continent, large, with towns, banners, caravans and armies; rings and a leader line tie each story to its place.
+   COLOUR and TYPE: deep pine-green field, gold highlight, war red; pixel blackletter for the title, Pixelify Sans for names and numbers, Nunito for prose.
+   LAYOUT: map first and widest, chronicle beside it, then the history river, faiths and records, the realms table, and how it works. */
+:root{color-scheme:light dark;--bg:light-dark(#1f3b33,#0f1f1a);--panel:light-dark(#284a40,#17302a);--line:light-dark(rgba(255,255,255,.16),rgba(255,255,255,.1));--ink:#f3f1e8;--soft:light-dark(rgba(243,241,232,.8),rgba(243,241,232,.7));--hi:#ffd23f;--war:#ff7a66}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Nunito,system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(18px,3vw,40px) max(4vw,14px)}
+.wrap{max-width:1360px;margin:0 auto}
+h1{font:400 clamp(44px,6vw,64px)/1 "Jacquard 12","Pixelify Sans",serif;margin:0}
+h2,h3,.px{font-family:"Pixelify Sans",Nunito,sans-serif;font-weight:700}
+h2{font-size:24px;line-height:1.1;margin:0 0 10px}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;padding-bottom:14px}
+.top p{margin:6px 0 0;color:var(--soft);max-width:62ch}
+.hud{display:flex;gap:8px;flex-wrap:wrap}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px 12px;min-width:78px}
+.stat span{display:block;font-size:13px;color:var(--soft)}
+.stat b{font:700 22px/1.15 "Pixelify Sans",sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+#nw{color:var(--war)}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px}
+.fig{position:relative;width:100%;aspect-ratio:8/5;max-height:80vh;min-height:300px;border-radius:18px;overflow:hidden;background:#1d5a92;box-shadow:0 0 0 1px var(--line),0 18px 40px rgba(0,0,0,.3)}
+.fig>canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}
+.fig>canvas:active{cursor:grabbing}
+#caption{position:absolute;left:14px;right:14px;bottom:14px;max-width:580px;background:rgba(16,26,22,.9);backdrop-filter:blur(6px);border:1px solid rgba(255,210,63,.55);border-radius:14px;padding:10px 14px 12px;opacity:0;transform:translateY(10px);transition:opacity .35s,transform .35s;pointer-events:none}
+#caption.on{opacity:1;transform:none;pointer-events:auto}
+#caption b{display:block;font:700 19px/1.2 "Pixelify Sans",sans-serif;color:var(--hi);margin:2px 0 3px}
+#caption p{margin:0;font-size:15.5px;line-height:1.45}
+.cap-top{display:flex;align-items:center;gap:8px}
+.stamp{font-size:13px;color:var(--soft)}
+.chip{font-size:12px;background:var(--hi);color:#2a2200;border-radius:99px;padding:1px 8px;font-weight:800}
+.skip{margin-left:auto;background:none;border:0;color:var(--ink);font:800 14px Nunito,sans-serif;cursor:pointer;padding:6px 4px;min-height:32px}
+.bar{height:3px;background:rgba(255,255,255,.12);border-radius:2px;margin-top:9px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:var(--hi)}
+.zoom{position:absolute;top:12px;left:12px;display:flex;flex-direction:column;gap:6px}
+.zoom button{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:rgba(16,26,22,.8);color:var(--ink);font:700 20px "Pixelify Sans",sans-serif;cursor:pointer}
+#inspect{position:absolute;top:12px;right:12px;width:260px;max-height:calc(100% - 24px);overflow:auto;background:rgba(16,26,22,.92);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:none;font-size:14px}
+#inspect.on{display:block}
+#inspect p{margin:3px 0;color:var(--soft)}
+.ih{display:flex;justify-content:space-between;align-items:center;gap:8px}.ih b{font:700 18px/1.2 "Pixelify Sans",sans-serif}
+.ih button{background:none;border:0;color:var(--ink);font-size:22px;cursor:pointer;width:32px;height:32px;flex:none}
+.ir{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding:3px 0}
+.sm{font-size:14px;color:var(--ink)}
+.rl{margin:2px 0 0;padding-left:20px;font-size:13.5px}.rl li{margin:1px 0}
+.fine{font-size:13px}.dim{color:var(--soft)}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:7px;vertical-align:-1px;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
+.btn,.seg button{min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:800 15px Nunito,sans-serif;cursor:pointer}
+.btn:hover,.seg button:hover{border-color:rgba(255,255,255,.45)}
+.btn[aria-pressed=true]{background:var(--hi);color:#2a2200;border-color:var(--hi)}
+.btn.small{min-height:36px;margin-top:8px;width:100%}
+.btn.god{background:transparent}
+.seg{display:flex;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+.seg button{border:0;border-radius:0;padding:0 12px;min-width:44px}
+.seg button[aria-pressed=true]{background:var(--ink);color:#1f3b33}
+#play{min-width:88px}
+.grow{flex:1}
+.seed{color:var(--soft);font-size:14px}
+button:focus-visible,tr:focus-visible{outline:3px solid var(--hi);outline-offset:2px}
+aside{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px 14px 6px;display:flex;flex-direction:column;max-height:min(80vh,900px)}
+aside .sub{margin:0 0 10px;color:var(--soft);font-size:14px}
+#journal{list-style:none;margin:0;padding:0;overflow-y:auto;flex:1}
+#journal li button{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);color:var(--ink);padding:9px 4px;cursor:pointer;font:inherit}
+#journal li button:hover{background:rgba(255,255,255,.06)}
+#journal b{display:block;font:700 16px/1.25 "Pixelify Sans",sans-serif;color:var(--hi)}
+#journal .txt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:14px;color:var(--soft)}
+.lower{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:16px;align-items:start}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px}
+.histfig{position:relative;height:300px}.histfig canvas{position:absolute;inset:0;width:100%;height:100%}
+.note{font-size:14px;color:var(--soft);margin:8px 0 0}
+.fr{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:5px 0;border-top:1px solid var(--line);font-size:14.5px}
+.track{grid-column:1/-1;height:8px;border-radius:4px;background:rgba(255,255,255,.12)}.track i{display:block;height:100%;border-radius:4px}
+.rec{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding:6px 0;font-size:14.5px}.rec b{font-weight:800;text-align:right}
+.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th{text-align:left;font-weight:800;color:var(--soft);padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+tr[data-k]{cursor:pointer}tr[data-k]:hover{background:rgba(255,255,255,.05)}
+.war{color:var(--war);font-weight:800}.gold{color:var(--hi);font-weight:800}
+.how{columns:2 320px;column-gap:32px;color:var(--soft)}
+.how p{margin:0 0 12px;break-inside:avoid}.how b{color:var(--ink)}
+@media(max-width:1020px){.main{grid-template-columns:minmax(0,1fr)}aside{max-height:440px}.lower{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.fig{aspect-ratio:1/1;max-height:76vh}#caption b{font-size:17px}#caption{left:8px;right:8px;bottom:8px;padding:8px 11px 10px}#caption p{font-size:14.5px}#inspect{width:210px}.histfig{height:220px}
+  .stack thead{display:none}.stack tr{display:grid;padding-block:8px;border-bottom:1px solid var(--line)}.stack td{display:flow-root;border:0;padding:2px 0;padding-inline-start:6.5em}.stack td::before{content:attr(data-l);float:inline-start;width:6em;margin-inline-start:-6.5em;color:var(--soft)}.stack td:empty{display:none}.stack td.n{text-align:start}}
+@media(prefers-reduced-motion:reduce){#caption{transition:none}}
+</style>
+<script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;const h=c.closest('table').tHead;c.dataset.l=h&&h.rows[0].cells[i]?h.rows[0].cells[i].textContent:''}}).observe(document,{childList:true,subtree:true})</script>
+</head>
+<body>
+<header class="band"><div class="wrap top">
+  <div><h1>Little Kingdoms</h1><p>Tribes grow into kingdoms with rulers, dynasties, faiths, trade and wars. When history happens, the narrator flies to it and circles it. Click a town, army or realm to look closer.</p></div>
+  <div class="hud" aria-live="polite">
+    <div class="stat"><span id="yr">Year 1</span><b id="era">Tribal</b></div>
+    <div class="stat"><span>Realms</span><b id="nk">0</b></div>
+    <div class="stat"><span>People</span><b id="np">0</b></div>
+    <div class="stat"><span>Wars</span><b id="nw">0</b></div>
+  </div>
+</div></header>
+<section class="band" style="padding-top:0"><div class="wrap main">
+  <div>
+    <div class="fig" id="fig">
+      <canvas id="map" aria-label="Animated map of the kingdoms"></canvas>
+      <div class="zoom"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button><button id="zfit" aria-label="Show the whole map" style="font-size:14px">fit</button></div>
+      <div id="inspect" aria-live="polite"></div>
+      <div id="caption" aria-live="polite"></div>
+    </div>
+    <div class="controls">
+      <button class="btn" id="play" aria-pressed="false">Pause</button>
+      <div class="seg" role="group" aria-label="Speed"><button data-speed="1" aria-pressed="false">1×</button><button data-speed="2" aria-pressed="true">2×</button><button data-speed="4" aria-pressed="false">4×</button><button data-speed="8" aria-pressed="false">8×</button><button data-speed="16" aria-pressed="false">16×</button><button data-speed="32" aria-pressed="false">32×</button></div>
+      <button class="btn" id="dir" aria-pressed="true">Narrator camera</button>
+      <div class="seg" role="group" aria-label="Map colours"><button data-mode="realm" aria-pressed="true">Realms</button><button data-mode="faith" aria-pressed="false">Faiths</button><button data-mode="people" aria-pressed="false">Peoples</button><button data-mode="none" aria-pressed="false">Land</button></div>
+    </div>
+    <div class="controls">
+      <button class="btn god" id="gplague">Send a plague</button>
+      <button class="btn god" id="ghorde">Unleash a horde</button>
+      <button class="btn god" id="gharvest">Bountiful harvest</button>
+      <span class="grow"></span>
+      <span class="seed px" id="seed"></span>
+      <button class="btn" id="newworld">New world</button>
+    </div>
+  </div>
+  <aside>
+    <h2>The chronicle <span class="stamp">(<span id="jcount">0</span>)</span></h2>
+    <p class="sub">Every story the narrator recorded. Click one to fly back to where it happened.</p>
+    <ul id="journal"></ul>
+  </aside>
+</div></section>
+<section class="band" style="padding-top:0"><div class="wrap lower">
+  <div class="card">
+    <h2>The river of history</h2>
+    <div class="histfig"><canvas id="hist" aria-label="Population of each realm over time"></canvas></div>
+    <p class="note">Each band is one realm's population over the centuries. A band ends when the realm falls; a new band appears when one is born. Gold dots mark the biggest stories.</p>
+  </div>
+  <div class="card">
+    <h2>Faiths</h2><div id="faiths"></div>
+    <h2 style="margin-top:18px">Records</h2><div id="records"></div>
+  </div>
+</div></section>
+<section class="band" style="padding-top:0"><div class="wrap card">
+  <h2>Realms today</h2>
+  <div class="tbl"><table class="stack"><thead><tr><th>Realm</th><th>Ruler (age)</th><th class="n">Towns</th><th class="n">People</th><th>Faith</th><th>Era</th><th>Status</th></tr></thead><tbody id="realms"></tbody></table></div>
+  <p class="note">Click a realm to see its ruler, traits and line of rulers.</p>
+</div></section>
+<section class="band" style="padding-top:0"><div class="wrap card">
+  <h2>How the world works</h2>
+  <div class="how">
+    <p><b>Land and food.</b> Each town farms the land around it. Grassland and river valleys feed the most people, forest and hills less, and desert almost none unless a river runs through it. Harvests rise and fall with the climate, and droughts or a cold century can bring famine. Better tools in later eras feed more people from the same fields.</p>
+    <p><b>Towns and trade.</b> Crowded towns send settlers to found new ones. Caravans carry food from full granaries to hungry towns, and roads form where they travel most. Trade also carries knowledge, faith and plague. From the Medieval era, ships carry settlers and goods overseas.</p>
+    <p><b>Rulers.</b> Every realm has a ruler with traits such as ambitious, cruel, wise or pious, and those traits change what the realm does. Rulers age, have children and die. A child may inherit, a cousin may step in, or the nobles may crown a new dynasty, and sometimes a dead ruler with no heir means civil war. History gives each ruler an epithet after they die.</p>
+    <p><b>War.</b> Neighbours whose borders rub, whose faiths differ or whose rulers are ambitious grow hostile. A realm attacks only when it thinks it's stronger. Armies march along roads, fight battles where they meet, and besiege towns; walls make sieges longer. Wars end in exhaustion or when a side collapses, and conquered towns stay with the winner.</p>
+    <p><b>Rebellion.</b> Towns grow restless when they're far from the capital, recently conquered, hungry, or ruled by a different people or faith. Restless towns may break away and form their own realm, and towns cut off for long enough become a new people with their own names.</p>
+    <p><b>Faith, eras, disasters.</b> Prophets found new faiths that spread town to town, and realms convert when most of their people do. Knowledge grows with population and trade, moving realms from the Tribal age to Gunpowder. Plagues, droughts, cold centuries and nomad hordes shake things up. Nothing is scripted: every world plays out differently.</p>
+  </div>
+</div></section>
+<script>
+(() => {
+// ===== Little Kingdoms: history engine =====
+const W = 160, H = 100, YEAR = 48, MONTH = 4;
+const DEEP = 0, SHALLOW = 1, SAND = 2, GRASS = 3, FOREST = 4, HILL = 5, MOUNT = 6, DESERT = 7;
+const ERAS = ['Tribal', 'Bronze Age', 'Iron Age', 'Medieval', 'Gunpowder'];
+const ERA_AT = [0, 45, 230, 620, 1400];
+const TRAITS = ['brave', 'cruel', 'wise', 'pious', 'greedy', 'ambitious', 'gentle', 'builder', 'lazy', 'cunning'];
+
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+function makeNoise(rnd, n) {
+  const g = new Float32Array(n * n); for (let i = 0; i < g.length; i++) g[i] = rnd();
+  return (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi, s = t => t * t * (3 - 2 * t), at = (i, j) => g[((j % n + n) % n) * n + ((i % n + n) % n)];
+    const a = at(xi, yi), b = at(xi + 1, yi), c = at(xi, yi + 1), d = at(xi + 1, yi + 1), u = s(fx), v = s(fy); return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; };
+}
+const pick = (S, a) => a[(S.rnd() * a.length) | 0];
+const d2 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+
+// ---------- names ----------
+const CONS = ['b', 'c', 'd', 'f', 'g', 'h', 'k', 'l', 'm', 'n', 'p', 'r', 's', 't', 'v', 'z', 'th', 'sh', 'kh', 'br', 'dr', 'tr', 'gr', 'st', 'j', 'w'];
+const VOW = ['a', 'e', 'i', 'o', 'u', 'ae', 'ia', 'ou', 'ei', 'y', 'a', 'o'];
+const ENDS = ['ar', 'en', 'ia', 'os', 'heim', 'dor', 'mar', 'ur', 'ith', 'an', 'el', 'ost', 'ava', 'une', 'ik', 'ard', 'um', 'is', 'esh', 'or', 'ino', 'gard', 'ale', 'eth'];
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+function makeCulture(S, parent) {
+  const c = { id: S.cultures.length, parent: parent ? parent.id : -1, born: S.tick };
+  if (parent) {
+    c.cons = parent.cons.slice(); c.vows = parent.vows.slice(); c.ends = parent.ends.slice();
+    for (let k = 0; k < 2; k++) c.cons[(S.rnd() * c.cons.length) | 0] = pick(S, CONS);
+    c.vows[(S.rnd() * c.vows.length) | 0] = pick(S, VOW); c.ends[(S.rnd() * c.ends.length) | 0] = pick(S, ENDS);
+  } else {
+    const cs = CONS.slice().sort(() => S.rnd() - 0.5), vs = VOW.slice().sort(() => S.rnd() - 0.5), es = ENDS.slice().sort(() => S.rnd() - 0.5);
+    c.cons = cs.slice(0, 7); c.vows = vs.slice(0, 4); c.ends = es.slice(0, 4);
+  }
+  const root = word(S, c, 2);
+  c.name = root + pick(S, ['i', 'ian', 'ese', 'ar', 'ish', 'ic']);
+  c.hue = (S.rnd() * 360) | 0;
+  S.cultures.push(c); return c;
+}
+function word(S, c, n) {
+  let s = '', prev = ''; for (let i = 0; i < n; i++) { let sy = pick(S, c.cons) + pick(S, c.vows); if (sy === prev) sy = pick(S, c.cons) + pick(S, c.vows); s += sy; prev = sy; }
+  if (S.rnd() < 0.45) s += pick(S, ['n', 'r', 'l', 's', 'th', 'm', 'k']);
+  return cap(s.length > 10 ? s.slice(0, 9) : s);
+}
+function townName(S, c) { return S.rnd() < 0.55 ? word(S, c, 1) + pick(S, c.ends) : word(S, c, 2); }
+function personName(S, c) { return S.rnd() < 0.5 ? word(S, c, 2) : word(S, c, 1) + pick(S, ['a', 'o', 'is', 'an', 'ra', 'el', 'en']); }
+
+// ---------- world ----------
+function createWorld(seed) {
+  const rnd = mulberry(seed * 7919 + 11);
+  const S = { seed, rnd, tick: 0, terrain: new Uint8Array(W * H), height: new Float32Array(W * H), river: new Uint8Array(W * H), fert: new Float32Array(W * H),
+    road: new Float32Array(W * H), owner: new Int32Array(W * H).fill(-1), towns: [], kingdoms: [], cultures: [], religions: [], persons: 0,
+    armies: [], caravans: [], settlers: [], wars: [], events: [], plagues: [], nextId: 1, climate: 1, climTarget: 1, coldUntil: -1, droughts: [],
+    hist: [], records: { maxTowns: 0, maxCity: 0, longestReign: 0, oldestKingdom: 0, worstPlague: 0, firstEra: [0, -1, -1, -1, -1] }, pathCache: new Map(), roadsDirty: true, terrDirty: true };
+  const n1 = makeNoise(rnd, 64), n2 = makeNoise(rnd, 64), n3 = makeNoise(rnd, 64);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const nx = (x - W / 2) / (W / 2), ny = (y - H / 2) / (H / 2), d = Math.sqrt(nx * nx * 0.85 + ny * ny * 1.05);
+    let h = 0, amp = 1, f = 1 / 26, tot = 0;
+    for (let o = 0; o < 5; o++) { h += n1(x * f, y * f) * amp; tot += amp; amp *= 0.5; f *= 2; }
+    h = h / tot + 0.5 - d * 0.78 - Math.max(0, d - 0.85) * 1.4;
+    const ridge = 1 - Math.abs(n3(x / 18, y / 18) * 2 - 1);
+    if (h > 0.3) h += Math.max(0, ridge - 0.82) * 0.5;
+    const m = n2(x / 16, y / 16) * 0.75 + n2(x / 6, y / 6) * 0.25;
+    let t;
+    if (h < 0.05) t = DEEP; else if (h < 0.13) t = SHALLOW; else if (h < 0.155) t = SAND;
+    else if (h > 0.74) t = MOUNT; else if (h > 0.6) t = HILL;
+    else if (m < 0.36 && y > H * 0.45) t = DESERT; else if (m > 0.58) t = FOREST; else t = GRASS;
+    S.terrain[y * W + x] = t; S.height[y * W + x] = h;
+  }
+  // rivers flow downhill from the highlands
+  for (let r = 0; r < 14; r++) {
+    let i = -1; for (let k = 0; k < 300; k++) { const j = (rnd() * W * H) | 0; if (S.height[j] > 0.45 && S.height[j] < 0.72) { i = j; break; } }
+    if (i < 0) continue;
+    for (let s = 0; s < 260; s++) {
+      if (S.terrain[i] <= SHALLOW) break;
+      S.river[i] = 1;
+      const x = i % W, y = (i / W) | 0; let best = -1, bh = 9;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue; const j = yy * W + xx; if (S.river[j]) continue; const hh = S.height[j] + rnd() * 0.01; if (hh < bh) { bh = hh; best = j; } }
+      if (best < 0) break; if (S.height[best] > S.height[i]) S.height[best] = S.height[i] - 0.001; i = best;
+    }
+  }
+  for (let i = 0; i < W * H; i++) if (S.river[i] && S.terrain[i] === MOUNT) S.terrain[i] = HILL;
+  // fertility
+  const base = [0, 0, 0.15, 1, 0.45, 0.35, 0, 0.06];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x; let f = base[S.terrain[i]];
+    if (f > 0) { let wet = false; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const xx = x + dx, yy = y + dy; if (xx >= 0 && yy >= 0 && xx < W && yy < H && S.river[yy * W + xx]) wet = true; } if (wet) f += S.terrain[i] === DESERT ? 0.9 : 0.5; }
+    if (y < 14) f *= 0.65;
+    S.fert[i] = f;
+  }
+  // founding tribes
+  const spots = [];
+  for (let k = 0; k < 4000 && spots.length < 7; k++) {
+    const x = 6 + rnd() * (W - 12), y = 6 + rnd() * (H - 12); if (siteScore(S, x, y) < 22) continue;
+    if (spots.some(p => Math.hypot(p.x - x, p.y - y) < 30)) continue; spots.push({ x, y });
+  }
+  for (const p of spots) {
+    const c = makeCulture(S), rel = { id: S.religions.length, name: `the old gods of the ${c.name}`, short: `${c.name} old gods`, folk: true, fervor: 0.4, hue: c.hue, born: 0, followers: 0 };
+    S.religions.push(rel);
+    const k = newKingdom(S, c, rel, 0);
+    const t = newTown(S, p.x, p.y, k, c, rel, 260); k.capital = t; k.base = t.name; k.ruler = newRuler(S, k, true);
+    S.events.push({ type: 'tribe', t: 0, k, town: t });
+  }
+  updateTerritory(S); recordHist(S);
+  return S;
+}
+function siteScore(S, x, y) {
+  const xi = x | 0, yi = y | 0, i0 = yi * W + xi; if (xi < 1 || yi < 1 || xi >= W - 1 || yi >= H - 1) return 0;
+  const t = S.terrain[i0]; if (t <= SAND || t === MOUNT) return 0;
+  let s = 0, coast = 0;
+  for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) { if (dx * dx + dy * dy > 18) continue; const xx = xi + dx, yy = yi + dy; if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue; const j = yy * W + xx; s += S.fert[j]; if (S.terrain[j] === SHALLOW && Math.abs(dx) <= 1 && Math.abs(dy) <= 1) coast = 1; }
+  return s + coast * 4 + (S.river[i0] ? 3 : 0);
+}
+function pickColor(S) {
+  const used = S.kingdoms.filter(k => !k.fallen).map(k => k.hue); let best = 0, bd = -1;
+  for (let c = 0; c < 24; c++) { const h = (c * 15 + S.seed * 7) % 360; let md = 999; for (const u of used) { const d = Math.min(Math.abs(h - u), 360 - Math.abs(h - u)); md = Math.min(md, d); } if (md > bd) { bd = md; best = h; } }
+  return best;
+}
+function newKingdom(S, culture, religion, era) {
+  const k = { id: S.nextId++, culture, religion, hue: pickColor(S), founded: S.tick, era: era || 0, know: era ? ERA_AT[era] + 1 : 0, pool: 30, treasury: 50,
+    enemies: new Set(), allies: new Set(), truce: new Map(), opinion: new Map(), rulers: [], fallen: false, towns: 0, pop: 0, base: '', freeCity: false, horde: false,
+    wonWars: 0, lostTowns: 0, peaceSince: S.tick };
+  k.sat = 58 + ((k.id * 37) % 14); k.lig = 50 + ((k.id * 53) % 10);
+  S.kingdoms.push(k); return k;
+}
+function newTown(S, x, y, k, culture, religion, pop) {
+  const t = { id: S.nextId++, name: townName(S, culture), x: (x | 0) + 0.5, y: (y | 0) + 0.5, k, culture, religion, pop, food: pop * 2, wealth: 20, walls: 0, unrest: 0, founded: S.tick,
+    plague: 0, immune: -1, famine: 0, yield: 0, port: false, conquered: -1e9, alive: true, tradeIn: 0, sieged: null, level: 0, bigEver: pop };
+  const i = (t.y | 0) * W + (t.x | 0);
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const j = i + dy * W + dx; if (j >= 0 && j < W * H && S.terrain[j] <= SHALLOW) t.port = true; }
+  S.towns.push(t); S.terrDirty = true; return t;
+}
+function newPerson(S, c, born, dyn) { return { id: S.persons++, name: personName(S, c), born, female: S.rnd() < 0.5, dyn, traits: [pick(S, TRAITS)], kids: [], dead: false, wars: 0, towns: 0 }; }
+function newRuler(S, k, founder) {
+  const dyn = founder ? `House ${word(S, k.culture, 2)}` : `House ${k.capital ? k.capital.name : word(S, k.culture, 2)}`;
+  const p = newPerson(S, k.culture, S.tick - (22 + S.rnd() * 20) * YEAR, dyn);
+  if (S.rnd() < 0.5) p.traits.push(pick(S, TRAITS));
+  p.crowned = S.tick; k.rulers.push(p); p.ord = ordinal(k, p);
+  return p;
+}
+function ordinal(k, p) { return k.rulers.filter(r => r.name === p.name).length; }
+const ageOf = (S, p) => (S.tick - p.born) / YEAR;
+const has = (p, t) => p && p.traits.includes(t);
+function title(k) {
+  if (k.horde) return `the ${k.base} Horde`;
+  if (k.freeCity && k.towns <= 1) return `Free City of ${k.base}`;
+  if (k.towns >= 14) return `${k.base} Empire`;
+  if (k.towns >= 4) return `Kingdom of ${k.base}`;
+  return k.era === 0 ? `Chiefdom of ${k.base}` : `Duchy of ${k.base}`;
+}
+function rulerTitle(k, p) {
+  const f = p.female;
+  if (k.horde) return 'Warlord';
+  if (k.freeCity && k.towns <= 1) return f ? 'Lady' : 'Lord';
+  if (k.towns >= 14) return f ? 'Empress' : 'Emperor';
+  if (k.towns >= 4) return f ? 'Queen' : 'King';
+  return k.era === 0 ? 'Chief' : f ? 'Duchess' : 'Duke';
+}
+const ROMAN = ['', '', ' II', ' III', ' IV', ' V', ' VI', ' VII', ' VIII', ' IX', ' X', ' XI', ' XII'];
+function rulerName(k, p, full) { return `${full === false ? '' : rulerTitle(k, p) + ' '}${p.name}${ROMAN[p.ord] ?? ' ' + p.ord}${p.epithet ? ' ' + p.epithet : ''}`; }
+
+// ---------- territory ----------
+function townLevel(p) { return p < 300 ? 0 : p < 1200 ? 1 : p < 4000 ? 2 : 3; }
+function updateTerritory(S) {
+  const best = new Float32Array(W * H).fill(1e9); S.owner.fill(-1);
+  const live = S.towns.filter(t => t.alive);
+  const idx = new Map(); live.forEach((t, i) => idx.set(t, i));
+  for (const t of live) { t.level = townLevel(t.pop); t.yield = 0; t.tiles = 0; }
+  for (const t of live) {
+    const r = 6 + t.level, wgt = 1 + 0.18 * t.level;
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      const x = (t.x | 0) + dx, y = (t.y | 0) + dy; if (x < 0 || y < 0 || x >= W || y >= H) continue;
+      const i = y * W + x; if (S.terrain[i] <= SHALLOW) continue; const d = Math.hypot(dx, dy); if (d > r + 0.3) continue;
+      const s = d / wgt; if (s < best[i]) { best[i] = s; S.owner[i] = t.id; }
+    }
+  }
+  const byId = new Map(live.map(t => [t.id, t]));
+  S.townById = byId;
+  for (let i = 0; i < W * H; i++) { const o = S.owner[i]; if (o < 0) continue; const t = byId.get(o); const d = Math.hypot(i % W + 0.5 - t.x, ((i / W) | 0) + 0.5 - t.y); t.yield += S.fert[i] * (d <= 3 + t.level ? 1 : 0.25); t.tiles++; }
+  for (const k of S.kingdoms) { k.towns = 0; k.pop = 0; }
+  for (const t of live) { t.k.towns++; t.k.pop += t.pop; }
+  S.terrDirty = false; S.territoryVersion = (S.territoryVersion || 0) + 1;
+}
+const ownerK = (S, i) => { const o = S.owner[i]; if (o < 0) return null; const t = S.townById.get(o); return t ? t.k : null; };
+
+// ---------- pathfinding ----------
+const COST = [1e9, 1e9, 1.1, 1, 1.7, 2.2, 7, 1.4];
+const gScore = new Float32Array(W * H), cameFrom = new Int32Array(W * H), seen = new Uint32Array(W * H); let stamp = 1;
+function findPath(S, x0, y0, x1, y1, mode) {
+  const key = `${x0 | 0},${y0 | 0}>${x1 | 0},${y1 | 0}:${mode}`; if (S.pathCache.has(key)) return S.pathCache.get(key);
+  const s = (y0 | 0) * W + (x0 | 0), g = (y1 | 0) * W + (x1 | 0); stamp++;
+  const heap = [], push = (i, f) => { heap.push([f, i]); let c = heap.length - 1; while (c > 0) { const p = (c - 1) >> 1; if (heap[p][0] <= heap[c][0]) break; [heap[p], heap[c]] = [heap[c], heap[p]]; c = p; } };
+  const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let c = 0; for (;;) { const l = 2 * c + 1, r = l + 1; let m = c; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === c) break; [heap[m], heap[c]] = [heap[c], heap[m]]; c = m; } } return top; };
+  seen[s] = stamp; gScore[s] = 0; cameFrom[s] = -1; push(s, 0); let n = 0, found = false;
+  const gx = g % W, gy = (g / W) | 0;
+  while (heap.length && n++ < 9000) {
+    const [, c] = pop(); if (c === g) { found = true; break; }
+    const cx = c % W, cy = (c / W) | 0;
+    for (let k = 0; k < 8; k++) {
+      const dx = [1, -1, 0, 0, 1, 1, -1, -1][k], dy = [0, 0, 1, -1, 1, -1, 1, -1][k], x = cx + dx, y = cy + dy;
+      if (x < 0 || y < 0 || x >= W || y >= H) continue; const j = y * W + x, t = S.terrain[j];
+      let c2;
+      if (mode === 'sea') c2 = t <= SHALLOW ? 0.5 : (j === g || j === s ? 1 : 1e9);
+      else { c2 = COST[t]; if (S.river[j]) c2 += 0.5; if (S.road[j] > 6) c2 *= 0.55; }
+      if (c2 >= 1e9) continue; if (k >= 4) c2 *= 1.414;
+      const ng = gScore[c] + c2;
+      if (seen[j] !== stamp || ng < gScore[j]) { seen[j] = stamp; gScore[j] = ng; cameFrom[j] = c; push(j, ng + Math.hypot(x - gx, y - gy) * (mode === 'sea' ? 0.5 : 0.55)); }
+    }
+  }
+  let out = null;
+  if (found) { out = []; let c = g; while (c !== -1) { out.push(c); c = cameFrom[c]; } out.reverse(); out.cost = gScore[g]; }
+  if (S.pathCache.size > 3000) S.pathCache.clear();
+  S.pathCache.set(key, out); return out;
+}
+function moveUnit(S, u, spd, roads) {
+  u.px = u.x; u.py = u.y;
+  if (!u.path || u.pi >= u.path.length) return true;
+  let left = spd;
+  while (left > 0 && u.pi < u.path.length) {
+    const j = u.path[u.pi], tx = j % W + 0.5, ty = ((j / W) | 0) + 0.5, dx = tx - u.x, dy = ty - u.y, d = Math.hypot(dx, dy);
+    const terr = S.terrain[(u.y | 0) * W + (u.x | 0)], slow = u.ship ? 1 : (S.road[(u.y | 0) * W + (u.x | 0)] > 6 ? 1.5 : 1) / (terr === FOREST ? 1.4 : terr === HILL ? 1.7 : terr === MOUNT ? 3 : 1);
+    const step = left * slow;
+    if (d <= step) { u.x = tx; u.y = ty; left -= d / slow; u.pi++; if (roads && !u.ship) S.road[j] += roads; u.dir = dx; }
+    else { u.x += dx / d * step; u.y += dy / d * step; left = 0; u.dir = dx; }
+  }
+  return u.pi >= u.path.length;
+}
+
+// ---------- the clock ----------
+function step(S) {
+  S.tick++;
+  const wk = S.tick % YEAR;
+  moveAll(S);
+  if (S.tick % MONTH === 0) monthly(S);
+  if (wk === 0) yearly(S);
+}
+function moveAll(S) {
+  for (const c of S.caravans) {
+    const done = moveUnit(S, c, c.ship ? 2.6 : 1.8, 0.35);
+    if (done) { c.done = true; const t = c.to; if (t.alive) { t.food += c.goods; t.tradeIn += c.goods; t.wealth += 10 + c.goods * 0.03; c.from.wealth += 8 + c.goods * 0.02; if (c.plague && !t.plague && t.immune < S.tick && S.rnd() < 0.5) startPlagueIn(S, t, c.plague, c.from); learn(S, c.from.k, t.k); spreadFaith(S, c.from, t, 0.06); } }
+  }
+  S.caravans = S.caravans.filter(c => !c.done);
+  for (const s of S.settlers) {
+    const done = moveUnit(S, s, s.ship ? 2.6 : 1.4, 0.2);
+    if (done) { s.done = true; found(S, s); }
+  }
+  S.settlers = S.settlers.filter(s => !s.done);
+  // armies
+  for (const a of S.armies) {
+    if (a.n <= 0) { a.dead = true; continue; }
+    if (a.mode === 'march' || a.mode === 'home') {
+      if (a.mode === 'march' && (!a.target.alive || a.target.k === a.k || !atWar(a.k, a.target.k))) { retarget(S, a); continue; }
+      const done = moveUnit(S, a, a.horde ? 1.6 : 1.3, 0.25);
+      if (done) { if (a.mode === 'home') { a.k.pool += a.n; a.dead = true; } else { a.mode = 'siege'; a.siegeStart = S.tick; startSiege(S, a, a.target); } }
+    } else if (a.mode === 'siege') { a.px = a.x; a.py = a.y; siegeTick(S, a); }
+    else if (a.mode === 'battle') { a.px = a.x; a.py = a.y; }
+  }
+  // battles between hostile armies that meet
+  for (let i = 0; i < S.armies.length; i++) {
+    const a = S.armies[i]; if (a.dead || a.battle) continue;
+    for (let j = i + 1; j < S.armies.length; j++) {
+      const b = S.armies[j]; if (b.dead || b.battle || !atWar(a.k, b.k)) continue;
+      if (Math.abs(a.x - b.x) < 1.6 && Math.abs(a.y - b.y) < 1.6) { const bt = { a, b, n0a: a.n, n0b: b.n, t: S.tick, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, ma: a.mode, mb: b.mode }; a.battle = b.battle = bt; a.mode = b.mode = 'battle'; S.battles = S.battles || []; S.battles.push(bt); S.events.push({ type: 'battleStart', bt }); break; }
+    }
+  }
+  for (const bt of S.battles || []) {
+    if (bt.over) continue; const { a, b } = bt;
+    const ea = a.n * power(S, a), eb = b.n * power(S, b) * terrainBonus(S, b);
+    a.n -= eb * 0.05 * (0.8 + S.rnd() * 0.4); b.n -= ea * 0.05 * (0.8 + S.rnd() * 0.4);
+    if (a.n < bt.n0a * 0.35 || b.n < bt.n0b * 0.35 || a.n < 15 || b.n < 15) {
+      bt.over = true; const winA = a.n / bt.n0a >= b.n / bt.n0b, win = winA ? a : b, lose = winA ? b : a;
+      bt.win = win; bt.lose = lose; bt.dead = Math.round(bt.n0a - Math.max(0, a.n) + bt.n0b - Math.max(0, b.n));
+      win.battle = null; lose.battle = null;
+      const pm = winA ? bt.ma : bt.mb;
+      if (pm === 'home') { win.mode = 'home'; sendHome(S, win); }
+      else if (win.target && win.target.alive && atWar(win.k, win.target.k)) {
+        if (pm === 'siege' && win.target.sieged === win) win.mode = 'siege';
+        else { win.mode = 'march'; win.path = findPath(S, win.x, win.y, win.target.x, win.target.y, 'land') || []; win.pi = 0; }
+      } else retarget(S, win);
+      lose.n = Math.max(0, lose.n); if (lose.target && lose.target.sieged === lose) lose.target.sieged = null; lose.mode = 'home'; sendHome(S, lose);
+      if (lose.leader && lose.leader.ruler && S.rnd() < 0.3) { bt.kingDied = lose.leader.p; killRuler(S, lose.k, 'battle', bt); }
+      if (win.leader && win.leader.ruler) win.leader.p.wins = (win.leader.p.wins || 0) + 1;
+      const w = warBetween(S, a.k, b.k); if (w) { w.score += winA === (a.k === w.a) ? 1 : -1; w.dead += bt.dead; }
+      S.events.push({ type: 'battle', bt });
+    }
+  }
+  S.battles = (S.battles || []).filter(b => !b.over);
+  S.armies = S.armies.filter(a => !a.dead && a.n > 0);
+}
+function terrainBonus(S, a) { const t = S.terrain[(a.y | 0) * W + (a.x | 0)]; return t === HILL || t === FOREST ? 1.15 : 1; }
+function power(S, a) { const k = a.k; let p = 1 + 0.35 * k.era; if (a.leader && a.leader.p && has(a.leader.p, 'brave')) p *= 1.15; if (a.horde) p *= 1.25; return p; }
+const atWar = (k1, k2) => k1 && k2 && k1.enemies.has(k2.id);
+function warBetween(S, k1, k2) { return S.wars.find(w => !w.over && ((w.a === k1 && w.d === k2) || (w.a === k2 && w.d === k1) || (w.side && w.side.has(k1.id) && w.side.has(k2.id) && false))); }
+function startSiege(S, a, t) {
+  if (!t.sieged) { t.sieged = a; t.gar = t.pop * 0.05 * (1 + 0.8 * t.walls) + (t.k.capital === t ? t.k.pool * 0.25 : 0) + 10; t.gar0 = t.gar; S.events.push({ type: 'siege', a, town: t }); }
+}
+function siegeTick(S, a) {
+  const t = a.target;
+  if (!t.alive || t.k === a.k || !atWar(a.k, t.k)) { retarget(S, a); return; }
+  if (t.sieged && t.sieged !== a && t.sieged.dead) t.sieged = a;
+  if (!t.sieged) startSiege(S, a, t);
+  const ea = a.n * power(S, a), eg = t.gar * (1 + 0.3 * t.k.era) * (1 + 0.6 * t.walls);
+  t.gar -= ea * 0.012; a.n -= eg * 0.006 + a.n * 0.002;
+  if (t.gar <= 0) captureTown(S, a, t);
+  else if (a.n < 20) { t.sieged = null; a.mode = 'home'; sendHome(S, a); S.events.push({ type: 'siegeBroken', a, town: t }); }
+}
+function captureTown(S, a, t) {
+  const old = t.k; t.sieged = null; t.k = a.k; t.conquered = S.tick; t.pop *= a.horde ? 0.7 : 0.85; t.wealth *= 0.5; t.unrest = Math.min(1, t.unrest + 0.3);
+  old.lostTowns++; S.terrDirty = true;
+  const w = warBetween(S, a.k, old); if (w) { w.taken.push(t); w.score += a.k === w.a ? 2 : -2; }
+  const wasCap = old.capital === t;
+  S.events.push({ type: 'capture', a, town: t, from: old, wasCap });
+  if (a.horde && a.k.horde) settleHorde(S, a.k, t);
+  if (wasCap) moveCapital(S, old);
+  retarget(S, a);
+}
+function moveCapital(S, k) {
+  const mine = S.towns.filter(t => t.alive && t.k === k);
+  if (!mine.length) { fallKingdom(S, k); return; }
+  k.capital = mine.reduce((m, t) => t.pop > m.pop ? t : m, mine[0]);
+}
+function fallKingdom(S, k, by, quiet) {
+  if (k.fallen) return; k.fallen = true; k.fellAt = S.tick;
+  for (const w of S.wars) if (!w.over && (w.a === k || w.d === k)) endWar(S, w, 'fall');
+  for (const o of S.kingdoms) { o.enemies.delete(k.id); o.allies.delete(k.id); }
+  for (const a of S.armies) if (a.k === k) a.dead = true;
+  if (!k.horde && !quiet) S.events.push({ type: 'fall', k, age: (S.tick - k.founded) / YEAR });
+}
+function retarget(S, a) {
+  const w = S.wars.find(w => !w.over && (w.a === a.k || w.d === a.k));
+  if (w && a.n > (a.n0 || a.n) * 0.4) {
+    const tg = chooseTarget(S, a.k, a.x, a.y, 22);
+    if (tg) { const p = findPath(S, a.x, a.y, tg.x, tg.y, 'land'); if (p) { a.target = tg; a.path = p; a.pi = 0; a.mode = 'march'; return; } }
+  }
+  if (a.horde) { a.dead = true; if (a.k.horde && !a.k.fallen) { a.k.fallen = true; S.events.push({ type: 'hordeGone', k: a.k, x: a.x, y: a.y }); } return; }
+  a.mode = 'home'; sendHome(S, a);
+}
+function sendHome(S, a) {
+  const mine = S.towns.filter(t => t.alive && t.k === a.k);
+  if (!mine.length) { a.dead = true; return; }
+  const h = mine.reduce((m, t) => d2(t, a) < d2(m, a) ? t : m, mine[0]);
+  a.home = h; a.path = findPath(S, a.x, a.y, h.x, h.y, 'land') || []; a.pi = 0; a.target = null;
+  if (!a.path.length) { a.k.pool += a.n; a.dead = true; }
+}
+function chooseTarget(S, k, x, y, maxD) {
+  let best = null, bs = -1e9;
+  for (const t of S.towns) {
+    if (!t.alive || !atWar(k, t.k)) continue; const d = Math.hypot(t.x - x, t.y - y); if (d > maxD * 2.2) continue;
+    const s = -d - t.pop * 0.002 * (1 + t.walls) + (t.k.capital === t ? 6 : 0) + (t.sieged ? -15 : 0);
+    if (s > bs) { bs = s; best = t; }
+  }
+  return best;
+}
+function raiseArmy(S, k, from, target, n, lead) {
+  const p = findPath(S, from.x, from.y, target.x, target.y, 'land'); if (!p) return null;
+  const a = { id: S.nextId++, k, n, n0: n, x: from.x, y: from.y, px: from.x, py: from.y, path: p, pi: 0, target, mode: 'march', dir: 1, horde: k.horde };
+  if (lead && k.ruler && !k.ruler.dead && ageOf(S, k.ruler) > 18 && ageOf(S, k.ruler) < 60) a.leader = { ruler: true, p: k.ruler };
+  else a.leader = { ruler: false, name: personName(S, k.culture) };
+  S.armies.push(a); return a;
+}
+
+// ---------- monthly ----------
+function monthly(S) {
+  if (S.terrDirty || S.tick % (MONTH * 3) === 0) updateTerritory(S);
+  const live = S.towns.filter(t => t.alive);
+  const climAt = (t) => { let c = S.climate; for (const d of S.droughts) if (Math.hypot(t.x - d.x, t.y - d.y) < d.r) c *= d.f; return c; };
+  for (const t of live) {
+    const k = t.k, tech = 1 + 0.33 * k.era;
+    const Y = t.yield * 28 * tech * climAt(t) + (t.port ? 60 * tech : 0);
+    t.K = Y;
+    const prod = Math.min(Y, t.pop * 1.35), need = t.pop;
+    t.food += prod - need;
+    if (t.food < 0) { const f = Math.min(1, -t.food / t.pop); t.pop *= 1 - 0.35 * f; t.food = 0; if (!t.famine) S.events.push({ type: 'famine', town: t }); t.famine = 12; }
+    else { if (t.famine > 0) t.famine--; const capK = Y + t.tradeIn * 0.6; if (t.food > t.pop * 0.6) t.pop += t.pop * 0.005 * (1 - t.pop / Math.max(50, capK)); }
+    t.food = Math.min(t.food, t.pop * 6); t.tradeIn *= 0.9;
+    t.wealth = t.wealth * 0.995 + t.pop * 0.0008 * tech;
+    if (t.plague > 0) { const loss = t.pop * (0.03 + 0.02 * S.rnd()); t.pop -= loss; t.plague--; const pl = t.plagueObj; if (pl) pl.dead += loss;
+      if (t.plague === 0) t.immune = S.tick + YEAR * 35;
+      if (pl) for (const o of live) if (!o.plague && o.immune < S.tick && o !== t && Math.hypot(o.x - t.x, o.y - t.y) < 11 && S.rnd() < 0.05) startPlagueIn(S, o, pl, t); }
+    if (t.pop < 25) { t.alive = false; S.terrDirty = true; S.events.push({ type: 'abandoned', town: t }); if (t.k.capital === t) moveCapital(S, t.k); continue; }
+    t.bigEver = Math.max(t.bigEver, t.pop);
+    if (k.era >= 2 && t.walls === 0 && t.pop > 1500 && t.wealth > 400) { t.walls = 1; t.wealth -= 300; }
+    if (k.era >= 3 && t.walls === 1 && t.pop > 4000 && t.wealth > 1500) { t.walls = 2; t.wealth -= 1000; S.events.push({ type: 'castle', town: t }); }
+    // trade
+    if (S.caravans.length < 140 && t.level >= 1 && S.rnd() < 0.18) trade(S, t, live);
+    // settlers
+    if (S.settlers.length < 12 && t.pop > 0.65 * t.K && t.pop > 200 && t.food > t.pop * 1.2 && S.rnd() < 0.09 && k.towns < 16 && !k.horde) colonize(S, t);
+  }
+  for (const k of S.kingdoms) if (!k.fallen) kingdomMonth(S, k);
+  for (const w of S.wars) if (!w.over) warMonth(S, w);
+  S.wars = S.wars.filter(w => !w.over || S.tick - w.end < YEAR * 60);
+}
+function trade(S, t, live) {
+  let best = null, bs = 0;
+  for (let k = 0; k < 8; k++) {
+    const o = live[(S.rnd() * live.length) | 0]; if (o === t || !o.alive) continue;
+    const d = Math.hypot(o.x - t.x, o.y - t.y); if (d > 34 || d < 3 || atWar(t.k, o.k)) continue;
+    const gap = (t.food / t.pop) - (o.food / o.pop);
+    const s = (gap > 1 ? gap * 2 : 0.3) * Math.sqrt(o.pop * t.pop) / (d + 4);
+    if (s > bs) { bs = s; best = o; }
+  }
+  if (!best) return;
+  let path = findPath(S, t.x, t.y, best.x, best.y, 'land'), ship = false;
+  if ((!path || path.cost > 60) && t.port && best.port && t.k.era >= 3) { path = findPath(S, t.x, t.y, best.x, best.y, 'sea'); ship = !!path; }
+  if (!path || path.cost > 70) return;
+  const goods = Math.max(0, Math.min(t.food - t.pop * 2, t.pop * 0.6)) * (best.food / best.pop < 1.5 ? 1 : 0.3);
+  t.food -= goods;
+  S.caravans.push({ from: t, to: best, x: t.x, y: t.y, px: t.x, py: t.y, path, pi: 0, goods, ship, k: t.k, plague: t.plague > 0 ? t.plagueObj : null, dir: 1 });
+}
+function colonize(S, t) {
+  const k = t.k; let best = null, bs = 0;
+  for (let n = 0; n < 50; n++) {
+    const a = S.rnd() * 6.283, r = 7 + S.rnd() * 18, x = t.x + Math.cos(a) * r, y = t.y + Math.sin(a) * r;
+    if (x < 2 || y < 2 || x >= W - 2 || y >= H - 2) continue;
+    const i = (y | 0) * W + (x | 0), o = ownerK(S, i); if (o && o !== k) continue;
+    if (S.towns.some(o => o.alive && Math.hypot(o.x - x, o.y - y) < 8.5)) continue;
+    const s = siteScore(S, x, y); if (s > bs) { bs = s; best = { x, y }; }
+  }
+  let ship = false, path = null;
+  if (best && bs > 11) path = findPath(S, t.x, t.y, best.x, best.y, 'land');
+  if ((!best || bs < 11 || !path) && k.era >= 3 && t.port && S.rnd() < 0.5) {
+    best = null; bs = 0;
+    for (let n = 0; n < 80; n++) { const x = 3 + S.rnd() * (W - 6), y = 3 + S.rnd() * (H - 6), i = (y | 0) * W + (x | 0); if (S.owner[i] >= 0) continue; if (S.towns.some(o => o.alive && Math.hypot(o.x - x, o.y - y) < 9)) continue; const s = siteScore(S, x, y); let coast = false; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const j = i + dy * W + dx; if (S.terrain[j] <= SHALLOW) coast = true; } if (coast && s > bs) { bs = s; best = { x, y }; } }
+    if (best && bs > 10) { path = findPath(S, t.x, t.y, best.x, best.y, 'sea'); ship = !!path; }
+  }
+  if (!best || !path || bs < 10) return;
+  const n = t.pop * 0.15; t.pop -= n;
+  S.settlers.push({ from: t, k, x: t.x, y: t.y, px: t.x, py: t.y, path, pi: 0, n, ship, tx: best.x, ty: best.y, dir: 1 });
+}
+function found(S, s) {
+  const k = s.k; if (k.fallen) return;
+  const i = (s.y | 0) * W + (s.x | 0), o = ownerK(S, i);
+  if ((o && o !== k) || S.towns.some(t => t.alive && Math.hypot(t.x - s.x, t.y - s.y) < 6)) return;
+  const t = newTown(S, s.x, s.y, k, s.from.culture, s.from.religion, s.n);
+  if (k.ruler) k.ruler.towns = (k.ruler.towns || 0) + 1;
+  S.events.push({ type: 'found', town: t, from: s.from, ship: s.ship, far: Math.hypot(s.from.x - t.x, s.from.y - t.y) });
+}
+function learn(S, a, b) { if (!a || !b) return; if (b.know > a.know) a.know += (b.know - a.know) * 0.003; if (a.know > b.know) b.know += (a.know - b.know) * 0.003; }
+function spreadFaith(S, from, to, p) { if (from.religion !== to.religion && S.rnd() < p * from.religion.fervor / Math.max(0.3, to.religion.fervor)) { to.religion = from.religion; S.events.push({ type: 'convertTown', town: to, rel: from.religion }); } }
+
+function kingdomMonth(S, k) {
+  const mine = S.towns.filter(t => t.alive && t.k === k);
+  if (!mine.length) { if (!k.horde) fallKingdom(S, k); return; }
+  if (!k.capital || !k.capital.alive || k.capital.k !== k) moveCapital(S, k);
+  k.pop = mine.reduce((s, t) => s + t.pop, 0); k.towns = mine.length; k.peak = Math.max(k.peak || 0, k.towns); k.peakPop = Math.max(k.peakPop || 0, k.pop);
+  const war = k.enemies.size > 0;
+  const target = k.pop * (war ? 0.06 : 0.022);
+  k.pool += (target - k.pool) * (war ? 0.08 : 0.04);
+  k.treasury += k.pop * 0.0015 - k.pool * 0.002;
+  // knowledge and eras
+  const trade = mine.reduce((s, t) => s + t.tradeIn, 0);
+  k.know += Math.sqrt(k.pop) * 0.0011 * (1 + Math.min(1, trade / Math.max(1, k.pop) * 2)) * (has(k.ruler, 'wise') ? 1.3 : 1);
+  while (k.era < 4 && k.know >= ERA_AT[k.era + 1]) {
+    k.era++; const first = S.records.firstEra[k.era] < 0; if (first) S.records.firstEra[k.era] = S.tick;
+    S.events.push({ type: 'era', k, era: k.era, first });
+  }
+  // opinions and diplomacy
+  const capT = k.capital;
+  for (const o of S.kingdoms) {
+    if (o === k || o.fallen || !o.capital) continue;
+    const dist = Math.hypot(o.capital.x - capT.x, o.capital.y - capT.y);
+    if (dist > 70) continue;
+    let near = 1e9; for (const a of mine) for (const b of S.towns) if (b.alive && b.k === o) near = Math.min(near, Math.hypot(a.x - b.x, a.y - b.y));
+    let base = near < 16 ? -18 : near < 26 ? -6 : 4;
+    base += k.religion === o.religion ? 22 : (k.religion.folk || o.religion.folk ? -6 : -22);
+    base += k.culture === o.culture ? 12 : -6;
+    if (has(k.ruler, 'ambitious') || has(k.ruler, 'cruel')) base -= 14; if (has(k.ruler, 'gentle')) base += 12;
+    if (k.allies.has(o.id)) base += 30; if (k.horde || o.horde) base = -100;
+    let op = k.opinion.get(o.id) ?? base; op += (base - op) * 0.04 + (S.rnd() - 0.5) * 3; k.opinion.set(o.id, op);
+    if (near > 30) continue;
+    // declare war
+    if (!atWar(k, o) && !(k.truce.get(o.id) > S.tick) && !k.allies.has(o.id) && op < -25 && k.enemies.size === 0) {
+      const myStr = strength(S, k), theirStr = strength(S, o) + [...o.allies].reduce((s, id) => { const a = S.kingdoms.find(q => q.id === id); return s + (a && !a.fallen ? strength(S, a) * 0.6 : 0); }, 0);
+      const ratio = myStr / Math.max(1, theirStr);
+      let p = 0.012 * (has(k.ruler, 'ambitious') ? 2.5 : 1) * (has(k.ruler, 'cruel') ? 1.6 : 1) * (has(k.ruler, 'gentle') ? 0.3 : 1);
+      if (ratio > 1.25 && S.rnd() < p) {
+        let reason = 'border disputes';
+        const holy = !k.religion.folk && !o.religion.folk && k.religion !== o.religion && has(k.ruler, 'pious');
+        const lost = mine.length && S.towns.find(t => t.alive && t.k === o && t.formerK === k.id);
+        if (holy) reason = 'holy war'; else if (lost) reason = `to take back ${lost.name}`; else if (has(k.ruler, 'ambitious')) reason = 'ambition'; else if (has(k.ruler, 'greedy')) reason = 'greed';
+        declareWar(S, k, o, reason);
+      }
+    }
+    // alliances
+    if (!k.allies.has(o.id) && op > 45 && !atWar(k, o) && S.rnd() < 0.01 && !k.horde && !o.horde) { k.allies.add(o.id); o.allies.add(k.id); S.events.push({ type: 'alliance', k, o }); }
+    if (k.allies.has(o.id) && op < 10) { k.allies.delete(o.id); o.allies.delete(k.id); }
+  }
+  // royal marriage
+  if (S.rnd() < 0.004 && k.ruler && !k.ruler.married) {
+    const cands = S.kingdoms.filter(o => o !== k && !o.fallen && !o.horde && o.ruler && !atWar(k, o) && (k.opinion.get(o.id) || 0) > 0);
+    if (cands.length) { const o = pick(S, cands); k.ruler.married = o.id; k.opinion.set(o.id, (k.opinion.get(o.id) || 0) + 25); o.opinion.set(k.id, (o.opinion.get(k.id) || 0) + 25); S.events.push({ type: 'marriage', k, o }); }
+  }
+}
+function strength(S, k) { let n = k.pool; for (const a of S.armies) if (a.k === k) n += a.n; return n * (1 + 0.35 * k.era); }
+function declareWar(S, a, d, reason) {
+  const w = { id: S.nextId++, a, d, reason, start: S.tick, score: 0, taken: [], dead: 0, over: false, joined: [] };
+  a.enemies.add(d.id); d.enemies.add(a.id); a.peaceSince = d.peaceSince = S.tick;
+  S.wars.push(w);
+  for (const id of d.allies) { const al = S.kingdoms.find(q => q.id === id); if (al && !al.fallen && !atWar(al, a) && S.rnd() < 0.6) { al.enemies.add(a.id); a.enemies.add(al.id); w.joined.push(al); } }
+  S.events.push({ type: 'war', w });
+  return w;
+}
+function warMonth(S, w) {
+  const { a, d } = w;
+  if (a.fallen || d.fallen) { endWar(S, w, 'fall'); return; }
+  const months = (S.tick - w.start) / MONTH;
+  for (const [k, o] of [[a, d], [d, a]]) {
+    const field = S.armies.filter(x => x.k === k && x.mode !== 'home');
+    const mine = S.towns.filter(t => t.alive && t.k === k);
+    // relieve besieged towns
+    for (const t of mine) if (t.sieged && !field.some(x => x.target === t || x.relief === t) && k.pool > 60) {
+      const from = mine.filter(m => m !== t && !m.sieged).sort((p, q) => d2(p, t) - d2(q, t))[0];
+      if (from) { const n = k.pool * 0.7; const ar = raiseArmy(S, k, from, t, n, true); if (ar) { k.pool -= n; ar.relief = t; ar.mode = 'march'; ar.target = t; ar.reliefOnly = true; } }
+    }
+    const attackers = field.filter(x => !x.reliefOnly);
+    const aggressive = k === a || w.score < 0 || S.rnd() < 0.3;
+    if (aggressive && attackers.length < 2 && k.pool > 120) {
+      const cap = k.capital, tg = chooseTarget(S, k, cap.x, cap.y, 40);
+      if (tg) {
+        const from = mine.sort((p, q) => d2(p, tg) - d2(q, tg))[0];
+        const n = k.pool * 0.65, ar = raiseArmy(S, k, from, tg, n, true); if (ar) { k.pool -= n; if (attackers.length === 0) S.events.push({ type: 'march', a: ar, town: tg }); }
+      }
+    }
+  }
+  for (const a2 of S.armies) if (a2.reliefOnly && a2.mode === 'siege') { a2.reliefOnly = false; }
+  // peace
+  const exhaustion = months / 60 + w.dead / Math.max(500, (a.pop + d.pop) * 0.05) * 0.5;
+  if (months > 6 && S.rnd() < 0.015 + exhaustion * 0.02 + Math.abs(w.score) * 0.004) endWar(S, w, 'peace');
+}
+function endWar(S, w, why) {
+  if (w.over) return; w.over = true; w.end = S.tick; w.why = why;
+  const sides = [w.a, w.d, ...w.joined];
+  for (const k of sides) for (const o of sides) if (k !== o) { k.enemies.delete(o.id); k.truce.set(o.id, S.tick + YEAR * 12); k.opinion.set(o.id, -15); }
+  for (const ar of S.armies) if (sides.includes(ar.k) && ar.mode !== 'home' && ![...ar.k.enemies].length) { if (ar.target && ar.target.sieged === ar) ar.target.sieged = null; ar.mode = 'home'; sendHome(S, ar); }
+  for (const t of S.towns) if (t.sieged && sides.includes(t.sieged.k) && !atWar(t.sieged.k, t.k)) t.sieged = null;
+  const winner = w.score > 0 ? w.a : w.score < 0 ? w.d : null;
+  if (winner) winner.wonWars++;
+  if (winner && winner.ruler) winner.ruler.wars = (winner.ruler.wars || 0) + 1;
+  for (const t of w.taken) t.formerK = t.formerK || (t.k === w.a ? w.d.id : w.a.id);
+  w.a.peaceSince = w.d.peaceSince = S.tick;
+  if (why === 'peace') S.events.push({ type: 'peace', w, winner });
+}
+
+// ---------- yearly ----------
+function yearly(S) {
+  const yr = S.tick / YEAR;
+  // climate
+  if (S.coldUntil < S.tick && S.rnd() < 0.006) { S.coldUntil = S.tick + (50 + S.rnd() * 70) * YEAR; S.events.push({ type: 'coldStart' }); }
+  if (S.coldUntil > 0 && S.coldUntil <= S.tick && !S.coldEnded) { S.coldEnded = true; S.events.push({ type: 'coldEnd' }); }
+  if (S.coldUntil > S.tick) S.coldEnded = false;
+  S.climTarget = 1 + 0.06 * Math.sin(yr / 47) - (S.coldUntil > S.tick ? 0.17 : 0);
+  S.climate += (S.climTarget - S.climate) * 0.15 + (S.rnd() - 0.5) * 0.06;
+  S.droughts = S.droughts.filter(d => d.until > S.tick);
+  if (S.rnd() < 0.035) { const t = pick(S, S.towns.filter(t => t.alive)); if (t) { const d = { x: t.x, y: t.y, r: 10 + S.rnd() * 12, f: 0.55, until: S.tick + (2 + S.rnd() * 5) * YEAR }; S.droughts.push(d); S.events.push({ type: 'drought', d, town: t }); } }
+  // roads fade if unused
+  for (let i = 0; i < W * H; i++) if (S.road[i] > 0) S.road[i] *= 0.93;
+  S.roadsDirty = true; if (S.tick % (YEAR * 10) === 0) S.pathCache.clear();
+  const live = S.towns.filter(t => t.alive);
+  // plague
+  const tradeVol = S.caravans.length;
+  if (S.rnd() < 0.012 + tradeVol * 0.0003) {
+    const c = live.filter(t => t.pop > 800 && t.immune < S.tick).sort((a, b) => b.pop - a.pop)[0];
+    if (c) { const pl = { id: S.nextId++, name: pick(S, ['the Grey Cough', 'the Sweating Sickness', 'the Black Fever', 'the Red Pox', 'the Shaking Plague', 'the Pale Death', 'the Bloody Flux']), start: S.tick, origin: c, dead: 0, towns: 0, over: false }; S.plagues.push(pl); startPlagueIn(S, c, pl, null); S.events.push({ type: 'plague', pl, town: c }); }
+  }
+  for (const pl of S.plagues) if (!pl.over && !live.some(t => t.plagueObj === pl && t.plague > 0) && S.tick - pl.start > YEAR) { pl.over = true; if (pl.dead > S.records.worstPlague) S.records.worstPlague = pl.dead; S.events.push({ type: 'plagueEnd', pl }); }
+  // unrest and rebellion
+  for (const t of live) {
+    const k = t.k; if (k.horde) continue;
+    const dcap = k.capital ? Math.hypot(t.x - k.capital.x, t.y - k.capital.y) : 0;
+    let u = 0;
+    if (t.culture !== k.culture) u += 0.3; if (t.religion !== k.religion) u += 0.2; if (t.famine) u += 0.3; if (t.plague) u += 0.15;
+    u += Math.max(0, dcap - 20) * 0.007 + Math.max(0, k.towns - 8) * 0.02;
+    if (S.tick - t.conquered < YEAR * 20) u += 0.15;
+    if (has(k.ruler, 'cruel')) u += 0.15; if (has(k.ruler, 'greedy')) u += 0.08; if (has(k.ruler, 'wise') || has(k.ruler, 'gentle')) u -= 0.1;
+    if (k.capital === t) u -= 0.5;
+    t.unrest += (clamp(u, 0, 1) - t.unrest) * 0.25;
+    if (t.unrest > 0.68 && k.towns > 1 && !t.sieged && S.rnd() < 0.06) revolt(S, t);
+  }
+  // rulers: age, children, death
+  for (const k of S.kingdoms) {
+    if (k.fallen || k.horde || !k.ruler) continue; const r = k.ruler, age = ageOf(S, r);
+    if (age > 18 && age < 46 && r.kids.length < 6 && S.rnd() < 0.22) r.kids.push(newPerson(S, k.culture, S.tick, r.dyn));
+    let p = age < 40 ? 0.012 : age < 55 ? 0.025 : age < 65 ? 0.05 : age < 75 ? 0.1 : 0.2;
+    if (k.capital && k.capital.plague) p += 0.12;
+    let cause = 'age';
+    if (S.rnd() < p) { cause = age < 50 ? pick(S, ['fever', 'a fall from a horse', 'a hunting accident', 'illness', 'a bad winter']) : 'old age'; if (k.capital && k.capital.plague) cause = 'plague'; killRuler(S, k, cause); }
+    else if ((has(r, 'cruel') || k.capital.unrest > 0.5) && S.rnd() < 0.02) killRuler(S, k, 'murdered');
+  }
+  // religion founding
+  const organized = S.religions.filter(r => !r.folk && r.followers > 0).length;
+  if (organized < 6 && yr > 40 && S.rnd() < 0.03) {
+    const c = live.filter(t => t.pop > 600).sort(() => S.rnd() - 0.5)[0];
+    if (c) {
+      const root = word(S, c.culture, 2), style = pick(S, ['Way of {}', 'Church of {}', 'Faith of the {}', 'Order of {}', '{}ism', 'Light of {}']);
+      const rel = { id: S.religions.length, name: style.replace('{}', root), short: style.replace('{}', root), folk: false, fervor: 1.1 + S.rnd() * 0.8, hue: (S.rnd() * 360) | 0, born: S.tick, origin: c, prophet: personName(S, c.culture), followers: 0 };
+      S.religions.push(rel); c.religion = rel; S.events.push({ type: 'religion', rel, town: c });
+    }
+  }
+  // religion spreads to neighbours and kingdoms convert
+  for (const t of live) for (const o of live) if (o !== t && o.religion !== t.religion && Math.abs(o.x - t.x) < 10 && Math.abs(o.y - t.y) < 10 && S.rnd() < 0.05) spreadFaith(S, t, o, 0.5);
+  for (const r of S.religions) r.followers = 0; for (const t of live) t.religion.followers += t.pop;
+  for (const k of S.kingdoms) {
+    if (k.fallen || k.horde) continue; const tally = new Map(); let tot = 0;
+    for (const t of live) if (t.k === k) { tally.set(t.religion, (tally.get(t.religion) || 0) + t.pop); tot += t.pop; }
+    for (const [rel, n] of tally) if (rel !== k.religion && n > tot * 0.55 && (S.rnd() < 0.3 || has(k.ruler, 'pious'))) { const old = k.religion; k.religion = rel; S.events.push({ type: 'convertK', k, rel, old }); break; }
+  }
+  // barbarians
+  if (S.rnd() < 0.012 + (S.climate < 0.9 ? 0.04 : 0) && S.kingdoms.filter(k => k.horde && !k.fallen).length < 2) spawnHorde(S);
+  // small realms swear fealty to a big friendly neighbour of the same people
+  for (const k of S.kingdoms) {
+    if (k.fallen || k.horde || k.towns > 2 || k.enemies.size || !k.capital) continue;
+    const lord = S.kingdoms.filter(o => o !== k && !o.fallen && !o.horde && o.towns >= 5 && o.culture === k.culture && !o.enemies.size && (k.opinion.get(o.id) || 0) > 15 && o.capital && Math.hypot(o.capital.x - k.capital.x, o.capital.y - k.capital.y) < 40).sort((a, b) => b.pop - a.pop)[0];
+    if (lord && S.rnd() < 0.05) {
+      const mine = S.towns.filter(t => t.alive && t.k === k); for (const t of mine) t.k = lord;
+      S.events.push({ type: 'fealty', k, o: lord, n: mine.length, cap: k.capital, r: k.ruler }); S.terrDirty = true; fallKingdom(S, k, lord, true);
+    }
+  }
+  // golden ages
+  for (const k of S.kingdoms) if (!k.fallen && !k.horde && k.towns >= 3 && S.tick - k.peaceSince > YEAR * 60 && !k.golden) { k.golden = true; S.events.push({ type: 'golden', k }); }
+  for (const k of S.kingdoms) if (k.enemies.size) k.golden = false;
+  // records
+  for (const k of S.kingdoms) if (!k.fallen && k.towns > S.records.maxTowns) { const was = S.records.maxTowns; S.records.maxTowns = k.towns; if (k.towns >= 8 && was >= 5) S.events.push({ type: 'recordEmpire', k, n: k.towns }); }
+  for (const t of live) if (t.pop > S.records.maxCity * 1.25 && t.pop > 4000) { S.records.maxCity = t.pop; S.events.push({ type: 'recordCity', town: t }); }
+  for (const k of S.kingdoms) if (!k.fallen && k.towns) for (const t of live) if (t.k === k) { /* noop */ }
+  recordHist(S);
+}
+function killRuler(S, k, cause, bt) {
+  const r = k.ruler; if (!r || r.dead) return;
+  r.dead = true; r.died = S.tick; r.cause = cause; const reign = (S.tick - r.crowned) / YEAR;
+  r.epithet = r.epithet || epithetFor(S, k, r, reign);
+  if (reign > S.records.longestReign) S.records.longestReign = reign;
+  const heir = r.kids.filter(c => !c.dead && ageOf(S, c) >= 0).sort((a, b) => a.born - b.born)[0];
+  S.events.push({ type: 'death', k, r, cause, reign, bt });
+  if (heir) {
+    heir.crowned = S.tick; heir.dyn = r.dyn; if (S.rnd() < 0.5) heir.traits.push(pick(S, TRAITS));
+    k.rulers.push(heir); heir.ord = ordinal(k, heir); k.ruler = heir;
+    S.events.push({ type: 'crown', k, r: heir, prev: r, child: ageOf(S, heir) < 16 });
+  } else if (r.married && S.rnd() < 0.5 && (() => { const o = S.kingdoms.find(q => q.id === r.married); return o && !o.fallen && !o.horde && o.ruler && !atWar(k, o) && o.towns >= 1; })()) {
+    const o = S.kingdoms.find(q => q.id === r.married);
+    const mine = S.towns.filter(t => t.alive && t.k === k);
+    for (const t of mine) { t.k = o; t.unrest = Math.min(1, t.unrest + 0.1); }
+    S.events.push({ type: 'union', k, o, prev: r, n: mine.length, cap: k.capital });
+    k.ruler = null; S.terrDirty = true; fallKingdom(S, k, o, true);
+  } else if (S.rnd() < 0.45) {
+    const c = newPerson(S, k.culture, S.tick - (20 + S.rnd() * 25) * YEAR, r.dyn); c.crowned = S.tick; k.rulers.push(c); c.ord = ordinal(k, c); k.ruler = c;
+    S.events.push({ type: 'crown', k, r: c, prev: r, cousin: true });
+  } else {
+    // no heir: crisis
+    const mine = S.towns.filter(t => t.alive && t.k === k);
+    if (mine.length >= 4 && S.rnd() < 0.65) {
+      const rival = mine.filter(t => t !== k.capital).sort((a, b) => b.pop - a.pop)[0];
+      k.ruler = newRuler(S, k, false); k.ruler.dyn = `House ${k.capital.name}`;
+      const nk = splitKingdom(S, k, rival, mine.filter(t => t !== k.capital && d2(t, rival) < d2(t, k.capital)));
+      S.events.push({ type: 'civilWar', k, nk, r: k.ruler, rival: nk.ruler, prev: r });
+      declareWar(S, nk, k, 'the crown');
+    } else {
+      k.ruler = newRuler(S, k, false); k.ruler.dyn = `House ${k.capital.name}`;
+      S.events.push({ type: 'newDynasty', k, r: k.ruler, prev: r });
+    }
+  }
+}
+function epithetFor(S, k, r, reign) {
+  if ((r.wars || 0) + (r.wins || 0) >= 4) return 'the Conqueror';
+  if (r.cause === 'battle') return S.rnd() < 0.5 ? 'the Brave' : 'the Fallen';
+  if (r.cause === 'murdered') return 'the Betrayed';
+  if (reign < 1.5) return 'the Brief';
+  if ((r.towns || 0) >= 3) return 'the Builder';
+  if (reign > 40) return 'the Old';
+  const t = r.traits[0];
+  return { brave: 'the Bold', cruel: 'the Cruel', wise: 'the Wise', pious: 'the Pious', greedy: 'the Greedy', ambitious: 'the Ambitious', gentle: 'the Kind', builder: 'the Builder', lazy: 'the Idle', cunning: 'the Fox' }[t] || '';
+}
+function splitKingdom(S, k, seat, towns) {
+  const nk = newKingdom(S, k.culture, k.religion, k.era); nk.know = k.know; nk.base = seat.name;
+  for (const t of towns) { t.k = nk; t.unrest = 0.1; }
+  nk.capital = seat; nk.ruler = newRuler(S, nk, false); nk.ruler.dyn = `House ${seat.name}`; nk.pool = k.pool * 0.4; k.pool *= 0.6;
+  S.terrDirty = true; updateTerritory(S);
+  return nk;
+}
+function revolt(S, t) {
+  const old = t.k, far = old.capital ? Math.hypot(t.x - old.capital.x, t.y - old.capital.y) : 0;
+  const group = S.towns.filter(o => o.alive && o.k === old && o !== old.capital && Math.hypot(o.x - t.x, o.y - t.y) < 14 && o.unrest > 0.4 && o.culture === t.culture);
+  if (!group.includes(t)) group.push(t);
+  if (group.length >= old.towns) return;
+  const why = t.culture !== old.culture ? 'culture' : t.religion !== old.religion ? 'faith' : t.famine ? 'famine' : S.tick - t.conquered < YEAR * 25 ? 'conquest' : 'distance', oldCulture = t.culture;
+  let culture = t.culture;
+  if (far > 35 && S.rnd() < 0.4) { culture = makeCulture(S, t.culture); for (const g of group) g.culture = culture; }
+  const nk = splitKingdom(S, old, t, group); nk.culture = culture; nk.freeCity = group.length === 1;
+  if (t.religion !== old.religion) nk.religion = t.religion;
+  S.events.push({ type: 'revolt', k: nk, old, town: t, n: group.length, newCulture: culture !== oldCulture ? culture : null, oldCulture, why });
+  declareWar(S, old, nk, 'rebellion');
+}
+function spawnHorde(S) {
+  let best = null, bd = 0;
+  for (let n = 0; n < 200; n++) { const x = 2 + S.rnd() * (W - 4), y = 2 + S.rnd() * (H - 4), i = (y | 0) * W + (x | 0); const t = S.terrain[i]; if (t !== GRASS && t !== DESERT && t !== HILL) continue; if (S.owner[i] >= 0) continue; let md = 1e9; for (const o of S.towns) if (o.alive) md = Math.min(md, Math.hypot(o.x - x, o.y - y)); if (md > bd && md < 40) { bd = md; best = { x, y }; } }
+  if (!best) return;
+  const culture = makeCulture(S), rel = { id: S.religions.length, name: `the sky spirits of the ${culture.name}`, short: `${culture.name} spirits`, folk: true, fervor: 0.5, hue: culture.hue, born: S.tick, followers: 0 };
+  S.religions.push(rel);
+  const live = S.kingdoms.filter(k => !k.fallen && !k.horde);
+  const era = Math.max(0, Math.round(live.reduce((s, k) => s + k.era, 0) / Math.max(1, live.length)) - 0);
+  const k = newKingdom(S, culture, rel, era); k.horde = true; k.base = word(S, culture, 2); k.capital = null;
+  k.ruler = newRuler(S, k, true);
+  let tg = null, td = 1e9; for (const o of S.towns) if (o.alive && !o.k.horde) { const d = Math.hypot(o.x - best.x, o.y - best.y); if (d < td) { td = d; tg = o; } }
+  if (!tg) { k.fallen = true; return; }
+  k.enemies.add(tg.k.id); tg.k.enemies.add(k.id);
+  const w = { id: S.nextId++, a: k, d: tg.k, reason: 'plunder', start: S.tick, score: 0, taken: [], dead: 0, over: false, joined: [] }; S.wars.push(w);
+  const n = 400 + S.rnd() * 900 + tg.k.pop * 0.04;
+  const p = findPath(S, best.x, best.y, tg.x, tg.y, 'land'); if (!p) { k.fallen = true; w.over = true; return; }
+  const a = { id: S.nextId++, k, n, n0: n, x: best.x, y: best.y, px: best.x, py: best.y, path: p, pi: 0, target: tg, mode: 'march', horde: true, dir: 1, leader: { ruler: true, p: k.ruler } };
+  S.armies.push(a);
+  S.events.push({ type: 'horde', k, a, town: tg });
+}
+function settleHorde(S, k, t) {
+  k.horde = false; k.capital = t; k.base = t.name; for (const a of S.armies) if (a.k === k) a.horde = false;
+  t.culture = t.culture; S.events.push({ type: 'hordeSettles', k, town: t });
+}
+function startPlagueIn(S, t, pl, from) {
+  if (t.plague || t.immune > S.tick) return; t.plague = 8 + ((S.rnd() * 10) | 0); t.plagueObj = pl; pl.towns++;
+  if (from && pl.towns <= 4) S.events.push({ type: 'plagueSpread', pl, town: t, from });
+}
+function recordHist(S) {
+  const pops = {}; let tot = 0;
+  for (const t of S.towns) if (t.alive) { pops[t.k.id] = (pops[t.k.id] || 0) + t.pop; tot += t.pop; }
+  S.hist.push({ t: S.tick, pops, tot, wars: S.wars.filter(w => !w.over).length, climate: S.climate });
+}
+
+// ---------- god powers ----------
+function godPlague(S) {
+  const live = S.towns.filter(t => t.alive && !t.plague); if (!live.length) return null;
+  const c = live.sort((a, b) => b.pop - a.pop)[0];
+  const pl = { id: S.nextId++, name: 'the Wrath', start: S.tick, origin: c, dead: 0, towns: 0, over: false }; S.plagues.push(pl); c.immune = -1; startPlagueIn(S, c, pl, null); return { pl, town: c };
+}
+function godHarvest(S) { for (const t of S.towns) if (t.alive) { t.food += t.pop * 3; t.famine = 0; } S.droughts = []; S.climate = Math.max(S.climate, 1.1); }
+
+
+// ===== Little Kingdoms: map, narrator, panels =====
+const $ = id => document.getElementById(id);
+const fig = $('fig'), cv = $('map'), ctx = cv.getContext('2d');
+const TS = 8;
+let S, terrCv, riverCv, fieldCv, roadCv, borderCv, tintCv, tintCtx, tintImg;
+let cw = 0, ch = 0, dpr = 1, fitZ = 6;
+const cam = { x: W / 2, y: H / 2, z: 6 }, camT = { x: W / 2, y: H / 2, z: 6 };
+let speed = 2, paused = false, director = true, manual = false, follow = null, selected = null, mapMode = 'realm';
+let seed = (Date.now() % 9000) + 1, frac = 0, terrVer = -1, roadYear = -1, fx = [];
+const hash = (x, y, k = 0) => { let h = (x * 374761393 + y * 668265263 + k * 1442695041) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+const hexToRgb = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+function hsl(h, s, l) { s /= 100; l /= 100; const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l), f = n => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)); return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)]; }
+const kcol = (k, l, a) => { const [r, g, b] = hsl(k.hue, k.sat || 62, l ?? (k.lig || 52)); return a == null ? `rgb(${r},${g},${b})` : `rgba(${r},${g},${b},${a})`; };
+const hcol = (h, s, l, a) => { const [r, g, b] = hsl(h, s, l); return a == null ? `rgb(${r},${g},${b})` : `rgba(${r},${g},${b},${a})`; };
+const fmt = n => n >= 10000 ? (n / 1000).toFixed(0) + 'k' : n >= 1000 ? (n / 1000).toFixed(1) + 'k' : Math.round(n).toString();
+const yearOf = t => Math.floor(t / YEAR) + 1;
+const LEVEL = ['Hamlet', 'Village', 'Town', 'City'];
+
+// ---------- terrain ----------
+function buildTerrain() {
+  terrCv = document.createElement('canvas'); terrCv.width = W * TS; terrCv.height = H * TS;
+  const g = terrCv.getContext('2d'), img = g.createImageData(W * TS, H * TS), d = img.data, cwid = W * TS;
+  const put = (x, y, c) => { if (x < 0 || y < 0 || x >= cwid || y >= H * TS) return; const i = (y * cwid + x) * 4; d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = 255; };
+  const C = s => hexToRgb(s);
+  const P = { deep: [C('#1d5a92'), C('#1f5f99')], shal: [C('#3a8cc0'), C('#4696c8')], sand: [C('#ead59b'), C('#e2ca8a')], grass: [C('#8cc163'), C('#80b75a'), C('#98ca6d')],
+    forest: [C('#5c9a4c'), C('#548f45')], hill: [C('#a9b96b'), C('#9aab60')], mount: [C('#8b8f97'), C('#7d828b')], desert: [C('#ebcf86'), C('#e0c176')], tundra: [C('#c5d3bf'), C('#d5e0d0')] };
+  for (let py = 0; py < H * TS; py++) for (let px = 0; px < cwid; px++) {
+    const tx = (px / TS) | 0, ty = (py / TS) | 0, i = ty * W + tx, t = S.terrain[i], n = hash(px, py, 3), h = S.height[i];
+    let c;
+    if (t === DEEP) c = P.deep[n > 0.5 ? 0 : 1]; else if (t === SHALLOW) c = P.shal[n > 0.5 ? 0 : 1];
+    else if (t === SAND) c = P.sand[n > 0.4 ? 0 : 1];
+    else if (t === GRASS) c = ty < 14 ? P.tundra[n > 0.5 ? 0 : 1] : P.grass[n > 0.7 ? 2 : n > 0.35 ? 0 : 1];
+    else if (t === FOREST) c = P.forest[n > 0.5 ? 0 : 1];
+    else if (t === HILL) c = P.hill[n > 0.5 ? 0 : 1];
+    else if (t === MOUNT) c = P.mount[n > 0.5 ? 0 : 1];
+    else c = ((py + ((hash(tx, ty, 2) * 4) | 0)) % 5 === 0) ? C('#d4b26a') : P.desert[n > 0.5 ? 0 : 1];
+    if (t <= SHALLOW && h > 0.1 && n > 0.96) c = C('#7ec0e0');
+    put(px, py, c);
+  }
+  // shore foam
+  for (let ty = 0; ty < H; ty++) for (let tx = 0; tx < W; tx++) {
+    if (S.terrain[ty * W + tx] > SHALLOW) continue;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const x = tx + dx, y = ty + dy; if (x < 0 || y < 0 || x >= W || y >= H || S.terrain[y * W + x] <= SHALLOW) continue;
+      for (let k = 0; k < TS; k++) { const fx = dx === 1 ? TS - 1 : dx === -1 ? 0 : k, fy = dy === 1 ? TS - 1 : dy === -1 ? 0 : k; if (hash(tx * TS + fx, ty * TS + fy, 5) > 0.3) put(tx * TS + fx, ty * TS + fy, [226, 244, 250]); } }
+  }
+  // hills, mountains, trees (back to front)
+  for (let ty = 0; ty < H; ty++) for (let tx = 0; tx < W; tx++) {
+    const t = S.terrain[ty * W + tx], ox = tx * TS, oy = ty * TS;
+    if (t === HILL && hash(tx, ty, 8) < 0.55) { const cx = ox + 4, cy = oy + 6; for (let y = 0; y < 4; y++) for (let x = -5 + y; x <= 5 - y; x++) put(cx + x, cy - y, x < 0 ? [156, 172, 96] : [130, 147, 80]); }
+    if (t === MOUNT && hash(tx, ty, 9) < 0.8) {
+      const cx = ox + 4 + ((hash(tx, ty, 1) * 3) | 0) - 1, cy = oy + 7, hgt = 7 + ((hash(tx, ty, 4) * 4) | 0), snow = S.height[ty * W + tx] > 0.66;
+      for (let y = 0; y < hgt; y++) for (let x = -(hgt - y); x <= hgt - y; x++) { const sn = snow && y > hgt - 4; put(cx + x, cy - y, sn ? (x < 0 ? [250, 252, 255] : [214, 224, 236]) : x < 0 ? [158, 160, 168] : [108, 112, 122]); }
+    }
+    if (t === FOREST && hash(tx, ty, 1) < 0.7) {
+      const cx = ox + 4 + ((hash(tx, ty, 2) * 4) | 0) - 2, cy = oy + 3 + ((hash(tx, ty, 6) * 3) | 0), r = 3 + ((hash(tx, ty, 7) * 2) | 0), pine = ty < 22 || hash(tx, ty, 11) < 0.3;
+      put(cx, cy + r, [91, 58, 34]); put(cx, cy + r + 1, [91, 58, 34]);
+      if (pine) { for (let y = 0; y < r * 2 + 1; y++) for (let x = -Math.floor(y / 2); x <= Math.floor(y / 2); x++) put(cx + x, cy - r + y, x < 0 ? [52, 120, 70] : [36, 95, 56]); }
+      else for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) { if (x * x + y * y > r * r) continue; put(cx + x, cy + y, (x + 1.2) ** 2 + (y + 1.2) ** 2 < r * 0.8 ? [86, 160, 78] : x + y < -1 ? [62, 134, 64] : [45, 112, 52]); }
+    }
+    if (t === GRASS && hash(tx, ty, 12) > 0.93) { put(ox + 3, oy + 3, [250, 220, 90]); put(ox + 6, oy + 5, [255, 160, 190]); }
+  }
+  g.putImageData(img, 0, 0);
+  // rivers
+  riverCv = document.createElement('canvas'); riverCv.width = W * TS; riverCv.height = H * TS;
+  const rg = riverCv.getContext('2d'); rg.strokeStyle = '#4aa2d6'; rg.lineCap = 'round'; rg.lineWidth = 3;
+  rg.beginPath();
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (!S.river[y * W + x]) continue; let any = false;
+    for (const [dx, dy] of [[1, 0], [0, 1], [1, 1], [1, -1]]) { const xx = x + dx, yy = y + dy; if (xx >= W || yy < 0 || yy >= H) continue; const j = yy * W + xx; if (S.river[j] || (S.terrain[j] <= SHALLOW && dx * dy === 0)) { rg.moveTo(x * TS + 4, y * TS + 4); rg.lineTo(xx * TS + 4, yy * TS + 4); any = true; } }
+    if (!any) { rg.moveTo(x * TS + 4, y * TS + 4); rg.lineTo(x * TS + 4.1, y * TS + 4); }
+  }
+  rg.stroke();
+  fieldCv = document.createElement('canvas'); fieldCv.width = W * TS; fieldCv.height = H * TS;
+  roadCv = document.createElement('canvas'); roadCv.width = W * TS; roadCv.height = H * TS;
+  borderCv = document.createElement('canvas'); borderCv.width = W * TS; borderCv.height = H * TS;
+  tintCv = document.createElement('canvas'); tintCv.width = W; tintCv.height = H; tintCtx = tintCv.getContext('2d'); tintImg = tintCtx.createImageData(W, H);
+}
+function tileColor(i) {
+  const o = S.owner[i]; if (o < 0) return null; const t = S.townById.get(o); if (!t) return null;
+  if (mapMode === 'realm') return hsl(t.k.hue, t.k.sat || 62, t.k.lig || 52);
+  if (mapMode === 'faith') return t.religion.folk ? hsl(t.religion.hue, 25, 55) : hsl(t.religion.hue, 75, 50);
+  if (mapMode === 'people') return hsl(t.culture.hue, 55, 52);
+  return null;
+}
+function buildOverlays() {
+  // tint + borders
+  const d = tintImg.data;
+  for (let i = 0; i < W * H; i++) { const c = tileColor(i); if (!c) { d[i * 4 + 3] = 0; continue; } d[i * 4] = c[0]; d[i * 4 + 1] = c[1]; d[i * 4 + 2] = c[2]; d[i * 4 + 3] = 70; }
+  tintCtx.putImageData(tintImg, 0, 0);
+  const bg = borderCv.getContext('2d'); bg.clearRect(0, 0, borderCv.width, borderCv.height);
+  const keyOf = i => { const o = S.owner[i]; if (o < 0) return -1; const t = S.townById.get(o); if (!t) return -1; return mapMode === 'realm' ? t.k.id : mapMode === 'faith' ? t.religion.id : t.culture.id; };
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x, k = keyOf(i); if (k < 0) continue; const c = tileColor(i);
+    bg.fillStyle = `rgb(${Math.round(c[0] * 0.7)},${Math.round(c[1] * 0.7)},${Math.round(c[2] * 0.7)})`;
+    if (x + 1 >= W || keyOf(i + 1) !== k) bg.fillRect(x * TS + TS - 2, y * TS, 2, TS);
+    if (x - 1 < 0 || keyOf(i - 1) !== k) bg.fillRect(x * TS, y * TS, 2, TS);
+    if (y + 1 >= H || keyOf(i + W) !== k) bg.fillRect(x * TS, y * TS + TS - 2, TS, 2);
+    if (y - 1 < 0 || keyOf(i - W) !== k) bg.fillRect(x * TS, y * TS, TS, 2);
+  }
+  // fields around towns
+  const fg = fieldCv.getContext('2d'); fg.clearRect(0, 0, fieldCv.width, fieldCv.height);
+  for (const t of S.towns) {
+    if (!t.alive) continue; const r = 1 + t.level, tx = t.x | 0, ty = t.y | 0;
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      if (!dx && !dy) continue; const x = tx + dx, y = ty + dy; if (x < 0 || y < 0 || x >= W || y >= H) continue;
+      const i = y * W + x; if (S.owner[i] !== t.id || S.fert[i] < 0.6 || S.terrain[i] === FOREST || hash(x, y, 21) > 0.5 + t.level * 0.12) continue;
+      const a = hash(x, y, 22) > 0.5; fg.globalAlpha = 0.7; for (let k = 0; k < TS; k += 2) { fg.fillStyle = k % 4 ? (a ? '#d8c25b' : '#a9c95a') : (a ? '#c4a94a' : '#8fb44c'); fg.fillRect(x * TS + 1, y * TS + k, TS - 2, 2); }
+    }
+  }
+}
+function buildRoads() {
+  const rg = roadCv.getContext('2d'); rg.clearRect(0, 0, roadCv.width, roadCv.height);
+  rg.strokeStyle = 'rgba(150,108,62,.85)'; rg.lineWidth = 2; rg.lineCap = 'round'; rg.beginPath();
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x; if (S.road[i] <= 6) continue;
+    for (const [dx, dy] of [[1, 0], [0, 1], [1, 1], [1, -1]]) { const xx = x + dx, yy = y + dy; if (xx >= W || yy < 0 || yy >= H) continue; if (S.road[yy * W + xx] > 6) { rg.moveTo(x * TS + 4, y * TS + 4); rg.lineTo(xx * TS + 4, yy * TS + 4); } }
+  }
+  rg.stroke();
+}
+
+// ---------- camera ----------
+function resize() {
+  dpr = Math.min(2, window.devicePixelRatio || 1); cw = fig.clientWidth; ch = fig.clientHeight;
+  cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr);
+  const nf = Math.min(cw / W, ch / H) * 1.0; if (Math.abs(cam.z - fitZ) < 0.01) cam.z = nf; fitZ = nf;
+}
+const ro = new ResizeObserver(resize); ro.observe(fig);
+const toScreen = (x, y) => [(x - cam.x) * cam.z + cw / 2, (y - cam.y) * cam.z + ch / 2];
+const toWorld = (sx, sy) => [(sx - cw / 2) / cam.z + cam.x, (sy - ch / 2) / cam.z + cam.y];
+function clampCam(c) {
+  c.z = Math.max(fitZ * 0.95, Math.min(fitZ * 7, c.z));
+  const hw = cw / 2 / c.z, hh = ch / 2 / c.z;
+  c.x = hw * 2 >= W ? W / 2 : Math.max(hw, Math.min(W - hw, c.x));
+  c.y = hh * 2 >= H ? H / 2 : Math.max(hh, Math.min(H - hh, c.y));
+}
+function posOf(t) { if (t.frozen) return [t.sx, t.sy]; const a = t.a; if (a && (a.alive !== false) && !a.dead && a.x != null) return [a.x, a.y]; return [t.x, t.y]; }
+function aimCamera() {
+  if (follow && !follow.dead && follow.alive !== false) { camT.x = follow.x; camT.y = follow.y; camT.z = fitZ * 3.5; }
+  else if (manual) { }
+  else if (director && card && card.targets.length) {
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    for (const t of card.targets) { const [x, y] = posOf(t); x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+    const pad = card.pad || 6; camT.x = (x0 + x1) / 2; camT.y = (y0 + y1) / 2 + 2;
+    camT.z = Math.min(fitZ * (card.zoom || 3.6), cw / (x1 - x0 + pad * 2), ch / (y1 - y0 + pad * 2.8));
+  } else { camT.x = W / 2; camT.y = H / 2; camT.z = fitZ; }
+  clampCam(camT);
+  const k = manual ? 1 : 0.05; cam.x += (camT.x - cam.x) * k; cam.y += (camT.y - cam.y) * k; cam.z += (camT.z - cam.z) * k; clampCam(cam);
+}
+
+// ---------- sprites ----------
+const roofOf = (k) => k.era === 0 ? '#d4b05a' : kcol(k, 44);
+function drawTown(t, now) {
+  const k = t.k, lv = t.level, u = 0.15, n = [3, 5, 8, 12][lv], rad = 0.3 + lv * 0.3;
+  const wall = k.era >= 2 ? '#e4dccb' : '#c69c6a', roof = roofOf(k);
+  const homes = [];
+  for (let i = 0; i < n; i++) { const a = hash(t.id, i, 1) * 6.283, r = Math.sqrt(hash(t.id, i, 2)) * rad; homes.push([t.x + Math.cos(a) * r, t.y + Math.sin(a) * r * 0.75]); }
+  homes.sort((a, b) => a[1] - b[1]);
+  if (t.walls) { ctx.fillStyle = '#9c968c'; const R = rad + 0.45; for (let a = 0; a < 6.283; a += 0.35) ctx.fillRect(t.x + Math.cos(a) * R - u * 1.5, t.y + Math.sin(a) * R * 0.8 - u * 1.5, u * 3, u * 3); }
+  for (const [x, y] of homes) {
+    ctx.fillStyle = 'rgba(30,40,20,.25)'; ctx.fillRect(x - 2 * u, y + 1.5 * u, 5 * u, u);
+    ctx.fillStyle = wall; ctx.fillRect(x - 2 * u, y - u, 4 * u, 2.5 * u);
+    ctx.fillStyle = roof; ctx.fillRect(x - 2.5 * u, y - 2 * u, 5 * u, 1.2 * u); ctx.fillRect(x - 1.5 * u, y - 2.8 * u, 3 * u, u);
+    ctx.fillStyle = '#4a3324'; ctx.fillRect(x - 0.4 * u, y + 0.4 * u, 0.9 * u, 1.1 * u);
+  }
+  if (lv >= 2 && k.religion && !k.religion.folk) { const x = t.x + rad * 0.7, y = t.y - rad * 0.2; ctx.fillStyle = '#f2ede2'; ctx.fillRect(x - 1.2 * u, y - 3 * u, 2.4 * u, 4.5 * u); ctx.fillStyle = hcol(t.religion.hue, 70, 45); ctx.fillRect(x - 1.6 * u, y - 4 * u, 3.2 * u, 1.2 * u); ctx.fillRect(x - 0.3 * u, y - 6 * u, 0.6 * u, 2 * u); }
+  if (k.capital === t) {
+    const x = t.x, y = t.y - 0.15; ctx.fillStyle = 'rgba(30,40,20,.3)'; ctx.fillRect(x - 2 * u, y + 2 * u, 5 * u, u);
+    ctx.fillStyle = '#b9b2a6'; ctx.fillRect(x - 1.8 * u, y - 5 * u, 3.6 * u, 7 * u); ctx.fillStyle = '#8f887d'; ctx.fillRect(x + 0.6 * u, y - 5 * u, 1.2 * u, 7 * u);
+    for (let i = -2; i <= 1; i += 1.3) ctx.fillRect(x + i * u, y - 6 * u, 0.8 * u, u);
+    ctx.fillStyle = '#3c2a1c'; ctx.fillRect(x - 0.1 * u, y - 11 * u, 0.4 * u, 6 * u);
+    const wv = Math.sin(now / 300 + t.id) * 0.4 * u; ctx.fillStyle = kcol(k, 50); ctx.fillRect(x + 0.3 * u, y - 11 * u + wv, 3.4 * u, 2 * u); ctx.fillStyle = kcol(k, 75); ctx.fillRect(x + 0.3 * u, y - 10.2 * u + wv, 3.4 * u, 0.5 * u);
+  }
+  // status effects
+  if (t.sieged || t.plague || t.famine > 8) {
+    for (let i = 0; i < 6; i++) {
+      const ph = (now / (t.plague ? 1400 : 900) + i / 6) % 1, x = t.x + (hash(t.id, i, 5) - 0.5) * rad * 2, y = t.y - ph * 1.6;
+      ctx.globalAlpha = (1 - ph) * 0.7; ctx.fillStyle = t.plague ? '#9be36a' : t.sieged ? '#5a5a5a' : '#b08d5a'; const s = (0.12 + ph * 0.25); ctx.fillRect(x - s / 2, y - s / 2, s, s);
+    }
+    ctx.globalAlpha = 1;
+    if (t.sieged && (now / 120 | 0) % 3) { ctx.fillStyle = '#ff9a2e'; ctx.fillRect(t.x + (hash(t.id, now / 120 | 0, 3) - 0.5) * rad * 1.6, t.y - 0.2, u * 1.2, u * 1.6); }
+  }
+}
+function drawSoldier(x, y, k, era, horde, u, dir) {
+  const body = horde ? '#7a5a3a' : kcol(k, 45), f = dir < 0 ? -1 : 1;
+  ctx.fillStyle = 'rgba(30,40,20,.25)'; ctx.fillRect(x - 1.5 * u, y + 2.5 * u, 3 * u, 0.7 * u);
+  if (horde || era >= 3) { ctx.fillStyle = horde ? '#6b4a2e' : '#8a6a4a'; ctx.fillRect(x - 2 * u, y + 0.3 * u, 4 * u, 1.6 * u); ctx.fillRect(x + f * 1.6 * u - 0.5 * u, y - 0.6 * u, u, 1.2 * u); ctx.fillStyle = '#3c2a1c'; ctx.fillRect(x - 1.6 * u, y + 1.9 * u, 0.6 * u, 0.9 * u); ctx.fillRect(x + 1 * u, y + 1.9 * u, 0.6 * u, 0.9 * u); y -= 1.6 * u; }
+  else { ctx.fillStyle = '#3c2a1c'; ctx.fillRect(x - 0.8 * u, y + 1.2 * u, 0.6 * u, 1.3 * u); ctx.fillRect(x + 0.2 * u, y + 1.2 * u, 0.6 * u, 1.3 * u); }
+  ctx.fillStyle = body; ctx.fillRect(x - u, y - 0.8 * u, 2 * u, 2.2 * u);
+  ctx.fillStyle = '#f0c9a0'; ctx.fillRect(x - 0.6 * u, y - 2 * u, 1.2 * u, 1.2 * u);
+  ctx.fillStyle = era >= 2 ? '#9aa3ad' : '#6b4a2e'; ctx.fillRect(x - 0.7 * u, y - 2.4 * u, 1.4 * u, 0.5 * u);
+  ctx.fillStyle = era >= 4 ? '#2b2b2b' : '#d9d9d9'; ctx.fillRect(x + f * 1.2 * u, y - 3.2 * u, 0.35 * u, 4 * u);
+}
+function drawArmy(a, now) {
+  const [x, y] = lerpPos(a), u = 0.16, cnt = Math.max(1, Math.min(7, Math.round(Math.log2(a.n / 60)) + 1)), era = a.k.era;
+  const bob = a.mode === 'march' || a.mode === 'home' ? Math.abs(Math.sin(now / 140 + a.id)) * 0.6 * u : 0;
+  for (let i = 0; i < cnt; i++) { const ox = ((i % 3) - 1) * 0.42 + (i >= 3 ? 0.2 : 0), oy = Math.floor(i / 3) * 0.32; drawSoldier(x + ox, y + oy - bob * ((i % 2) ? 1 : 0), a.k, era, a.horde, u, a.dir); }
+  const fx0 = x - 0.55; ctx.fillStyle = '#3c2a1c'; ctx.fillRect(fx0, y - 1.25, 0.05, 1.1);
+  const wv = Math.sin(now / 250 + a.id) * 0.04; ctx.fillStyle = a.horde ? '#2b1d12' : kcol(a.k, 50); ctx.fillRect(fx0 + 0.05, y - 1.25 + wv, 0.42, 0.26);
+  if (a.horde) { ctx.fillStyle = '#d33'; ctx.fillRect(fx0 + 0.18, y - 1.18 + wv, 0.12, 0.12); }
+}
+function drawCaravan(c, now) {
+  const [x, y] = lerpPos(c), u = 0.11, f = c.dir < 0 ? -1 : 1;
+  if (c.ship) { drawShip(x, y, c.k, u, f, '#f4efe2', now); return; }
+  ctx.fillStyle = 'rgba(30,40,20,.25)'; ctx.fillRect(x - 3 * u, y + 1.6 * u, 6 * u, 0.7 * u);
+  ctx.fillStyle = '#8c8c8c'; ctx.fillRect(x + f * 2.2 * u - 1 * u, y - 0.6 * u, 2 * u, 1.4 * u); ctx.fillRect(x + f * 3.1 * u - 0.4 * u, y - 1.2 * u, 0.8 * u, 0.8 * u);
+  ctx.fillStyle = '#8a5a32'; ctx.fillRect(x - 2.2 * u - f * 0.6 * u, y - 1 * u, 3.4 * u, 1.8 * u);
+  ctx.fillStyle = '#e6c36a'; ctx.fillRect(x - 2 * u - f * 0.6 * u, y - 1.8 * u, 3 * u, 0.9 * u);
+  ctx.fillStyle = '#3c2a1c'; ctx.fillRect(x - 2 * u - f * 0.6 * u, y + 0.8 * u, 0.9 * u, 0.9 * u); ctx.fillRect(x + 0.2 * u - f * 0.6 * u, y + 0.8 * u, 0.9 * u, 0.9 * u);
+}
+function drawSettler(s, now) {
+  const [x, y] = lerpPos(s), u = 0.11, f = s.dir < 0 ? -1 : 1;
+  if (s.ship) { drawShip(x, y, s.k, u, f, '#ffffff', now); return; }
+  ctx.fillStyle = 'rgba(30,40,20,.25)'; ctx.fillRect(x - 3 * u, y + 1.6 * u, 6 * u, 0.7 * u);
+  ctx.fillStyle = '#7a5332'; ctx.fillRect(x - 2.5 * u, y - 0.2 * u, 5 * u, 1.2 * u);
+  ctx.fillStyle = '#f5efe0'; ctx.fillRect(x - 2.2 * u, y - 2.4 * u, 4.4 * u, 2.2 * u); ctx.fillRect(x - 1.6 * u, y - 2.9 * u, 3.2 * u, 0.6 * u);
+  ctx.fillStyle = '#3c2a1c'; ctx.fillRect(x - 2 * u, y + 0.9 * u, u, u); ctx.fillRect(x + u, y + 0.9 * u, u, u);
+  ctx.fillStyle = kcol(s.k, 50); ctx.fillRect(x + f * 2.6 * u, y - 1.2 * u, 0.9 * u, 0.9 * u);
+}
+function drawShip(x, y, k, u, f, sail, now) {
+  const rock = Math.sin(now / 400 + x) * 0.3 * u;
+  ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.fillRect(x - f * 4 * u, y + 1.4 * u, 2 * u, 0.4 * u);
+  ctx.fillStyle = '#6b4226'; ctx.fillRect(x - 3 * u, y + rock, 6 * u, 1.3 * u); ctx.fillRect(x - 2.2 * u, y + 1.3 * u + rock, 4.4 * u, 0.6 * u);
+  ctx.fillStyle = '#3c2a1c'; ctx.fillRect(x - 0.2 * u, y - 5 * u + rock, 0.4 * u, 5 * u);
+  ctx.fillStyle = sail; ctx.fillRect(x - 2 * u, y - 4.6 * u + rock, 4 * u, 3.4 * u);
+  ctx.fillStyle = kcol(k, 50); ctx.fillRect(x - 2 * u, y - 3.3 * u + rock, 4 * u, 0.8 * u);
+}
+const lerpPos = a => [a.px != null ? a.px + (a.x - a.px) * frac : a.x, a.py != null ? a.py + (a.y - a.py) * frac : a.y];
+
+// ---------- draw ----------
+function draw(now) {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.fillStyle = '#1d5a92'; ctx.fillRect(0, 0, cw, ch);
+  ctx.setTransform(dpr * cam.z, 0, 0, dpr * cam.z, dpr * (cw / 2 - cam.x * cam.z), dpr * (ch / 2 - cam.y * cam.z));
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(terrCv, 0, 0, W, H); ctx.drawImage(riverCv, 0, 0, W, H);
+  ctx.drawImage(fieldCv, 0, 0, W, H); ctx.drawImage(roadCv, 0, 0, W, H);
+  if (mapMode !== 'none') { ctx.drawImage(tintCv, 0, 0, W, H); ctx.drawImage(borderCv, 0, 0, W, H); }
+  // cold century frost from the north
+  const frost = Math.max(0, Math.min(0.55, (1 - S.climate) * 2.2));
+  if (frost > 0.02) { const g = ctx.createLinearGradient(0, 0, 0, H * 0.7); g.addColorStop(0, `rgba(240,248,255,${frost})`); g.addColorStop(1, 'rgba(240,248,255,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H * 0.7); }
+  for (const d of S.droughts) { ctx.fillStyle = 'rgba(200,140,60,.16)'; ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, 6.29); ctx.fill(); }
+  const [vx0, vy0] = toWorld(-30, -30), [vx1, vy1] = toWorld(cw + 30, ch + 30), vis = a => a.x > vx0 && a.x < vx1 && a.y > vy0 && a.y < vy1;
+  const towns = S.towns.filter(t => t.alive && vis(t)).sort((a, b) => a.y - b.y);
+  for (const t of towns) drawTown(t, now);
+  for (const c of S.caravans) if (vis(c)) drawCaravan(c, now);
+  for (const s of S.settlers) if (vis(s)) drawSettler(s, now);
+  for (const a of S.armies) if (vis(a)) drawArmy(a, now);
+  // battle dust and sparks
+  for (const bt of S.battles || []) {
+    for (let i = 0; i < 10; i++) { const ph = (now / 700 + i / 10) % 1, ang = hash(i, bt.t, 1) * 6.283; ctx.globalAlpha = (1 - ph) * 0.55; ctx.fillStyle = '#d9c7a0'; const r = 0.3 + ph * 0.9; ctx.beginPath(); ctx.arc(bt.x + Math.cos(ang) * r, bt.y + Math.sin(ang) * r * 0.6 - ph * 0.4, 0.18 + ph * 0.25, 0, 6.29); ctx.fill(); }
+    ctx.globalAlpha = 1; for (let i = 0; i < 5; i++) if (hash(i, (now / 90) | 0, bt.t) > 0.4) { ctx.fillStyle = i % 2 ? '#fff6a8' : '#ffffff'; ctx.fillRect(bt.x + (hash(i, now / 90 | 0, 3) - 0.5) * 1.2, bt.y - 0.3 + (hash(i, now / 90 | 0, 4) - 0.5) * 0.8, 0.09, 0.09); }
+  }
+  ctx.globalAlpha = 1;
+  for (let i = fx.length - 1; i >= 0; i--) { const f = fx[i], age = Math.max(0, (now - f.t) / 1600); if (age > 1) { fx.splice(i, 1); continue; } ctx.globalAlpha = 1 - age; ctx.strokeStyle = f.c; ctx.lineWidth = 0.12; ctx.beginPath(); ctx.arc(f.x, f.y, 0.5 + age * 3, 0, 6.29); ctx.stroke(); }
+  ctx.globalAlpha = 1;
+  // labels in screen space
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const zoomed = cam.z > fitZ * 1.7;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  if (!zoomed && mapMode === 'realm') {
+    const placed = [];
+    for (const k of S.kingdoms.filter(k => !k.fallen && !k.horde && k.towns >= 3).sort((a, b) => b.pop - a.pop)) {
+      let sx = 0, sy = 0, sw = 0;
+      for (const t of S.towns) if (t.alive && t.k === k) { sx += t.x * t.pop; sy += t.y * t.pop; sw += t.pop; }
+      if (!sw) continue; const [px, py] = toScreen(sx / sw, sy / sw - 1.6), size = Math.max(10, Math.min(22, 6 + Math.sqrt(k.towns) * 4) * Math.min(1, cw / 760));
+      ctx.font = `700 ${size}px "Pixelify Sans", sans-serif`; const tw = ctx.measureText(title(k)).width;
+      if (placed.some(p => Math.abs(p.x - px) < (p.w + tw) / 2 + 4 && Math.abs(p.y - py) < (p.s + size) / 2 + 2)) continue; placed.push({ x: px, y: py, w: tw, s: size }); ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(20,24,30,.75)'; ctx.strokeText(title(k), px, py); ctx.fillStyle = '#ffffff'; ctx.fillText(title(k), px, py);
+    }
+  }
+  if (zoomed) {
+    ctx.font = '600 13px Nunito, sans-serif';
+    for (const t of towns) { const [px, py] = toScreen(t.x, t.y + 0.55 + t.level * 0.22); const label = t.name + (t.k.capital === t ? ' ♛' : ''); ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(20,24,30,.8)'; ctx.strokeText(label, px, py + 6); ctx.fillStyle = '#fff'; ctx.fillText(label, px, py + 6); }
+  }
+  // rings
+  const pulse = 1 + Math.sin(now / 220) * 0.1;
+  if (card) {
+    card.targets.forEach((t, i) => { const [x, y] = posOf(t), [sx, sy] = toScreen(x, y - 0.2), r = Math.max(11, cam.z * (t.r || 1.2)) * pulse; ctx.strokeStyle = t.c || '#ffd23f'; ctx.lineWidth = i === 0 ? 3 : 2; ctx.beginPath(); ctx.arc(sx, sy, r, 0, 6.29); ctx.stroke(); });
+    const t0 = card.targets[0];
+    if (t0 && capEl.classList.contains('on')) {
+      const [x, y] = posOf(t0), [sx, sy] = toScreen(x, y - 0.2), fr = fig.getBoundingClientRect(), cr = capEl.getBoundingClientRect();
+      const ex = Math.max(cr.left - fr.left + 24, Math.min(cr.right - fr.left - 24, sx)), ey = cr.top - fr.top, r = Math.max(11, cam.z * (t0.r || 1.2)) * pulse;
+      if (sy + r < ey - 6 && sy > 0) { ctx.strokeStyle = 'rgba(255,210,63,.9)'; ctx.lineWidth = 2; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(sx, sy + r); ctx.lineTo(ex, ey); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(ex, ey, 3.5, 0, 6.29); ctx.fill(); }
+    }
+  }
+  if (selected && (selected.alive !== false) && !selected.dead) { const [sx, sy] = toScreen(selected.x, selected.y - 0.2), r = Math.max(12, cam.z * 1.3); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.arc(sx, sy, r, 0, 6.29); ctx.stroke(); ctx.setLineDash([]); }
+}
+
+// ---------- narrator ----------
+const capEl = $('caption'), journal = $('journal');
+let card = null, cardEnd = 0, queue = [], cards = [], lastShown = -1e9;
+const lastType = {};
+const T = (a, c, r) => ({ a, x: a.x, y: a.y, c, r });
+const P = (x, y, c, r) => ({ x, y, c, r });
+const KN = k => title(k), RN = k => k.ruler ? rulerName(k, k.ruler) : 'its ruler';
+const he = p => p && p.female ? 'she' : 'he', his = p => p && p.female ? 'her' : 'his';
+function say(c, gapYears) {
+  if (gapYears && c.pri < 8) { const last = lastType[c.kind]; if (last != null && S.tick - last < gapYears * YEAR) return; }
+  lastType[c.kind] = S.tick;
+  c.t = S.tick; c.stamp = `Year ${yearOf(S.tick)}`; c.targets = (c.targets || []).filter(Boolean);
+  for (const t of c.targets) { if (t.a && t.a.x != null) { t.x = t.a.x; t.y = t.a.y; } t.sx = t.x; t.sy = t.y; }
+  cards.push(c); if (cards.length > 400) cards.shift();
+  const li = document.createElement('li'); li.dataset.kind = c.kind;
+  li.innerHTML = `<button><span class="stamp">${c.stamp}</span><b>${esc(c.title)}</b><span class="txt">${esc(c.text)}</span></button>`;
+  li.firstChild.onclick = () => { manual = false; follow = null; director = true; setDirUI(); showCard(c, true); };
+  journal.prepend(li); while (journal.children.length > 300) journal.lastChild.remove();
+  $('jcount').textContent = cards.length;
+  if (c.pri >= 3) { queue.push(c); queue.sort((a, b) => b.pri - a.pri || b.t - a.t); if (queue.length > 6) queue.length = 6; }
+}
+const esc = s => String(s).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+const big = k => k && (k.towns >= 3 || (k.peak || 0) >= 4);
+function nearestTownName(x, y) { let b = null, bd = 1e9; for (const t of S.towns) if (t.alive) { const d = Math.hypot(t.x - x, t.y - y); if (d < bd) { bd = d; b = t; } } return b ? b.name : 'the wilds'; }
+function battleName(bt) { const i = (bt.y | 0) * W + (bt.x | 0), t = S.terrain[i]; const place = nearestTownName(bt.x, bt.y); const kind = S.river[i] ? 'Ford' : t === HILL ? 'Hill' : t === FOREST ? 'Wood' : t === MOUNT ? 'Pass' : t === DESERT ? 'Sands' : 'Field'; return `the Battle of ${place} ${kind}`; }
+const ERA_TEXT = ['', 'bronze tools and weapons; fields feed more people', 'iron ploughs and iron swords; towns start building wooden walls', 'stone castles, knights on horseback, and sailing ships that can carry settlers overseas', 'cannons and muskets; old walls matter less'];
+const CAUSE = { battle: 'fell in battle', murdered: 'was murdered', 'old age': 'died of old age', plague: 'died of plague', fever: 'died of a fever', 'a fall from a horse': 'died after a fall from a horse', 'a hunting accident': 'died in a hunting accident', illness: 'died of an illness', 'a bad winter': 'died in a bitter winter' };
+function narrate(e) {
+  switch (e.type) {
+    case 'war': { const w = e.w, a = w.a, d = w.d; if (a.horde) return;
+      const pri = big(a) || big(d) || w.reason === 'holy war' ? 6 : 3;
+      const why = { 'border disputes': `Their borders have been rubbing for years, and ${RN(a)} thinks ${his(a.ruler)} army is the bigger one.`, 'holy war': `A holy war: ${RN(a)} follows the ${a.religion.short}, and ${KN(d)} does not.`, ambition: `${RN(a)} is ambitious and wants more land.`, greed: `${RN(a)} is greedy and wants ${KN(d)}'s farms.`, rebellion: `${KN(a)} wants its rebel towns back.`, 'the crown': `Two claimants, one crown.` }[w.reason] || `${RN(a)} wants ${w.reason.replace('to ', '')}.`;
+      const allies = w.joined.length ? ` ${w.joined.map(KN).join(' and ')} joined to defend ${KN(d)}.` : '';
+      say({ kind: 'war', pri, title: `War: ${KN(a)} vs ${KN(d)}`, text: why + allies, targets: [T(a.capital, kcol(a, 55)), T(d.capital, kcol(d, 55))], zoom: 2.6 }, pri < 6 ? 3 : 0); break; }
+    case 'battle': { const bt = e.bt, tot = bt.n0a + bt.n0b; if (tot < 900 && !bt.kingDied) return;
+      const nm = battleName(bt), w = bt.win.k, l = bt.lose.k;
+      let text = `${w.horde ? 'The horde' : KN(w)} beat ${l.horde ? 'the horde' : KN(l)}. About ${fmt(bt.dead)} soldiers died.`;
+      if (bt.kingDied) text += ` ${rulerName(l, bt.kingDied)} died on the field.`;
+      say({ kind: 'battle', pri: bt.kingDied ? 7 : tot > 3000 ? 5 : 4, title: cap1(nm), text, targets: [P(bt.x, bt.y, '#ffd23f', 1.6), T(bt.win, kcol(w, 60))], zoom: 4 }, bt.kingDied ? 0 : 1.2); break; }
+    case 'capture': { const t = e.town, k = e.a.k, o = e.from;
+      if (e.wasCap) { const nc = o.capital && !o.fallen && o.capital !== t ? o.capital : null; say({ kind: 'capital', pri: 7, title: `${t.name} has fallen`, text: `${k.horde ? 'The horde' : KN(k)} took ${KN(o)}'s capital.` + (nc ? ` The court flees to ${nc.name}.` : ''), targets: [T(t), T(e.a, kcol(k, 60))], zoom: 3.6 }); }
+      else if (t.level >= 2 || big(o)) say({ kind: 'capture', pri: 5, title: `${t.name} captured`, text: `${k.horde ? 'The horde' : KN(k)} took ${t.name} from ${KN(o)}. The town was sacked and lost people.`, targets: [T(t), T(e.a, kcol(k, 60))], zoom: 3.6 }, 1.5);
+      fx.push({ x: t.x, y: t.y, t: performance.now(), c: kcol(k, 60) }); break; }
+    case 'fall': { const k = e.k; if ((k.peak || 0) < 2 && e.age < 60) return; const last = k.capital || S.towns.find(t => t.k === k);
+      say({ kind: 'fall', pri: (k.peak || 0) >= 5 ? 8 : 6, title: `The end of ${KN(k)}`, text: `Founded in year ${yearOf(k.founded)}, it lasted ${Math.round(e.age)} years, had ${k.rulers.length} ruler${k.rulers.length > 1 ? 's' : ''}, and at its height held ${k.peak} town${k.peak > 1 ? 's' : ''}.`, targets: last ? [P(last.x, last.y, '#ffffff', 1.6)] : [], zoom: 3 }); break; }
+    case 'revolt': { const k = e.k, t = e.town, o = e.old;
+      const why = { culture: `Its people are ${e.oldCulture.name}, not ${o.culture.name}, and they're tired of foreign rule.`, faith: `They follow the ${t.religion.short}, not the crown's ${o.religion.short}.`, famine: `They went hungry and the crown did nothing.`, conquest: `${KN(o)} conquered them only a few years ago.`, distance: `They're far from the capital, and the crown's tax collectors are the only officials they ever see.` }[e.why];
+      const nc = e.newCulture ? ` Cut off for generations, they now call themselves the ${e.newCulture.name}: a new people.` : '';
+      say({ kind: 'revolt', pri: e.n >= 2 || t.level >= 2 || e.newCulture ? 7 : 4, title: `${t.name} rebels`, text: `${t.name}${e.n > 1 ? ` and ${e.n - 1} nearby town${e.n > 2 ? 's' : ''}` : ''} broke away from ${KN(o)}. ${why}${nc}`, targets: [T(t, kcol(k, 60))], zoom: 3.2 }, e.n >= 2 ? 0 : 2); break; }
+    case 'death': { const k = e.k, r = e.r; if (!big(k) && !['battle', 'murdered'].includes(e.cause)) return;
+      const heir = k.ruler && k.ruler !== r ? k.ruler : null, rel = heir && r.kids.includes(heir) ? (heir.female ? 'daughter' : 'son') : null;
+      const text = `${rulerName(k, r)} ${CAUSE[e.cause] || 'died'} after ${Math.max(1, Math.round(e.reign))} years on the throne.` + (heir && rel ? ` ${his(r).replace(/^./, c => c.toUpperCase())} ${rel} ${heir.name} takes the throne${S.tick - heir.born < 16 * YEAR ? `, aged only ${Math.max(1, Math.round((S.tick - heir.born) / YEAR))}` : ''}.` : '');
+      say({ kind: 'death', pri: e.cause === 'murdered' || e.cause === 'battle' ? 6 : 4, title: `${rulerTitle(k, r)} ${r.name}${r.epithet ? ' ' + r.epithet : ''} is dead`, text, targets: [T(k.capital)], zoom: 3.4 }, 1); break; }
+    case 'crown': if (e.cousin && big(e.k)) say({ kind: 'crown', pri: 3, title: `A cousin takes the throne`, text: `${rulerName(e.k, e.prev, false)} left no children, so a cousin, ${e.r.name}, takes the throne of ${KN(e.k)}.`, targets: [T(e.k.capital)], zoom: 3.4 }, 3); break;
+    case 'civilWar': say({ kind: 'civil', pri: 7, title: `Civil war in ${e.k.base}`, text: `${rulerName(e.k, e.prev, false)} died without an heir. Two lords claim the crown: ${e.r.name} in ${e.k.capital.name}, and ${e.rival.name} in ${e.nk.capital.name}. The realm splits in two.`, targets: [T(e.k.capital, kcol(e.k, 60)), T(e.nk.capital, kcol(e.nk, 60))], zoom: 2.8 }); break;
+    case 'newDynasty': if (big(e.k)) say({ kind: 'dynasty', pri: 5, title: `A new dynasty in ${e.k.base}`, text: `${rulerName(e.k, e.prev, false)} died with no heir. The nobles crowned ${e.r.name} of ${e.r.dyn}.`, targets: [T(e.k.capital)], zoom: 3.4 }, 2); break;
+    case 'era': if (e.first) say({ kind: 'era', pri: 8, title: `The ${ERAS[e.era]} begins`, text: `${KN(e.k)} is the first realm to reach the ${ERAS[e.era]}: ${ERA_TEXT[e.era]}.`, targets: [T(e.k.capital)], zoom: 3.2 }); else if (big(e.k)) say({ kind: 'era2', pri: 3, title: `${KN(e.k)} enters the ${ERAS[e.era]}`, text: `It learned from traders and neighbours, and is ${Math.round((S.tick - S.records.firstEra[e.era]) / YEAR)} years behind the first realm to get there.`, targets: [T(e.k.capital)], zoom: 3 }, 6); break;
+    case 'plague': say({ kind: 'plague', pri: 7, title: `${cap1(e.pl.name)} breaks out`, text: `It started in ${e.town.name}, one of the biggest and busiest towns in the world. Trade caravans will carry it along the roads.`, targets: [T(e.town, '#9be36a', 1.6)], zoom: 3.4 }); break;
+    case 'plagueSpread': if (e.pl.towns <= 3) say({ kind: 'pspread', pri: 5, title: `${cap1(e.pl.name)} reaches ${e.town.name}`, text: `It came from ${e.from.name}${e.pl.towns <= 2 ? ', probably with a trade caravan' : ''}.`, targets: [T(e.town, '#9be36a', 1.5), T(e.from, '#9be36a')], zoom: 3 }); break;
+    case 'plagueEnd': if (e.pl.dead > 300) say({ kind: 'pend', pri: 6, title: `${cap1(e.pl.name)} is over`, text: `It killed about ${fmt(e.pl.dead)} people in ${e.pl.towns} town${e.pl.towns > 1 ? 's' : ''}.` + (e.pl.dead >= S.records.worstPlague ? ' The deadliest plague so far.' : ''), targets: [T(e.pl.origin)], zoom: 2.4 }); break;
+    case 'famine': if (e.town.level >= 2 || (e.town.k.capital === e.town && big(e.town.k))) say({ kind: 'famine', pri: 4, title: `Famine in ${e.town.name}`, text: `The harvest failed and the granaries are empty. People are leaving or starving, and unrest is rising.`, targets: [T(e.town, '#c8a060')], zoom: 3.4 }, 3); break;
+    case 'drought': say({ kind: 'drought', pri: 4, title: `Drought around ${e.town.name}`, text: `The rains failed. Harvests in the brown circle will be poor for a few years.`, targets: [P(e.d.x, e.d.y, '#e0a050', e.d.r * 0.6)], zoom: 1.8, pad: e.d.r }, 4); break;
+    case 'coldStart': say({ kind: 'cold', pri: 8, title: 'A cold century begins', text: 'Summers are getting shorter and harvests smaller, especially in the north. Hungry years make rebels, and nomad hordes move south.', targets: [P(W / 2, H * 0.2, '#e6f6ff', 6)], zoom: 1 }); break;
+    case 'coldEnd': say({ kind: 'coldend', pri: 6, title: 'The cold years end', text: 'The climate is warming again. Fields will feed more people.', targets: [], zoom: 1 }); break;
+    case 'religion': say({ kind: 'religion', pri: 7, title: `A new faith: the ${e.rel.name}`, text: `In ${e.town.name}, a prophet named ${e.rel.prophet} has begun preaching. It will spread along trade routes, town by town.`, targets: [T(e.town, hcol(e.rel.hue, 70, 55))], zoom: 3.6 }); break;
+    case 'convertK': if (big(e.k)) say({ kind: 'convert', pri: 5, title: `${KN(e.k)} converts`, text: `Most of its people now follow the ${e.rel.short}, so ${RN(e.k)} has adopted it too, leaving the ${e.old.short}.`, targets: [T(e.k.capital, hcol(e.rel.hue, 70, 55))], zoom: 3 }, 3); break;
+    case 'horde': say({ kind: 'horde', pri: 7, title: `The ${e.k.base} Horde`, text: `${fmt(e.a.n)} riders have come out of the wilds${S.climate < 0.9 ? ', driven by the cold' : ''}. They're heading for ${e.town.name}.`, targets: [T(e.a, '#ff5a4a'), T(e.town)], zoom: 2.6 }); break;
+    case 'hordeSettles': say({ kind: 'hsettle', pri: 7, title: `The horde settles down`, text: `The ${e.k.base} riders took ${e.town.name} and decided to stay. Their warlord now rules a kingdom.`, targets: [T(e.town, kcol(e.k, 60))], zoom: 3.4 }); break;
+    case 'hordeGone': say({ kind: 'hgone', pri: 4, title: `The ${e.k.base} Horde scatters`, text: `Beaten in the field, the riders go back to the wilds.`, targets: [P(e.x, e.y)], zoom: 3 }); break;
+    case 'found': if (e.ship) say({ kind: 'colony', pri: 6, title: `A colony across the sea`, text: `Settlers from ${e.from.name} sailed to found ${e.town.name} for ${KN(e.town.k)}.`, targets: [T(e.town), T(e.from)], zoom: 2.6 }, 4); else if (e.town.k.towns <= 2) say({ kind: 'found', pri: 4, title: `${e.town.name} is founded`, text: `Settlers from ${e.from.name} built a new home. ${KN(e.town.k)} now has ${S.towns.filter(t => t.alive && t.k === e.town.k).length} towns.`, targets: [T(e.town), T(e.from)], zoom: 3.4 }, 3); break;
+    case 'tribe': break;
+    case 'union': say({ kind: 'union', pri: 6, title: `${KN(e.k)} joins ${e.o.base}`, text: `${rulerName(e.k, e.prev, false)} died childless, and was married into the royal family of ${KN(e.o)}. By inheritance, all ${e.n} of ${e.k.base}'s towns now belong to ${e.o.base}, without a battle.`, targets: e.cap ? [T(e.cap, kcol(e.o, 60)), T(e.o.capital)] : [T(e.o.capital)], zoom: 2.6 }); break;
+    case 'fealty': say({ kind: 'fealty', pri: 5, title: `${e.k.base} swears fealty`, text: `Small and friendly with its big ${e.k.culture.name}-speaking neighbour, ${KN(e.k)} has joined ${KN(e.o)} peacefully.`, targets: e.cap ? [T(e.cap, kcol(e.o, 60)), T(e.o.capital)] : [T(e.o.capital)], zoom: 2.6 }, 2); break;
+    case 'peace': { const w = e.w; if (!big(w.a) && !big(w.d)) return; const won = e.winner; const taken = w.taken.filter(t => t.alive).map(t => t.name);
+      say({ kind: 'peace', pri: 5, title: `Peace between ${w.a.base} and ${w.d.base}`, text: (won ? `${KN(won)} came out ahead` : `Neither side really won`) + (taken.length ? `, keeping ${taken.slice(0, 3).join(', ')}${taken.length > 3 ? ' and more' : ''}.` : '.') + ` The war lasted ${Math.max(1, Math.round((S.tick - w.start) / YEAR))} years and cost about ${fmt(w.dead)} soldiers.`, targets: [T(w.a.capital), T(w.d.capital)], zoom: 2.6 }, 1.5); break; }
+    case 'alliance': if (big(e.k) && big(e.o)) say({ kind: 'alliance', pri: 4, title: `${e.k.base} and ${e.o.base} ally`, text: `They share a ${e.k.religion === e.o.religion ? 'faith' : 'border and a dislike of their neighbours'}. Each has promised to defend the other.`, targets: [T(e.k.capital), T(e.o.capital)], zoom: 2.6 }, 4); break;
+    case 'marriage': if (big(e.k) || big(e.o)) say({ kind: 'marriage', pri: 3, title: 'A royal wedding', text: `${RN(e.k)} married into the royal family of ${KN(e.o)}. The two courts are friendlier now.`, targets: [T(e.k.capital), T(e.o.capital)], zoom: 2.6 }, 6); break;
+    case 'golden': say({ kind: 'golden', pri: 5, title: `A golden age in ${e.k.base}`, text: `Sixty years of peace. Its towns are growing and its roads are busy with trade.`, targets: S.towns.filter(t => t.alive && t.k === e.k).slice(0, 5).map(t => T(t, '#ffd23f', 1)), zoom: 2.4 }, 5); break;
+    case 'recordEmpire': say({ kind: 'recemp', pri: 7, title: `The largest realm yet`, text: `${KN(e.k)} now holds ${e.n} towns, more than any realm before it. Large realms are hard to hold together: distant towns grow restless.`, targets: [T(e.k.capital)], zoom: 1.6, pad: 18 }, 8); break;
+    case 'recordCity': say({ kind: 'reccity', pri: 5, title: `${e.town.name}, the greatest city`, text: `${fmt(e.town.pop)} people now live in ${e.town.name}, the largest city the world has seen.`, targets: [T(e.town)], zoom: 4 }, 10); break;
+    case 'castle': say({ kind: 'castle', pri: 3, title: `${e.town.name} builds stone walls`, text: `Rich and big enough to afford them. Sieges against it will take much longer.`, targets: [T(e.town)], zoom: 4.2 }, 8); break;
+    case 'siege': if (e.town.k.capital === e.town && big(e.town.k)) say({ kind: 'siege', pri: 5, title: `Siege of ${e.town.name}`, text: `${e.a.horde ? 'The horde' : KN(e.a.k)} has surrounded ${KN(e.town.k)}'s capital with ${fmt(e.a.n)} soldiers.` + (e.town.walls ? ' The walls will hold for a while.' : ' It has no stone walls.'), targets: [T(e.town), T(e.a, kcol(e.a.k, 60))], zoom: 3.8 }, 2); break;
+    case 'abandoned': say({ kind: 'abandon', pri: 3, title: `${e.town.name} is abandoned`, text: 'The last families have left. Its fields will go back to the wild.', targets: [P(e.town.x, e.town.y)], zoom: 3.4 }, 5); break;
+  }
+}
+const cap1 = s => s.charAt(0).toUpperCase() + s.slice(1);
+function showCard(c, replay) {
+  card = c; c.replay = !!replay; c.targets.forEach(t => t.frozen = !!replay);
+  cardEnd = performance.now() + Math.min(11000, 4800 + c.text.length * 26);
+  capEl.innerHTML = `<div class="cap-top"><span class="stamp">${c.stamp}${replay ? ' · replay' : ''}</span>${!replay && speed > 1 && director && !manual ? '<span class="chip">Slowed to 1× to narrate</span>' : ''}<button class="skip" id="skip" aria-label="Next story">Next ›</button></div><b>${esc(c.title)}</b><p>${esc(c.text)}</p><div class="bar"><i></i></div>`;
+  capEl.classList.add('on');
+  const bar = capEl.querySelector('.bar i'); bar.style.transition = 'none'; bar.style.width = '0%'; void bar.offsetWidth; bar.style.transition = `width ${cardEnd - performance.now()}ms linear`; bar.style.width = '100%';
+  $('skip').onclick = () => { cardEnd = 0; };
+}
+function tickNarrator(now) {
+  if (card && now > cardEnd) { for (const t of card.targets) t.frozen = false; card = null; capEl.classList.remove('on'); lastShown = now; }
+  if (!card && queue.length && now - lastShown > 2200) {
+    let c = queue.shift();
+    while (c && S.tick - c.t > YEAR * (c.pri >= 7 ? 3 : 1.2)) c = queue.shift();
+    if (c) showCard(c);
+  }
+}
+
+// ---------- panels ----------
+const riverHist = $('hist'), hctx = riverHist.getContext('2d');
+function drawHistory() {
+  const w = riverHist.clientWidth, h = riverHist.clientHeight; if (!w) return;
+  riverHist.width = w * dpr; riverHist.height = h * dpr; const g = hctx; g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  const hs = S.hist, L = 8, R = 8, top = 8, bot = 22, pw = w - L - R, ph = h - top - bot;
+  const t1 = Math.max(S.tick, YEAR * 100), xs = t => L + (t / t1) * pw;
+  const maxTot = Math.max(1, ...hs.map(p => p.tot));
+  const ids = [...new Set(hs.flatMap(p => Object.keys(p.pops).map(Number)))].sort((a, b) => a - b);
+  const kById = new Map(S.kingdoms.map(k => [k.id, k]));
+  const stepN = Math.max(1, Math.floor(hs.length / pw));
+  const pts = []; for (let i = 0; i < hs.length; i += stepN) pts.push(hs[i]); if (hs.length && pts[pts.length - 1] !== hs[hs.length - 1]) pts.push(hs[hs.length - 1]);
+  const base = pts.map(() => 0);
+  const labels = [];
+  for (const id of ids) {
+    const k = kById.get(id); if (!k) continue; const vals = pts.map(p => p.pops[id] || 0); if (!vals.some(v => v > 0)) continue;
+    g.fillStyle = kcol(k, k.fallen ? 44 : 54); g.beginPath();
+    pts.forEach((p, i) => { const x = xs(p.t), y = top + ph - (base[i] + vals[i]) / maxTot * ph; i ? g.lineTo(x, y) : g.moveTo(x, y); });
+    for (let i = pts.length - 1; i >= 0; i--) g.lineTo(xs(pts[i].t), top + ph - base[i] / maxTot * ph);
+    g.closePath(); g.fill();
+    let bi = 0, bv = 0; vals.forEach((v, i) => { if (v > bv) { bv = v; bi = i; } });
+    if (bv / maxTot * ph > 16) labels.push({ x: xs(pts[bi].t), y: top + ph - (base[bi] + bv / 2) / maxTot * ph, s: k.base });
+    vals.forEach((v, i) => base[i] += v);
+  }
+  g.font = '700 12px "Pixelify Sans", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const l of labels) { const tw = g.measureText(l.s).width; const x = Math.max(L + tw / 2 + 2, Math.min(L + pw - tw / 2 - 2, l.x)); g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.45)'; g.strokeText(l.s, x, l.y); g.fillStyle = '#fff'; g.fillText(l.s, x, l.y); }
+  g.fillStyle = 'rgba(242,251,248,.75)'; g.font = '12px Nunito, sans-serif'; g.textBaseline = 'alphabetic';
+  const yrs = t1 / YEAR, st = yrs > 1200 ? 300 : yrs > 500 ? 100 : 50;
+  for (let y = 0; y <= yrs; y += st) g.fillText(y === 0 ? 'Year 1' : 'Year ' + y, Math.max(L + 22, Math.min(L + pw - 26, xs(y * YEAR))), h - 6);
+  g.fillStyle = '#ffd23f'; for (const c of cards) if (c.pri >= 7) { g.beginPath(); g.arc(xs(c.t), top + 2, 2.2, 0, 6.29); g.fill(); }
+}
+const roHist = new ResizeObserver(() => drawHistory()); roHist.observe(riverHist);
+function realmRows() {
+  const ks = S.kingdoms.filter(k => !k.fallen && !k.horde && k.towns > 0).sort((a, b) => b.pop - a.pop);
+  $('realms').innerHTML = ks.slice(0, 14).map(k => {
+    const status = k.enemies.size ? `<span class="war">At war</span>` : k.golden ? `<span class="gold">Golden age</span>` : 'At peace';
+    const r = k.ruler, age = r ? Math.floor((S.tick - r.born) / YEAR) : 0;
+    return `<tr data-k="${k.id}" tabindex="0"><td><i class="sw" style="background:${kcol(k, 52)}"></i>${esc(title(k))}</td><td>${r ? esc(rulerName(k, r)) + ` <span class="dim">(${age})</span>` : ''}</td><td class="n">${k.towns}</td><td class="n">${fmt(k.pop)}</td><td>${esc(k.religion.short)}</td><td>${ERAS[k.era]}</td><td>${status}</td></tr>`;
+  }).join('') + (ks.length > 14 ? `<tr><td colspan="7" class="dim">and ${ks.length - 14} smaller realms</td></tr>` : '');
+  $('realms').querySelectorAll('tr[data-k]').forEach(tr => tr.onclick = () => { const k = S.kingdoms.find(q => q.id === +tr.dataset.k); if (k) { selected = null; inspectK = k; showInspect(); manual = false; follow = null; camFly(k.capital); } });
+}
+let inspectK = null;
+function camFly(t) { if (!t) return; manual = true; fig.scrollIntoView({ behavior: 'smooth', block: 'center' }); camT.x = t.x; camT.y = t.y; camT.z = fitZ * 3; cam.x = t.x; cam.y = t.y; cam.z = fitZ * 3; clampCam(cam); setDirUI(); }
+function drawRecords() {
+  const r = S.records, live = S.kingdoms.filter(k => !k.fallen && !k.horde && k.towns > 0);
+  const oldest = live.sort((a, b) => a.founded - b.founded)[0];
+  const faiths = S.religions.filter(x => x.followers > 0).sort((a, b) => b.followers - a.followers).slice(0, 5), tot = faiths.reduce((s, x) => s + x.followers, 0) || 1;
+  $('faiths').innerHTML = faiths.map(f => `<div class="fr"><span>${esc(cap1(f.short))}</span><span class="n">${Math.round(f.followers / tot * 100)}%</span><div class="track"><i style="width:${(f.followers / tot * 100).toFixed(1)}%;background:${f.folk ? hcol(f.hue, 25, 60) : hcol(f.hue, 70, 55)}"></i></div></div>`).join('');
+  $('records').innerHTML = [
+    ['Largest realm ever', `${r.maxTowns} towns`], ['Largest city ever', r.maxCity ? fmt(r.maxCity) + ' people' : 'not yet'],
+    ['Longest reign', `${Math.round(r.longestReign)} years`], ['Deadliest plague', r.worstPlague ? fmt(r.worstPlague) + ' dead' : 'none yet'],
+    ['Oldest living realm', oldest ? `${esc(oldest.base)}, ${Math.round((S.tick - oldest.founded) / YEAR)} years` : '—'], ['Realms that have fallen', S.kingdoms.filter(k => k.fallen && !k.horde && (k.peak || 0) >= 1).length]
+  ].map(([a, b]) => `<div class="rec"><span>${a}</span><b>${b}</b></div>`).join('');
+}
+function updateHud() {
+  const live = S.kingdoms.filter(k => !k.fallen && !k.horde && k.towns > 0), pop = S.towns.reduce((s, t) => s + (t.alive ? t.pop : 0), 0);
+  $('yr').textContent = `Year ${yearOf(S.tick)}`; $('era').textContent = ERAS[Math.max(0, ...live.map(k => k.era))];
+  $('nk').textContent = live.length; $('np').textContent = fmt(pop); $('nw').textContent = S.wars.filter(w => !w.over).length;
+}
+const insp = $('inspect');
+function showInspect() {
+  if (inspectK && !selected) {
+    const k = inspectK, r = k.ruler, past = k.rulers.slice(-8).reverse();
+    insp.innerHTML = `<div class="ih"><b>${esc(title(k))}</b><button id="ix" aria-label="Close">×</button></div>
+      <p>Founded year ${yearOf(k.founded)} · ${k.culture.name} · ${esc(k.religion.short)}</p>
+      ${k.fallen ? `<p>Fell in year ${yearOf(k.fellAt)}</p>` : `<p>${k.towns} towns · ${fmt(k.pop)} people · ${ERAS[k.era]}</p>`}
+      ${r && !k.fallen ? `<p><b class="sm">${esc(rulerName(k, r))}</b>, ${Math.floor((S.tick - r.born) / YEAR)}, ${r.traits.join(' and ')}</p>` : ''}
+      <p class="fine">Rulers, latest first</p><ol class="rl">${past.map(p => `<li>${esc(p.name + (ROMAN[p.ord] ?? '') + (p.epithet ? ' ' + p.epithet : ''))} <span class="dim">${yearOf(p.crowned)}–${p.dead ? yearOf(p.died) : 'now'}</span></li>`).join('')}</ol>`;
+  } else if (selected && selected.pop != null) {
+    const t = selected, k = t.k;
+    const st = [t.sieged ? 'under siege' : '', t.plague ? 'plague' : '', t.famine ? 'famine' : '', t.walls ? (t.walls > 1 ? 'stone walls' : 'wooden walls') : ''].filter(Boolean).join(' · ');
+    insp.innerHTML = `<div class="ih"><b>${esc(t.name)}</b><button id="ix" aria-label="Close">×</button></div>
+      <p>${t.alive ? `${LEVEL[t.level]} of ${fmt(t.pop)} people` : 'Abandoned'}${k.capital === t ? ', capital' : ''}</p>
+      <p><i class="sw" style="background:${kcol(k, 52)}"></i>${esc(title(k))}</p>
+      <p>${t.culture.name} · ${esc(t.religion.short)}</p><p>Founded year ${yearOf(t.founded)}${t.conquered > 0 ? ` · conquered year ${yearOf(t.conquered)}` : ''}</p>
+      <div class="ir"><span>Food stores</span><span>${(t.food / Math.max(1, t.pop)).toFixed(1)} months</span></div>
+      <div class="ir"><span>Unrest</span><span>${Math.round(t.unrest * 100)}%</span></div>
+      ${st ? `<p class="fine">${st}</p>` : ''}<button class="btn small" id="ik">About ${esc(k.base)}</button>`;
+    const kb = $('ik'); if (kb) kb.onclick = () => { inspectK = k; selected = null; showInspect(); };
+  } else if (selected && selected.n != null) {
+    const a = selected;
+    insp.innerHTML = `<div class="ih"><b>${a.horde ? esc(title(a.k)) : 'Army of ' + esc(a.k.base)}</b><button id="ix" aria-label="Close">×</button></div>
+      <p>${fmt(a.n)} soldiers · ${ERAS[a.k.era]}</p><p>Led by ${a.leader ? (a.leader.ruler ? esc(rulerName(a.k, a.leader.p)) : 'General ' + esc(a.leader.name)) : 'captains'}</p>
+      <p>${a.mode === 'siege' ? `Besieging ${esc(a.target.name)}` : a.mode === 'home' ? 'Going home' : a.mode === 'battle' ? 'In battle' : a.target ? `Marching on ${esc(a.target.name)}` : ''}</p>
+      <button class="btn small" id="ifol">${follow === a ? 'Stop following' : 'Follow'}</button>`;
+    $('ifol').onclick = () => { follow = follow === a ? null : a; manual = false; showInspect(); };
+  } else { insp.classList.remove('on'); return; }
+  insp.classList.add('on');
+  $('ix').onclick = () => { selected = null; inspectK = null; follow = null; insp.classList.remove('on'); };
+}
+
+// ---------- input ----------
+let drag = null;
+cv.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y, moved: false }; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove', e => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) + Math.abs(dy) > 5) { drag.moved = true; manual = true; follow = null; setDirUI(); cam.x = drag.cx - dx / cam.z; cam.y = drag.cy - dy / cam.z; clampCam(cam); Object.assign(camT, cam); } });
+cv.addEventListener('pointerup', e => {
+  if (drag && !drag.moved) {
+    const r = cv.getBoundingClientRect(), [wx, wy] = toWorld(e.clientX - r.left, e.clientY - r.top);
+    let best = null, bd = Math.max(1.2, 16 / cam.z);
+    for (const a of S.armies) { const d = Math.hypot(a.x - wx, a.y - wy + 0.3); if (d < bd) { bd = d; best = a; } }
+    if (!best) { bd = Math.max(1.6, 18 / cam.z); for (const t of S.towns) if (t.alive) { const d = Math.hypot(t.x - wx, t.y - wy); if (d < bd) { bd = d; best = t; } } }
+    selected = best; inspectK = null; showInspect();
+  }
+  drag = null;
+});
+cv.addEventListener('wheel', e => { e.preventDefault(); const r = cv.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top, [wx, wy] = toWorld(sx, sy); cam.z *= Math.exp(-e.deltaY * 0.0015); clampCam(cam); const [nx, ny] = toWorld(sx, sy); cam.x += wx - nx; cam.y += wy - ny; clampCam(cam); Object.assign(camT, cam); manual = true; follow = null; setDirUI(); }, { passive: false });
+const zoomBy = k => { cam.z *= k; clampCam(cam); Object.assign(camT, cam); manual = true; setDirUI(); };
+$('zin').onclick = () => zoomBy(1.4); $('zout').onclick = () => zoomBy(1 / 1.4);
+$('zfit').onclick = () => { manual = false; follow = null; director = true; setDirUI(); };
+function setDirUI() { $('dir').setAttribute('aria-pressed', String(director && !manual)); }
+$('dir').onclick = () => { if (director && !manual) { director = false; manual = true; } else { director = true; manual = false; follow = null; } setDirUI(); };
+$('play').onclick = () => { paused = !paused; $('play').textContent = paused ? 'Play' : 'Pause'; $('play').setAttribute('aria-pressed', String(paused)); };
+document.querySelectorAll('[data-speed]').forEach(b => b.onclick = () => { speed = +b.dataset.speed; document.querySelectorAll('[data-speed]').forEach(o => o.setAttribute('aria-pressed', String(o === b))); });
+document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { mapMode = b.dataset.mode; document.querySelectorAll('[data-mode]').forEach(o => o.setAttribute('aria-pressed', String(o === b))); buildOverlays(); });
+$('gplague').onclick = () => { const r = godPlague(S); if (r) say({ kind: 'god', pri: 9, title: `You sent a plague to ${r.town.name}`, text: `The biggest city in the world is sick. Watch it travel along the trade roads.`, targets: [T(r.town, '#9be36a', 1.6)], zoom: 3.4 }); };
+$('ghorde').onclick = () => { spawnHorde(S); };
+$('gharvest').onclick = () => { godHarvest(S); say({ kind: 'god', pri: 9, title: 'A bountiful harvest', text: 'Every granary in the world is full, and the droughts are over. Expect towns to grow, and settlers to set out.', targets: [], zoom: 1 }); };
+$('newworld').onclick = () => { seed = (Math.random() * 9000 | 0) + 1; start(); };
+document.addEventListener('keydown', e => { if (e.code === 'Space' && e.target === document.body) { e.preventDefault(); $('play').click(); } });
+
+// ---------- main loop ----------
+function start() {
+  S = createWorld(seed); $('seed').textContent = `World #${seed}`;
+  buildTerrain(); terrVer = -1; roadYear = -1;
+  card = null; queue = []; cards = []; journal.innerHTML = ''; capEl.classList.remove('on'); lastShown = -1e9; for (const k in lastType) delete lastType[k];
+  selected = null; inspectK = null; follow = null; insp.classList.remove('on'); fx = [];
+  const caps = S.kingdoms.map(k => k.capital);
+  say({ kind: 'intro', pri: 10, title: 'A new world', text: `${caps.length} tribes have settled this land, each with its own language and gods: the ${S.kingdoms.slice(0, 3).map(k => k.culture.name).join(', the ')} and more. Over the centuries they'll grow into towns and kingdoms, trade, pray, and fight.`, targets: caps.map(t => T(t, '#ffd23f', 1.4)), zoom: 1, pad: 10 });
+  S.events.length = 0; updateHud(); realmRows(); drawRecords(); drawHistory();
+}
+let acc = 0, lastNow = 0, lastHud = 0, lastPanels = 0;
+function frame(now) {
+  if (S) {
+    if (!paused) {
+      const eff = card && director && !manual && !card.replay ? 1 : speed;
+      acc += Math.min(100, now - (lastNow || now)) * eff * 0.003; let n = Math.min(24, Math.floor(acc)); acc -= n; if (acc > 24) acc = 0;
+      for (let i = 0; i < n; i++) { step(S); for (const e of S.events) narrate(e); S.events.length = 0; }
+      frac = Math.min(1, acc);
+    }
+    lastNow = now;
+    if (S.territoryVersion !== terrVer) { terrVer = S.territoryVersion; buildOverlays(); }
+    const yr = Math.floor(S.tick / YEAR); if (yr !== roadYear) { roadYear = yr; buildRoads(); }
+    tickNarrator(now); aimCamera(); draw(now);
+    if (now - lastHud > 300) { lastHud = now; updateHud(); if ((selected || inspectK) && insp.classList.contains('on')) showInspect(); }
+    if (now - lastPanels > 1500) { lastPanels = now; realmRows(); drawRecords(); drawHistory(); }
+  }
+  requestAnimationFrame(frame);
+}
+resize(); start(); requestAnimationFrame(frame);
+
+})();
+</script>
+</body>
+</html>

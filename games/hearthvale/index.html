@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hearthvale: Heir</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: cozy, warm, a little wry; a storybook you play.
+   IDEA: a pocket game cartridge: the village in a soft rounded screen, with a satchel of notes beside it.
+   PICTURE: the living pixel village, big; dialogue, menus and mini-games open inside the screen.
+   COLOUR and TYPE: dusk plum housing, butter-yellow accent, leaf green and rose hearts; Pixelify Sans for names and numbers, Nunito for prose.
+   LAYOUT: game screen first and widest, satchel tabs beside it (below on phones), travel buttons under the screen. */
+:root{color-scheme:light dark;--bg:light-dark(#2f2848,#1c1730);--panel:light-dark(#3d345c,#2a2342);--panel2:light-dark(#4a4070,#342b52);--line:rgba(255,255,255,.14);--ink:#fbf6ee;--soft:rgba(251,246,238,.75);--hi:#ffcf5a;--leaf:#8fd16a;--rose:#ff7f9b}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Nunito,system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(14px,2.5vw,32px) max(3vw,12px)}
+.wrap{max-width:1320px;margin:0 auto}
+h1,h2,h3,h4,.px{font-family:"Pixelify Sans",Nunito,sans-serif;font-weight:700}
+.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px;margin-bottom:12px}
+.top h1{font-size:clamp(30px,4vw,44px);margin:0;line-height:1}
+.top p{margin:0;color:var(--soft)}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;align-items:start}
+.screen{position:relative;width:100%;aspect-ratio:16/10;border-radius:20px;overflow:hidden;background:#74b955;box-shadow:0 0 0 6px var(--panel),0 0 0 7px var(--line),0 20px 44px rgba(0,0,0,.35)}
+#world{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges;touch-action:manipulation}
+.hud{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:8px;pointer-events:none}
+.chip{background:rgba(32,26,52,.82);border:1px solid var(--line);border-radius:12px;padding:5px 11px;display:flex;align-items:center;gap:10px;font-size:14px}
+.chip b{font:700 16px "Pixelify Sans",sans-serif}
+#hpips{display:flex;gap:4px}#hpips i{width:10px;height:10px;border-radius:50%;background:var(--hi)}#hpips i.used{background:rgba(255,255,255,.2)}
+#hcoins::before{content:"";display:inline-block;width:11px;height:11px;border-radius:50%;background:var(--hi);box-shadow:inset -2px -2px 0 #c9952a;margin-right:6px;vertical-align:-1px}
+#menu{position:absolute;right:10px;bottom:10px;width:min(330px,calc(100% - 20px));max-height:calc(100% - 64px);overflow:auto;background:rgba(32,26,52,.94);border:1px solid var(--line);border-radius:16px;padding:10px;display:none}
+#menu.on{display:block}
+.mh{display:flex;align-items:center;gap:10px;margin-bottom:6px}.mh b{font:700 18px/1.2 "Pixelify Sans",sans-serif;flex:1}
+.x{background:none;border:0;color:var(--ink);font-size:24px;width:40px;height:40px;cursor:pointer;flex:none;border-radius:10px}
+.act{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:12px;padding:9px 12px;margin-top:6px;font:700 15px Nunito,sans-serif;cursor:pointer;min-height:44px}
+.act small{display:block;font-weight:600;font-size:13px;color:var(--soft)}
+.act em{font-style:normal;font-size:12px;background:var(--hi);color:#2a2000;border-radius:99px;padding:1px 8px;white-space:nowrap}
+.act:hover:not(:disabled){border-color:var(--hi)}.act:disabled{opacity:.5;cursor:default}
+#dialog{position:absolute;left:10px;right:10px;bottom:10px;background:rgba(32,26,52,.95);border:2px solid var(--hi);border-radius:16px;padding:12px 14px;display:none;gap:12px;cursor:pointer}
+#dialog.on{display:flex}
+#dialog.letter{background:rgba(58,48,34,.96);border-color:#e6cf9a}
+#dport{width:72px;height:72px;image-rendering:pixelated;border-radius:12px;flex:none;box-shadow:0 0 0 2px var(--line)}
+.dbody{flex:1}
+#dname{font:700 17px "Pixelify Sans",sans-serif;color:var(--hi);margin:0 0 2px;min-height:4px}
+#dtext{margin:0;font-size:16.5px;line-height:1.45;min-height:3em}
+#dialog.nar #dtext{font-style:italic}
+#dnext{position:absolute;right:14px;bottom:8px;font-size:13px;color:var(--soft)}
+#dchoices{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.opt{text-align:left;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:8px 12px;font:700 15px Nunito,sans-serif;cursor:pointer;min-height:44px}
+.opt:hover,.opt:focus-visible{border-color:var(--hi)}
+.opt .k{display:inline-block;width:20px;height:20px;border-radius:6px;background:var(--hi);color:#2a2000;text-align:center;font-size:12px;line-height:20px;margin-right:8px}
+#mini{position:absolute;inset:0;background:rgba(20,16,34,.75);display:none;padding:10px;overflow:auto}
+#mini.on{display:flex;align-items:flex-start;justify-content:center}
+.mwrap{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px 14px;width:100%;max-width:880px;margin:auto}
+.mwrap.small{max-width:560px}
+.pbody{max-height:none}
+.row{display:flex;align-items:center;gap:10px;border-top:1px solid var(--line);padding:8px 0}
+.row small{display:block;color:var(--soft);font-size:13px}
+.grow{flex:1}.dim{color:var(--soft)}.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+.q{color:var(--hi);letter-spacing:1px;white-space:nowrap}.q.big{font-size:22px;margin:2px 0}
+.love{color:var(--rose);font-weight:800}
+.warn{color:#ffb08a}
+.spr{width:28px;height:28px;image-rendering:pixelated;flex:none}
+.btn{min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:var(--hi);color:#2a2000;font:800 15px Nunito,sans-serif;cursor:pointer}
+.btn.alt{background:var(--panel2);color:var(--ink)}.btn.s{min-height:36px;padding:0 10px;font-size:14px;background:var(--panel2);color:var(--ink)}
+.btn:disabled{opacity:.45;cursor:default}.btn.big{min-height:52px;font-size:17px;padding:0 22px}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--hi);outline-offset:2px}
+.gbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+/* garden */
+.garden{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px}
+.beds{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;background:#7a5a3e;padding:8px;border-radius:14px}
+.bed{position:relative;aspect-ratio:1;border:2px solid transparent;border-radius:10px;padding:0;background:#5e4330;cursor:pointer;overflow:hidden}
+.bed canvas{width:100%;height:100%;image-rendering:pixelated;display:block}
+.bed .st{position:absolute;left:3px;bottom:2px;font-size:11px;color:var(--hi);text-shadow:0 1px 0 #000}
+.bed .dd{position:absolute;right:4px;top:2px;font:700 11px "Pixelify Sans",sans-serif;color:#fff;text-shadow:0 1px 0 #000}
+.bed.ready{border-color:var(--hi)}.bed.risk::after{content:"";position:absolute;right:4px;bottom:4px;width:7px;height:7px;border-radius:50%;background:#ff8a5a;box-shadow:0 0 0 2px #5e4330}
+.bed:hover{border-color:rgba(255,255,255,.5)}
+.lab{font-size:13px;color:var(--soft);margin:0 0 6px}
+.seedbar{display:grid;grid-template-columns:repeat(auto-fill,minmax(122px,1fr));gap:6px}
+.seed{display:flex;align-items:center;gap:6px;background:var(--panel2);border:2px solid transparent;color:var(--ink);border-radius:10px;padding:4px 6px;cursor:pointer;font:700 13px Nunito,sans-serif;min-height:44px}
+.seed span{flex:1;text-align:left}.seed b{font-family:"Pixelify Sans"}
+.seed[aria-pressed=true]{border-color:var(--hi)}.seed:disabled{opacity:.4;cursor:default}
+.ginfo{background:rgba(0,0,0,.18);border-radius:12px;padding:8px 12px;margin-top:10px;min-height:120px;font-size:15px}
+.ginfo p{margin:4px 0}
+/* mill */
+.mtip{margin:4px 0 10px}
+.millrow{display:flex;gap:6px;align-items:stretch;max-width:min(470px,100%);margin:0 auto}
+.endcol{position:relative;width:34px;flex:none}
+.ec{position:absolute;left:0;width:34px;height:34px;transform:translateY(-50%);border-radius:50%}
+.ec.wheel{background:radial-gradient(circle,#3f8fc2 40%,#8a5a3e 42%);box-shadow:0 0 0 3px #6b4a32}
+.ec.stone{background:radial-gradient(circle,#6b6258 25%,#b7b1a6 27%);box-shadow:0 0 0 3px #8f887d}
+.mgrid{display:grid;gap:3px;flex:1;background:#2a231c;padding:4px;border-radius:10px}
+.mt{aspect-ratio:1;padding:0;border:0;background:none;cursor:pointer;border-radius:4px;overflow:hidden}
+.mt canvas{width:100%;height:100%;display:block}
+/* cipher */
+.cipher{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.verse{background:#5a4a34;border-radius:12px;padding:10px 14px;color:#f6ead2}
+.verse ol{margin:4px 0;padding-left:22px;font-style:italic}.verse li{margin:4px 0}
+.dials{display:flex;gap:10px;justify-content:center}
+.dial{display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--panel2);border-radius:12px;padding:8px}
+.dial canvas{width:56px;height:56px;image-rendering:pixelated;background:#2b2440;border-radius:10px}
+.dial span{font-size:12px;color:var(--soft)}
+.tries{list-style:none;padding:0;margin:10px 0 0;font-size:14px;color:var(--soft)}.tries li{border-top:1px solid var(--line);padding:4px 0}
+/* market & fair */
+.cust{display:flex;gap:14px;align-items:flex-start}.cust canvas{width:84px;height:84px;image-rendering:pixelated;border-radius:14px;flex:none}
+.cust p{margin:4px 0}
+.mmsg{background:rgba(0,0,0,.2);border-radius:10px;padding:6px 10px}
+.offers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:8px}
+.offer{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:64px;background:var(--panel2);color:var(--ink)}
+.offer span{font:700 18px "Pixelify Sans";color:var(--hi)}
+.judges{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.judge{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:14px}.judge canvas{width:64px;height:64px;image-rendering:pixelated;border-radius:12px}
+.pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.pitem{display:flex;align-items:center;gap:8px;background:var(--panel2);border:2px solid transparent;color:var(--ink);border-radius:10px;padding:6px 8px;cursor:pointer;font:700 14px Nunito,sans-serif;min-height:44px}
+.pitem[aria-pressed=true]{border-color:var(--hi);background:#5a4c84}
+.big{font-size:19px}
+.estats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:8px 0}
+.estats div{background:var(--panel2);border-radius:12px;padding:8px;text-align:center}.estats span{display:block;font-size:13px;color:var(--soft)}.estats b{font:700 20px "Pixelify Sans";text-transform:capitalize}
+textarea{width:100%;background:#1c1730;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px;font:13px ui-monospace,monospace;resize:none}
+#daycard{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(20,16,34,.86)}
+#daycard.on{display:flex}#daycard b{font:700 46px "Pixelify Sans";color:var(--hi)}#daycard span{font-size:18px}
+#toast{position:absolute;top:52px;left:50%;transform:translateX(-50%) translateY(-6px);background:var(--hi);color:#2a2000;font-weight:800;border-radius:99px;padding:5px 14px;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;white-space:nowrap;font-size:14px}
+#toast.on{opacity:1;transform:translateX(-50%)}
+#title{position:absolute;inset:0;background:linear-gradient(rgba(28,22,46,.55),rgba(28,22,46,.85));display:flex;align-items:center;justify-content:center;padding:12px;overflow:auto}
+#title[hidden]{display:none}
+.tcard{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:18px 22px;width:min(460px,100%);text-align:center}
+.tcard h1{font-size:clamp(34px,6vw,52px);line-height:1;margin:0}.tcard h1 span{display:block;font-size:.55em;color:var(--hi)}
+.book{color:var(--soft);margin:6px 0 14px}
+.tcard label,.tcard .lab{display:block;font-size:14px;color:var(--soft);margin:8px 0 4px}
+.tcard input{width:100%;min-height:44px;border-radius:12px;border:1px solid var(--line);background:#1c1730;color:var(--ink);font:700 16px Nunito,sans-serif;padding:0 12px;text-align:center}
+.looks{display:flex;gap:8px;justify-content:center}
+.look{border:2px solid transparent;background:none;border-radius:14px;padding:2px;cursor:pointer}.look[aria-pressed=true]{border-color:var(--hi)}
+.look canvas{width:56px;height:56px;image-rendering:pixelated;border-radius:11px;display:block}
+.tbtns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.travel{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;align-items:center}
+.travel .t{min-height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:700 14px Nunito,sans-serif;cursor:pointer}
+.travel .t:hover{border-color:var(--hi)}
+#saved{margin-left:auto;font-size:13px;color:var(--soft)}
+aside{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px;max-height:min(80vh,820px);display:flex;flex-direction:column}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px}
+.tabs button{min-height:40px;border-radius:10px;border:0;background:var(--panel2);color:var(--ink);font:700 14px Nunito,sans-serif;cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--hi);color:#2a2000}
+.tabp{overflow:auto;flex:1;font-size:15px}
+.tabp ul{list-style:none;margin:0;padding:0}
+#pquests li{border-top:1px solid var(--line);padding:8px 2px}#pquests li b{display:block}#pquests li span{font-size:14px;color:var(--soft)}
+#pquests li.done{color:var(--soft);text-decoration:line-through;padding:4px 2px}#pquests li.done-h{color:var(--soft);font-size:13px;border:0;padding-top:12px}
+.coins{font:700 22px "Pixelify Sans";color:var(--hi)}
+.tabp h4{margin:12px 0 4px;font-size:15px}
+.bi{display:flex;align-items:center;gap:8px;padding:2px 0}
+.fr{display:flex;gap:10px;align-items:center;border-top:1px solid var(--line);padding:7px 0}.fr canvas{width:44px;height:44px;image-rendering:pixelated;border-radius:10px;flex:none}
+.fr b{display:block;font-size:15px}.fr .dim{display:block;font-size:13px}
+.hearts{color:var(--rose);letter-spacing:1px;font-size:14px}.hearts s{text-decoration:none;color:rgba(255,255,255,.18)}
+#pjournal li{border-top:1px solid var(--line);padding:7px 2px;font-size:14.5px}
+.how{columns:2 300px;column-gap:28px;color:var(--soft)}.how p{margin:0 0 10px;break-inside:avoid}.how b{color:var(--ink)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px}
+.card h2{margin:0 0 10px;font-size:22px}
+@media(max-width:980px){.main{grid-template-columns:minmax(0,1fr)}aside{max-height:none}}
+@media(max-width:700px){.screen{aspect-ratio:auto;height:min(125vw,720px);background:var(--panel)}#world{height:auto;aspect-ratio:16/10;inset:auto;top:0;left:0}
+  .garden,.cipher{grid-template-columns:minmax(0,1fr)}.offers{grid-template-columns:repeat(2,minmax(0,1fr))}.estats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #dport{width:52px;height:52px}#dtext{font-size:15.5px}#menu{left:10px;width:auto}}
+@media(prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="band"><div class="wrap">
+  <div class="top"><h1>Hearthvale: Heir</h1><p>Book I: The Spring Fair. A cozy story RPG with puzzle and strategy mini-games.</p></div>
+  <div class="main">
+    <div>
+      <div class="screen" id="screen">
+        <canvas id="world" width="320" height="200" aria-label="The village of Hearthvale. Click a place to walk there."></canvas>
+        <div class="hud"><div class="chip"><b id="hday">Day 1</b><span id="hwhen">Mon · Morning</span><span id="hpips"></span></div><div class="chip"><b id="hcoins">50</b></div></div>
+        <div id="menu" aria-live="polite"></div>
+        <div id="dialog" role="dialog" aria-live="polite"><canvas id="dport" width="24" height="24"></canvas><div class="dbody"><p id="dname"></p><p id="dtext"></p><div id="dchoices"></div></div><span id="dnext">click ▸</span></div>
+        <div id="mini"></div>
+        <div id="daycard"></div>
+        <div id="toast" role="status"></div>
+        <div id="title" hidden></div>
+      </div>
+      <div class="travel" aria-label="Travel"><span class="dim">Go to:</span>
+        <button class="t" data-go="farm">Farm</button><button class="t" data-go="cottage">Cottage</button><button class="t" data-go="square">Square</button><button class="t" data-go="store">Store</button><button class="t" data-go="bakery">Bakery</button><button class="t" data-go="smithy">Smithy</button><button class="t" data-go="mill">Mill</button><button class="t" data-go="dock">Dock</button>
+        <span id="saved"></span></div>
+    </div>
+    <aside>
+      <div class="tabs" role="tablist"><button data-tab="tq" aria-selected="true" role="tab">Tasks</button><button data-tab="tb" aria-selected="false" role="tab">Satchel</button><button data-tab="tf" aria-selected="false" role="tab">Friends</button><button data-tab="tj" aria-selected="false" role="tab">Journal</button></div>
+      <div class="tabp" id="tq"><ul id="pquests"></ul></div>
+      <div class="tabp" id="tb" hidden><div id="pbag"></div></div>
+      <div class="tabp" id="tf" hidden><div id="pfriends"></div></div>
+      <div class="tabp" id="tj" hidden><ul id="pjournal"></ul></div>
+    </aside>
+  </div>
+</div></div>
+<div class="band" style="padding-top:0"><div class="wrap card">
+  <h2>How to play</h2>
+  <div class="how">
+    <p><b>Days and time.</b> You have 14 days until the Spring Fair. Each day has four parts: morning, midday, afternoon and evening. Story scenes, chats and mini-games use up time; walking, shopping and gardening don't. A yellow marker shows where a story scene is waiting. Go to bed at the cottage to end the day.</p>
+    <p><b>The garden.</b> Click the farm, then Tend the garden. Crops beside each other help or hurt as they grow, so plan your rows. Quality stars raise the price and impress the fair judges. Watch for aphids on day 7.</p>
+    <p><b>Money.</b> Buy seeds at Finch's store, sell produce there any day, or run a stall at the Saturday market, where reading your customers pays better.</p>
+    <p><b>Friends.</b> Chat once a day for a heart, and give gifts; everyone has a favourite crop. Friends bring their families to the fair.</p>
+    <p><b>Saving.</b> The game saves at the end of each day, in this browser. At the end of the book you get a save code that the next book will read.</p>
+  </div>
+</div></div>
+<script>
+(() => {
+// ===== Hearthvale: Heir — game data and the Book I script =====
+// Story format (reusable for sequels):
+//   scene = { id, at: locationId, when: { day:[min,max], slot:[...], flags:[...], not:[...], hearts:{who:n}, coins:n },
+//             cost: time slots used (default 1), lines: [ [speaker, text] | { choice:[{ t, flags, aff, say:[lines] }] } ],
+//             after: { flags, quests:{add,done}, seeds, coins, journal, run } }
+//   Speakers: a character id, 'you', 'nar' (narration) or 'wren' (letters). {name} becomes the player's name.
+
+const BOOK = { id: 'hv1', title: 'Book I: The Spring Fair', days: 14, next: 'Book II: The Willow\'s Secret' };
+const SLOTS = ['Morning', 'Midday', 'Afternoon', 'Evening'];
+const WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+const CHARS = {
+  odile: { name: 'Odile Marsh', role: 'Mayor', loves: 'pea', home: 'square', look: { skin: '#e8b996', hair: '#b9b4ae', style: 'bun', coat: '#7b5aa6', glasses: true, bg: '#d9cdea' },
+    small: ['"The council meets on Thursdays. Mostly we argue about the bridge."', '"Wren used to bring me peas every spring. Proper spring food, peas."', '"I\'ve been mayor for eleven years. Some days it feels like forty."'] },
+  mira: { name: 'Mira Ashdown', role: 'Baker', loves: 'strawberry', home: 'bakery', look: { skin: '#f0c4a0', hair: '#d4562e', style: 'curly', coat: '#f3ece0', apron: true, bg: '#ffd9c2' },
+    small: ['"I\'m up at four every morning. The ovens don\'t heat themselves."', '"Strawberry tarts are my weakness. Don\'t tell anyone."', '"Pip ate an entire loaf yesterday. A whole one!"'] },
+  tomas: { name: 'Tomas Reed', role: 'Blacksmith', loves: 'carrot', home: 'smithy', look: { skin: '#c98e64', hair: '#2e2420', style: 'short', beard: '#2e2420', coat: '#5a6b78', bg: '#c9d4dc' },
+    small: ['"Mm."', '"Biscuit\'s my horse. She\'d sell her own saddle for a carrot."', '"Iron\'s honest. You heat it, you hit it, it does what you ask."'] },
+  bram: { name: 'Bram Tully', role: 'Fisherman', loves: 'radish', home: 'dock', look: { skin: '#e2b08c', hair: '#eeeeee', style: 'cap', cap: '#2f5d7c', beard: '#f2f2f2', coat: '#3f6f5a', bg: '#c4e2ea' },
+    small: ['"River\'s low this week. Fish are sulking."', '"Pickled radish. Nothing better with a cold supper."', '"Your gran could out-row me till she was seventy."'] },
+  pip: { name: 'Pip', role: 'Mira\'s nephew', loves: 'sunflower', home: 'square', look: { skin: '#f3c9a5', hair: '#a8652d', style: 'messy', freckles: true, coat: '#3c8d5a', bg: '#fbe7a3' },
+    small: ['"Did you know bees can see colours we can\'t?"', '"Sunflower seeds are the best snack. Fact."', '"I\'m going to be an explorer. Or a baker. Or both."'] },
+  hollis: { name: 'Hollis Finch', role: 'Shopkeeper', loves: 'lettuce', home: 'store', look: { skin: '#eab38d', hair: '#6b4a32', style: 'bald', mustache: '#6b4a32', coat: '#b8473a', bg: '#f6d6a8' },
+    small: ['"Lettuce! Crisp, honest lettuce. People don\'t respect it enough."', '"I hear everything in this shop. Everything."', '"New stock Tuesdays. Well. Some Tuesdays."'] },
+  corvin: { name: 'Corvin Pell', role: 'Greyhaven Land Co.', loves: 'strawberry', home: 'square', look: { skin: '#e9c9b0', hair: '#1e1e24', style: 'tophat', hat: '#2b2b33', coat: '#5d6066', mustache: '#1e1e24', bg: '#d4d6db' }, small: [] },
+  wren: { name: 'Gran Wren', role: 'Your grandmother', look: { skin: '#eac3a3', hair: '#e8e6e2', style: 'long', coat: '#6c9b6e', bg: '#e8f0d8' } }
+};
+
+// Garden crops. grow = days to harvest; price = base sale price; prestige = how judges value it.
+const CROPS = {
+  radish: { name: 'Radish', seed: 5, price: 12, grow: 3, prestige: 1, color: '#e0475a', leaf: '#5fae4e', tip: 'Fast and cheap. Fights with carrots underground.' },
+  lettuce: { name: 'Lettuce', seed: 8, price: 20, grow: 4, prestige: 2, color: '#9ad35d', leaf: '#6cbf4a', tip: 'Likes the shade of a sunflower.' },
+  pea: { name: 'Peas', seed: 8, price: 18, grow: 5, prestige: 2, color: '#73c25a', leaf: '#4d9a43', tip: 'Feeds the soil: helps radish, lettuce, carrot and strawberry next to it.' },
+  carrot: { name: 'Carrot', seed: 10, price: 24, grow: 5, prestige: 2, color: '#f08a2c', leaf: '#5fae4e', tip: 'Fights with radishes underground.' },
+  marigold: { name: 'Marigold', seed: 4, price: 8, grow: 4, prestige: 1, color: '#ffb52e', leaf: '#4d9a43', tip: 'Keeps pests off everything next to it.' },
+  strawberry: { name: 'Strawberry', seed: 20, price: 55, grow: 7, prestige: 4, color: '#e8384f', leaf: '#3f8f45', tip: 'Slow but valuable. Loves bees from a nearby sunflower.' },
+  sunflower: { name: 'Sunflower', seed: 15, price: 30, grow: 8, prestige: 3, color: '#ffd23a', leaf: '#4d9a43', tip: 'Calls the bees: helps strawberries and peas, and shades lettuce.' }
+};
+// helps[a] = crops that get +1 when next to a; fights = pairs that hurt each other
+const HELPS = { pea: ['radish', 'lettuce', 'carrot', 'strawberry'], sunflower: ['strawberry', 'pea', 'lettuce'] };
+const FIGHTS = [['carrot', 'radish']];
+
+const QUESTS = {
+  letter: { t: 'Read Gran\'s letter', d: 'It\'s on the kitchen table in the cottage.' },
+  plant: { t: 'Plant your first crops', d: 'Open the garden at the farm. Put plants that help each other side by side.' },
+  fair: { t: 'Save the Spring Fair', d: 'The fair is on day 14. Grow your best produce, make friends, and help the village pull together.' },
+  mill: { t: 'Ask Tomas about the mill', d: 'Mira needs flour for the fair pies. Tomas the blacksmith knows the old mill.' },
+  iron: { t: 'Raise 80 coins for the mill gear', d: 'Pay Tomas at the smithy. Sell crops at Hollis\'s store, or at the Saturday market.' },
+  repair: { t: 'Repair the mill', d: 'Meet Tomas at the mill and connect the waterwheel to the millstone.' },
+  box: { t: 'Open Gran\'s box', d: 'Pip says there\'s a locked box in the attic. Only the heir can open it.' },
+  bram: { t: 'Ask Bram about the riddle', d: 'Gran\'s note says Bram has the other half. He might need to trust you first.' },
+  judges: { t: 'Learn what the judges like', d: 'Talk to Mayor Odile in the square about the fair judging.' }
+};
+
+const SCENES = [
+  { id: 'intro', at: 'farm', cost: 0, when: { day: [1, 1] }, lines: [
+    ['nar', 'The cart rattles away down the lane. The cottage at Willowmere is smaller than you remember, and the garden is mostly weeds. By the river, Gran\'s old willow leans over the water.'],
+    ['odile', 'You must be Wren\'s grandchild. {name}, isn\'t it? I\'m Odile Marsh, the mayor of Hearthvale, for what that\'s worth these days.'],
+    ['odile', 'Your grandmother left you Willowmere: the cottage, the garden, and, I suspect, a fair amount of trouble.'],
+    { choice: [
+      { t: 'Trouble?', say: [['odile', 'The village has had hard years. You\'ll hear all about it.']] },
+      { t: 'I\'m just glad to be here.', aff: { odile: 1 }, say: [['odile', 'Good. We could use some gladness.']] }
+    ] },
+    ['odile', 'The mill flooded six years ago and never turned again. The young folk left. The Spring Fair barely draws a crowd anymore.'],
+    ['odile', 'If this year\'s fair fails too, the council votes on selling the village commons to the Greyhaven Land Company. They\'ve been sniffing around for months.'],
+    ['odile', 'The fair\'s in two weeks. Wren believed this place could bloom again. Her letter\'s on the kitchen table. Read it, then see Hollis at the store about seeds.'],
+  ], after: { quests: { add: ['letter', 'fair'] }, journal: 'Arrived at Willowmere. The Spring Fair in two weeks may decide whether the village sells its commons to the Greyhaven Land Company.' } },
+
+  { id: 'letter', at: 'cottage', cost: 0, when: { flags: ['intro'] }, lines: [
+    ['nar', 'The kitchen smells of dried lavender. A letter waits on the table, in Gran\'s looping hand.'],
+    ['wren', 'My dear {name}, if you\'re reading this, the garden is yours now. Don\'t let it go to weeds, and don\'t let anyone tell you it\'s only dirt.'],
+    ['wren', 'Plant things that help each other. Peas feed the soil. Marigolds keep the pests away. Sunflowers call the bees. A garden is a village in miniature, and so is a village.'],
+    ['wren', 'There\'s a seed tin under the sink to get you started. And there\'s something else I meant to tell you, about the family and an old key. But I\'m running out of ink, and out of nerve.'],
+    ['wren', 'Bram knows some of it. Be patient with him. All my love, always. Gran.'],
+    ['nar', 'Under the sink you find a dented tin: 4 radish seeds, 3 pea seeds and 2 marigold seeds.']
+  ], after: { seeds: { radish: 4, pea: 3, marigold: 2 }, quests: { done: ['letter'], add: ['plant'] }, journal: 'Gran\'s letter: plant things that help each other. She mentioned an old key, and said Bram knows something about it.' } },
+
+  { id: 'hollis1', at: 'store', cost: 0, when: { flags: ['intro'] }, lines: [
+    ['hollis', 'A new face! You\'re Wren\'s grandchild, of course you are, you\'ve got her chin. Hollis Finch, at your service. Seeds, tools, gossip.'],
+    ['hollis', 'A tip, free of charge: radishes are quick, lettuce sells steady, and strawberries are the money crop. But they take a week, mind.'],
+    ['hollis', 'And if you can\'t make the Saturday market, I\'ll buy your produce here. Not at market prices, mind. I\'ve got a shop to run.'],
+    ['hollis', 'Oh! And a fellow in a grey coat was in here yesterday asking about your gran\'s land. Very polite. Too polite, if you ask me.'],
+    { choice: [
+      { t: 'What did he want to know?', flags: ['askedHollis'], say: [['hollis', 'Where the property line runs. Whether the willow\'s on it. Odd thing to care about, a tree.']] },
+      { t: 'Thanks, Hollis. I\'ll take a look at the seeds.', aff: { hollis: 1 }, say: [['hollis', 'Lovely. Lettuce is on the left. I\'m very proud of the lettuce.']] }
+    ] }
+  ], after: { journal: 'Hollis sells seeds and buys produce. A man in a grey coat has been asking about Gran\'s land, and the willow.' } },
+
+  { id: 'mira1', at: 'farm', when: { day: [2, 14], slot: [0], flags: ['letter'] }, lines: [
+    ['nar', 'A knock at the gate. A woman with flour on her sleeves holds out a warm loaf, and a boy peers around her apron.'],
+    ['mira', 'Welcome to Hearthvale! I\'m Mira, I run the bakery. And this small menace is my nephew, Pip.'],
+    ['pip', 'I\'m not small. I\'m nine.'],
+    ['mira', 'I bake the pies for the Spring Fair. Or I try to. Since the mill stopped, flour comes from Greyhaven at three times the price. Last year I made eleven pies. Eleven!'],
+    ['mira', 'If anyone could get that mill turning again, it\'s Tomas, the blacksmith. His father was the miller. He won\'t talk about it, though.'],
+    ['pip', 'Your gran had a box in the attic with a funny lock. She said only the heir could open it. Are you the heir? You look like an heir.'],
+    { choice: [
+      { t: 'I suppose I am. Want to help me open it someday?', aff: { pip: 2 }, flags: ['pipFriend'], say: [['pip', 'YES. I mean. Yes, that would be acceptable.']] },
+      { t: 'Thank you for the bread, Mira.', aff: { mira: 1 }, say: [['mira', 'There\'s more where that came from. Bakery\'s by the square.']] }
+    ] }
+  ], after: { quests: { add: ['mill', 'box', 'judges'] }, journal: 'Met Mira the baker and her nephew Pip. The fair pies need cheap flour, which needs the mill. Pip says Gran\'s attic box can only be opened by the heir.' } },
+
+  { id: 'corvin1', at: 'farm', when: { day: [3, 14], slot: [0], flags: ['mira1'] }, lines: [
+    ['nar', 'A tall man in a grey coat stands at the gate, admiring the willow. He tips his hat.'],
+    ['corvin', 'Corvin Pell, Greyhaven Land Company. My condolences about your grandmother. A remarkable woman, I\'m told.'],
+    ['corvin', 'I\'ll be brief. My employers would like to buy Willowmere. Two thousand coins. Enough to start over anywhere you like.'],
+    { choice: [
+      { t: 'It\'s not for sale.', flags: ['corvinFirm'], aff: { odile: 1 }, say: [['corvin', 'Everything is for sale, eventually. But I admire the spirit.']] },
+      { t: 'Why does Greyhaven want a tiny farm?', flags: ['corvinAsked'], say: [['corvin', 'The view. The river. The... soil.'], ['nar', 'His eyes flick to the willow, then back to you.'], ['corvin', 'Sentiment, really. My employers are sentimental people.']] },
+      { t: 'I\'ll think about it.', flags: ['corvinMaybe'], say: [['corvin', 'Splendid. Take your time. Well, until the fair.']] }
+    ] },
+    ['corvin', 'The offer stands until the Spring Fair. Good day.']
+  ], after: { journal: 'Corvin Pell of the Greyhaven Land Company offered 2,000 coins for Willowmere. He seemed very interested in the willow.' } },
+
+  { id: 'tomas1', at: ['smithy', 'mill'], when: { flags: ['mira1'] }, lines: [
+    ['nar', 'The forge glows. A broad man with soot on his forearms looks up and keeps hammering.'],
+    ['tomas', 'Wren\'s grandchild. Mm. You want something.'],
+    { choice: [
+      { t: 'Mira says you could fix the mill.', say: [['tomas', 'Mira says a lot of things.']] },
+      { t: 'Just saying hello.', aff: { tomas: 1 }, say: [['tomas', '...Hello.'], ['nar', 'He sets the hammer down. That\'s probably a good sign.']] }
+    ] },
+    ['tomas', 'My father ran that mill thirty years. The flood cracked the main gear and twisted half the gear train. He never saw it turn again.'],
+    ['tomas', 'I could cast a new gear. Iron from Greyhaven costs eighty coins. Then someone has to help me fit the whole train back together. It\'s fiddly work.'],
+    ['tomas', 'Bring me eighty coins, and I\'ll try. For Mira\'s pies. Not for any other reason.']
+  ], after: { quests: { done: ['mill'], add: ['iron'] }, journal: 'Tomas can repair the mill for 80 coins of iron, but the gear train needs fitting back together. His father was the miller.' } },
+
+  { id: 'tomasReady', at: 'smithy', cost: 0, when: { flags: ['paidIron'] }, lines: [
+    ['tomas', 'Iron\'s ordered. I cast the gear this morning. It\'s cooling now.'],
+    ['tomas', 'Meet me at the mill whenever you have an afternoon. Bring patience.']
+  ], after: { quests: { done: ['iron'], add: ['repair'] } } },
+
+  { id: 'millRepair', at: 'mill', cost: 0, when: { flags: ['tomasReady'], not: ['millFixed'] }, lines: [
+    ['tomas', 'Here she is. Waterwheel on the left, millstone on the right. Every shaft and gear in between has to line up, or nothing turns.'],
+    ['tomas', 'Turn the pieces until there\'s a clear path from wheel to stone. Three sections. I\'ll hold the light.']
+  ], after: { run: 'mill' } },
+
+  { id: 'millFixed', at: 'mill', cost: 0, when: { flags: ['millSolved'] }, lines: [
+    ['nar', 'The last gear clicks into place. For a moment, nothing. Then the river pushes, the wheel creaks, and the millstone begins to turn.'],
+    ['nar', 'Up in the village, someone shouts. Doors open. People are coming down the lane to look.'],
+    ['tomas', '...Six years.'],
+    ['nar', 'He doesn\'t say anything else for a while. He doesn\'t need to.'],
+    ['mira', 'Is that... is it TURNING? Tomas Reed, you wonderful lump! Flour! Real flour! I\'m going to bake forty pies!'],
+    ['tomas', 'Thank {name}. I just held the light.']
+  ], after: { flags: ['millFixed'], quests: { done: ['repair'] }, affAll: 1, aff: { tomas: 2, mira: 2 }, journal: 'Repaired the mill with Tomas. The whole village came to watch it turn. Mira can bake fair pies with real flour now.' } },
+
+  { id: 'bram1', at: 'dock', when: { flags: ['intro'] }, lines: [
+    ['nar', 'An old man sits on an upturned boat, mending a net. He doesn\'t look up.'],
+    ['bram', 'You walk like her. Wren. Heavy on the left foot.'],
+    ['bram', 'Bram Tully. Your gran and I planted that willow by your gate the spring your mother was born. Fifty-odd years ago now.'],
+    { choice: [
+      { t: 'Gran said you know something about a key.', flags: ['askedKey'], say: [['bram', 'Did she now.'], ['nar', 'He goes very quiet.'], ['bram', 'Maybe I do. Maybe that\'s a story for when I know you better.']] },
+      { t: 'Tell me about her?', aff: { bram: 2 }, say: [['bram', 'Stubborn as a mule. Kind as bread. Could out-row me till she was seventy.'], ['bram', 'You come by again. I\'ve got fifty years of stories and nobody left to tell them to.']] }
+    ] }
+  ], after: { journal: 'Bram the fisherman, Gran\'s oldest friend, planted the willow with her. He knows something about the key, but won\'t say yet.' } },
+
+  { id: 'odile1', at: 'square', when: { flags: ['mira1'] }, lines: [
+    ['odile', 'Ah, {name}. Come to see the noticeboard? There\'s not much on it. A lost goat. A complaint about the goat.'],
+    ['odile', 'The fair\'s simple. There\'s a produce contest: each grower enters a basket of up to three things they grew. Three judges.'],
+    ['odile', 'Me, I like peas. Proper spring food. Hollis will swoon over a good lettuce, he always does.'],
+    ['odile', 'And this year Greyhaven insisted on sending a judge. Mr. Pell. He says he values "what the market values."'],
+    ['odile', 'But a fair isn\'t only a contest. It\'s who shows up. Get to know people, {name}. A full square is worth more than any ribbon.']
+  ], after: { quests: { done: ['judges'] }, flags: ['knowJudges'], journal: 'Fair judges: Odile loves peas, Hollis loves lettuce, and Corvin Pell values what sells, which means strawberries. A basket holds up to three crops. Attendance matters too.' } },
+
+  { id: 'pip2', at: 'farm', when: { day: [5, 13], slot: [2, 3], flags: ['mira1'] }, lines: [
+    ['pip', 'Hi! I came to see the garden. Mira says I\'m not allowed to touch anything. I\'m only looking with my eyes.'],
+    ['pip', 'Your gran let me plant a sunflower here once. It got taller than her. She said the bees were her best workers because they never asked for tea breaks.'],
+    { choice: [
+      { t: 'Want to help me plant something?', aff: { pip: 2 }, say: [['pip', 'Really?! I\'ll be SO careful.'], ['nar', 'Pip is not careful at all, but the seeds go in the ground, and he talks to every one of them.']] },
+      { t: 'Bees are good workers.', aff: { pip: 1 }, say: [['pip', 'The BEST. Also they dance to tell each other where flowers are. True fact.']] }
+    ] }
+  ], after: { journal: 'Pip visited the garden. Gran once let him grow a sunflower taller than she was.' } },
+
+  { id: 'corvin2', at: 'square', when: { day: [7, 12], flags: ['corvin1', 'odile1'] }, lines: [
+    ['nar', 'Corvin Pell is leaning over Odile\'s noticeboard, talking quietly. She looks tired.'],
+    ['corvin', '...and with the mill silent and the young people gone, surely the commons is better in hands that can use it, Mayor.'],
+    ['odile', 'Ah, {name}. Mr. Pell was just explaining how hopeless we all are.'],
+    { choice: [
+      { t: 'The mill isn\'t silent anymore.', need: ['millFixed'], flags: ['stoodUp'], aff: { odile: 2 }, say: [['corvin', '...So I heard.'], ['nar', 'For a moment, his smile slips.'], ['corvin', 'One mill does not make a village. Good day.']] },
+      { t: 'The fair hasn\'t happened yet.', flags: ['stoodUp'], aff: { odile: 1 }, say: [['corvin', 'Indeed. I look forward to it.']] },
+      { t: 'Say nothing.', say: [['corvin', 'Wise. Good day, Mayor. Good day, heir of Willowmere.']] }
+    ] }
+  ], after: { journal: 'Caught Corvin pressuring Odile in the square about the commons.' } },
+
+  { id: 'hollis2', at: 'store', when: { day: [8, 13], flags: ['hollis1', 'corvin1'] }, lines: [
+    ['hollis', 'Psst. {name}. Come here. You didn\'t hear this from me.'],
+    ['hollis', 'Old Mrs. Tabb couldn\'t sleep Tuesday night, and she saw a lantern down by your river. By the willow. Somebody digging.'],
+    ['hollis', 'Grey coat, she said. Tall. Now who do we know with a grey coat?'],
+    { choice: [
+      { t: 'Corvin.', flags: ['suspectCorvin'], say: [['hollis', 'I\'m not saying it. I\'m just saying grey coat.']] },
+      { t: 'Thanks for telling me, Hollis.', aff: { hollis: 1 }, flags: ['suspectCorvin'], say: [['hollis', 'What are neighbours for? Besides lettuce.']] }
+    ] }
+  ], after: { journal: 'Someone in a grey coat was seen digging by the willow at night.' } },
+
+  { id: 'boxOpen', at: 'cottage', cost: 0, when: { flags: ['cipherSolved'] }, lines: [
+    ['nar', 'The last dial clicks. The lid lifts with a sigh of old cedar.'],
+    ['nar', 'Inside: a pressed willow leaf, a photograph of two young people in a rowing boat, laughing, and a folded note.'],
+    ['wren', 'For my heir. Where the willow drinks, the old iron sleeps. Bram holds the other half of the rhyme. He\'ll give it to someone he trusts.'],
+    ['nar', 'The young woman in the photograph is Gran. The young man at the oars, unmistakably, is Bram.']
+  ], after: { quests: { done: ['box'], add: ['bram'] }, journal: 'Opened Gran\'s box: "Where the willow drinks, the old iron sleeps." Bram holds the other half of the rhyme.' } },
+
+  { id: 'bram2', at: 'dock', when: { flags: ['boxOpen', 'bram1'], hearts: { bram: 4 } }, lines: [
+    ['bram', 'You opened her box. I can see it on your face.'],
+    ['nar', 'You show him the photograph. He holds it for a long time.'],
+    ['bram', 'The old families used to say there\'s a hearthstone under this valley, and a key that wakes it. Wren believed it. Spent half her life looking.'],
+    ['bram', 'Her half: where the willow drinks, the old iron sleeps. My half: and the hearth will wake when the village is whole.'],
+    ['bram', 'I never knew what it meant. But someone in a grey coat has been asking the same questions. Be careful, {name}.']
+  ], after: { flags: ['knowRhyme'], quests: { done: ['bram'] }, aff: { bram: 1 }, journal: 'Bram\'s half of the rhyme: "and the hearth will wake when the village is whole." Gran spent half her life looking for the key.' } },
+
+  { id: 'storm', at: 'farm', cost: 2, when: { day: [10, 10], slot: [0] }, lines: [
+    ['nar', 'The sky over the hills has gone the colour of a bruise. The willow is thrashing.'],
+    ['pip', '{name}! Storm\'s coming fast! Bram\'s boats are still tied at the old dock, and he can\'t haul them alone!'],
+    ['nar', 'Your garden is fully exposed. You could spend the morning covering the beds, or run to help Bram.'],
+    { choice: [
+      { t: 'Run to help Bram.', flags: ['helpedBram'], aff: { bram: 3, pip: 1 }, say: [['nar', 'You and Pip haul rope through sheets of rain. Every boat comes up the bank. Bram grips your shoulder and doesn\'t let go for a while.'], ['bram', 'Wren would\'ve done the same. You\'re hers, all right.'], ['nar', 'When you get home, the garden is battered. Every growing crop has lost a star.']] },
+      { t: 'Cover the garden.', flags: ['coveredGarden'], aff: { bram: -1 }, say: [['nar', 'You stake sacking over every bed as the rain hammers down. The garden survives untouched.'], ['nar', 'Later you hear that Bram lost his oldest boat to the river.']] }
+    ] }
+  ], after: { effect: 'storm', journal: 'A storm hit on day 10.' } },
+  { id: 'mira2', at: 'bakery', when: { day: [10, 13], flags: ['mira1'] }, lines: [
+    ['mira', '{name}! Pie planning. Very serious business. Sit.'],
+    ['mira', 'Rhubarb, apple, and for the centrepiece I want a strawberry tart the size of a cartwheel.'],
+    ['mira', 'With the mill turning I can bake for the whole valley.', 'millFixed'],
+    ['mira', 'Without the mill, I can afford maybe a dozen pies. It\'ll have to do.', '!millFixed'],
+    { choice: [
+      { t: 'Save me a slice of the cartwheel.', aff: { mira: 1 }, say: [['mira', 'The first slice. Promise.']] },
+      { t: 'How can I help?', aff: { mira: 2 }, say: [['mira', 'Just come. Bring friends. Bring the whole village. That\'s all a fair needs.']] }
+    ] }
+  ], after: {} },
+
+  { id: 'tomas2', at: 'smithy', when: { flags: ['millFixed'], day: [6, 13] }, lines: [
+    ['tomas', 'Mm. {name}.'],
+    ['tomas', 'I went down to the mill last night. Just to listen to it. My father used to say the stones sing if the gears are true.'],
+    ['tomas', 'They sing.'],
+    { choice: [
+      { t: 'He\'d be proud of you.', aff: { tomas: 2 }, say: [['nar', 'Tomas looks at his hands for a long moment.'], ['tomas', '...Thank you.']] },
+      { t: 'We make a good team.', aff: { tomas: 1 }, flags: ['tomasTeam'], say: [['tomas', 'We do.'], ['nar', 'Is he blushing, or is it the forge?']] }
+    ] }
+  ], after: { journal: 'Tomas went to listen to the mill singing, the way his father used to.' } }
+];
+
+// Morning events that happen to the whole village
+const EVENTS = {
+  7: { id: 'pests', title: 'Aphids!', text: 'Aphids swept through the gardens overnight. Crops without a marigold beside them lost a star.' },
+  10: { id: 'storm', title: 'A storm is coming' },
+};
+
+// ===== Hearthvale: Heir — engine =====
+const $ = id => document.getElementById(id);
+const VW = 320, VH = 200;
+const cv = $('world'), g = cv.getContext('2d');
+const SAVE_KEY = 'hearthvale-heir-hv1';
+const QMULT = [0.6, 1, 1.35, 1.75];
+const STARS = q => '★'.repeat(q) + '☆'.repeat(3 - q);
+const esc = s => String(s).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+const hash = (x, y, k = 0) => { let h = (x * 374761393 + y * 668265263 + k * 1442695041) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+
+// ---------- places on the map ----------
+const PLACES = {
+  farm: { name: 'Willowmere farm', x: 52, y: 150, who: null },
+  cottage: { name: 'The cottage', x: 42, y: 72, who: null },
+  mill: { name: 'The old mill', x: 120, y: 46, who: null },
+  dock: { name: 'The dock', x: 118, y: 178, who: 'bram' },
+  store: { name: 'Finch\'s General Store', x: 156, y: 80, who: 'hollis' },
+  bakery: { name: 'Ashdown Bakery', x: 214, y: 70, who: 'mira' },
+  square: { name: 'Village square', x: 214, y: 118, who: 'odile' },
+  smithy: { name: 'The smithy', x: 284, y: 152, who: 'tomas' }
+};
+const NODES = { farm: [52, 150], cottage: [42, 72], yard: [52, 100], bw: [84, 104], be: [122, 104], mill: [120, 46], dock: [118, 178], store: [156, 80], bakery: [214, 70], square: [214, 118], smithy: [284, 152], sq2: [250, 128] };
+const EDGES = [['farm', 'yard'], ['cottage', 'yard'], ['yard', 'bw'], ['bw', 'be'], ['be', 'mill'], ['be', 'dock'], ['be', 'store'], ['be', 'square'], ['store', 'square'], ['bakery', 'square'], ['square', 'sq2'], ['sq2', 'smithy'], ['store', 'bakery']];
+function route(a, b) {
+  const adj = {}; for (const [p, q] of EDGES) { (adj[p] = adj[p] || []).push(q); (adj[q] = adj[q] || []).push(p); }
+  const prev = { [a]: null }, q = [a];
+  while (q.length) { const c = q.shift(); if (c === b) break; for (const n of adj[c] || []) if (!(n in prev)) { prev[n] = c; q.push(n); } }
+  const out = []; let c = b; while (c) { out.unshift(NODES[c]); c = prev[c]; } return out;
+}
+
+// ---------- state ----------
+let G = null;
+function newState(name, look) {
+  return { v: 1, book: BOOK.id, name, look, day: 1, slot: 0, coins: 50, loc: 'farm', x: NODES.farm[0], y: NODES.farm[1],
+    flags: {}, aff: { odile: 0, mira: 0, tomas: 0, bram: 0, pip: 0, hollis: 0 }, seeds: {}, inv: {}, plots: Array.from({ length: 20 }, () => ({ c: null })),
+    quests: { active: [], done: [] }, journal: [], talked: {}, gifted: {}, marketDone: {}, weather: 'sunny', seen: {}, done: false, ending: null, earned: 0 };
+}
+function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(G)); $('saved').textContent = `Saved, day ${G.day}`; } catch (e) { $('saved').textContent = 'Saving isn\'t available in this browser'; } }
+function loadSave() { try { const s = localStorage.getItem(SAVE_KEY); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+const has = f => !!G.flags[f];
+const hearts = who => G.aff[who] || 0;
+function addAff(who, n) { if (!(who in G.aff)) return; G.aff[who] = Math.max(0, Math.min(10, G.aff[who] + n)); }
+function fill(t) { return t.replace(/\{name\}/g, G.name); }
+function addQuest(id) { if (!G.quests.active.includes(id) && !G.quests.done.includes(id)) { G.quests.active.push(id); toast(`New task: ${QUESTS[id].t}`); } }
+function doneQuest(id) { G.quests.active = G.quests.active.filter(q => q !== id); if (!G.quests.done.includes(id)) G.quests.done.push(id); }
+function addJournal(t) { G.journal.push({ day: G.day, t }); }
+function invAdd(crop, q, n = 1) { const k = `${crop}:${q}`; G.inv[k] = (G.inv[k] || 0) + n; }
+function invList() { return Object.entries(G.inv).filter(([, n]) => n > 0).map(([k, n]) => { const [c, q] = k.split(':'); return { k, c, q: +q, n }; }).sort((a, b) => CROPS[b.c].price * QMULT[b.q] - CROPS[a.c].price * QMULT[a.q]); }
+function useSlots(n) { if (G.slot + n > 4) return false; G.slot += n; hud(); return true; }
+
+// ---------- pixel art: portraits ----------
+function drawPortrait(c, id) {
+  const ch = id === 'you' ? { look: G.look } : CHARS[id]; const L = ch.look, x = c.getContext('2d'); c.width = 24; c.height = 24;
+  const P = (a, b, w, h, col) => { x.fillStyle = col; x.fillRect(a, b, w, h); };
+  P(0, 0, 24, 24, L.bg || '#e6dccb');
+  P(5, 18, 14, 6, L.coat); if (L.apron) P(9, 19, 6, 5, '#ffffff');
+  P(8, 4, 8, 11, L.skin); P(7, 6, 1, 6, L.skin); P(16, 6, 1, 6, L.skin); P(10, 15, 4, 3, L.skin);
+  const hr = L.hair;
+  if (L.style === 'bun') { P(8, 3, 8, 3, hr); P(7, 4, 1, 5, hr); P(16, 4, 1, 5, hr); P(10, 0, 4, 3, hr); }
+  else if (L.style === 'curly') { P(6, 2, 12, 4, hr); P(5, 4, 3, 9, hr); P(16, 4, 3, 9, hr); P(7, 1, 2, 1, hr); P(14, 1, 3, 1, hr); }
+  else if (L.style === 'short') { P(8, 3, 8, 3, hr); P(7, 4, 1, 3, hr); P(16, 4, 1, 3, hr); }
+  else if (L.style === 'messy') { P(7, 2, 10, 4, hr); P(6, 3, 1, 3, hr); P(17, 3, 1, 2, hr); P(9, 1, 2, 1, hr); P(13, 1, 2, 1, hr); }
+  else if (L.style === 'long') { P(7, 3, 10, 3, hr); P(6, 4, 2, 13, hr); P(16, 4, 2, 13, hr); }
+  else if (L.style === 'bald') { P(7, 7, 1, 3, hr); P(16, 7, 1, 3, hr); }
+  else if (L.style === 'bob') { P(7, 2, 10, 4, hr); P(6, 4, 2, 9, hr); P(16, 4, 2, 9, hr); }
+  if (L.style === 'cap') { P(7, 2, 10, 3, L.cap); P(6, 5, 12, 1, L.cap); P(7, 6, 1, 4, hr); P(16, 6, 1, 4, hr); }
+  if (L.style === 'tophat') { P(9, -1, 6, 5, L.hat); P(7, 4, 10, 1, L.hat); P(7, 5, 1, 3, hr); P(16, 5, 1, 3, hr); }
+  P(10, 8, 1, 1, '#2a1d17'); P(13, 8, 1, 1, '#2a1d17');
+  if (L.glasses) { x.strokeStyle = '#3a3a3a'; x.lineWidth = 1; x.strokeRect(9.5, 7.5, 2, 2); x.strokeRect(12.5, 7.5, 2, 2); }
+  if (L.freckles) { P(9, 10, 1, 1, '#c97b54'); P(14, 10, 1, 1, '#c97b54'); }
+  P(11, 12, 2, 1, '#a8473f');
+  if (L.beard) { P(8, 11, 8, 4, L.beard); P(9, 15, 6, 1, L.beard); P(11, 12, 2, 1, '#a8473f'); }
+  if (L.mustache) P(10, 11, 4, 1, L.mustache);
+}
+const LOOKS = [
+  { skin: '#f0c4a0', hair: '#4a3020', style: 'short', coat: '#3f7fbf', bg: '#cfe3f2' },
+  { skin: '#d8a27a', hair: '#1f1a18', style: 'bob', coat: '#c0563e', bg: '#f6d6c8' },
+  { skin: '#8d5a3c', hair: '#151010', style: 'messy', coat: '#5a9a55', bg: '#d8ecd0' },
+  { skin: '#f3d0b0', hair: '#d9a441', style: 'long', coat: '#8a5fb0', bg: '#e6dbf2' }
+];
+
+// ---------- the village map ----------
+let base = null, t0 = performance.now(), walker = null, petals = [];
+function buildBase() {
+  base = document.createElement('canvas'); base.width = VW; base.height = VH; const b = base.getContext('2d');
+  const P = (x, y, w, h, c) => { b.fillStyle = c; b.fillRect(x, y, w, h); };
+  for (let y = 0; y < VH; y++) for (let x = 0; x < VW; x++) { const n = hash(x, y, 1); b.fillStyle = n > 0.82 ? '#8fcf6a' : n > 0.18 ? '#80c45f' : '#74b955'; b.fillRect(x, y, 1, 1); }
+  // paths
+  b.strokeStyle = '#d9bf8c'; b.lineWidth = 6; b.lineCap = 'round'; b.lineJoin = 'round';
+  for (const [p, q] of EDGES) { if ((p === 'bw' && q === 'be')) continue; b.beginPath(); b.moveTo(...NODES[p]); b.lineTo(...NODES[q]); b.stroke(); }
+  b.strokeStyle = '#e6d0a2'; b.lineWidth = 2; for (const [p, q] of EDGES) { if ((p === 'bw' && q === 'be')) continue; b.beginPath(); b.moveTo(...NODES[p]); b.lineTo(...NODES[q]); b.stroke(); }
+  // square plaza
+  b.fillStyle = '#d9c49a'; b.beginPath(); b.ellipse(214, 118, 34, 18, 0, 0, 6.29); b.fill();
+  for (let i = 0; i < 70; i++) { const a = hash(i, 3) * 6.28, r = Math.sqrt(hash(i, 4)); P(214 + Math.cos(a) * r * 32 | 0, 118 + Math.sin(a) * r * 16 | 0, 2, 1, '#c8b184'); }
+  // river (drawn each frame with shimmer on top of this bed)
+  for (let y = 0; y < VH; y++) { const cx = riverX(y); P(cx - 12, y, 24, 1, '#c9b07c'); P(cx - 10, y, 20, 1, '#3f8fc2'); }
+  // forest along the top
+  for (let i = 0; i < 46; i++) { const x = (i * 7.3 + hash(i, 9) * 6) % VW, y = 4 + hash(i, 8) * 16; if (Math.abs(x - riverX(y)) < 16) continue; tree(b, x | 0, y | 0, 6 + (hash(i, 7) * 3 | 0)); }
+  for (let i = 0; i < 9; i++) { const x = 290 + hash(i, 5) * 28, y = 30 + hash(i, 6) * 90; tree(b, x | 0, y | 0, 6); }
+  // farm fence and plots bed
+  P(12, 118, 82, 64, '#7a5a3e'); P(14, 120, 78, 60, '#8b6a4a');
+  for (let x = 10; x < 98; x += 6) { P(x, 115, 2, 6, '#e8dcc0'); P(x, 182, 2, 5, '#e8dcc0'); } P(10, 117, 88, 1, '#e8dcc0'); P(10, 184, 88, 1, '#e8dcc0');
+  // buildings
+  house(b, 26, 44, 34, 24, '#f1e4cc', '#b65a3c', 'cottage');
+  house(b, 136, 54, 40, 22, '#efe2c8', '#3f7f9a', 'store');
+  house(b, 194, 40, 40, 24, '#f6e6d2', '#d9784a', 'bakery');
+  house(b, 264, 124, 40, 24, '#9a958c', '#55606b', 'smithy');
+  house(b, 252, 82, 36, 22, '#e8e0d2', '#7b5aa6', 'hall');
+  // mill building
+  P(124, 20, 26, 26, '#cfc1a6'); P(122, 14, 30, 7, '#8a5a3e'); P(126, 10, 22, 5, '#8a5a3e'); P(133, 33, 7, 13, '#6b4a32'); P(128, 25, 4, 4, '#3f5f7a'); P(142, 25, 4, 4, '#3f5f7a');
+  // dock planks
+  P(98, 172, 18, 6, '#9a6c44'); for (let x = 98; x < 116; x += 3) P(x, 172, 1, 6, '#7a5232'); P(98, 178, 2, 4, '#6b4a32'); P(113, 178, 2, 4, '#6b4a32');
+  // bridge
+  P(80, 99, 46, 9, '#9a6c44'); for (let x = 80; x < 126; x += 4) P(x, 99, 1, 9, '#7a5232'); P(80, 98, 46, 1, '#6b4a32'); P(80, 108, 46, 1, '#6b4a32');
+  // fountain
+  P(207, 112, 14, 9, '#b7b1a6'); P(209, 113, 10, 6, '#5fb3e0'); P(213, 106, 2, 8, '#b7b1a6');
+  // flowers
+  for (let i = 0; i < 140; i++) { const x = hash(i, 11) * VW | 0, y = 26 + hash(i, 12) * (VH - 30) | 0; if (Math.abs(x - riverX(y)) < 14 || (x > 10 && x < 98 && y > 112 && y < 190)) continue; P(x, y, 1, 1, ['#ffffff', '#ffd84a', '#ff9fc0', '#c9a7ff'][i % 4]); }
+}
+function riverX(y) { return 102 + Math.sin(y / 23) * 7; }
+function tree(b, x, y, r) {
+  b.fillStyle = 'rgba(30,60,30,.3)'; b.beginPath(); b.ellipse(x + 1, y + r, r, r * 0.4, 0, 0, 6.29); b.fill();
+  b.fillStyle = '#6b4a32'; b.fillRect(x - 1, y + r - 3, 2, 4);
+  b.fillStyle = '#3f8f4a'; b.beginPath(); b.arc(x, y, r, 0, 6.29); b.fill();
+  b.fillStyle = '#56a95a'; b.beginPath(); b.arc(x - r * 0.3, y - r * 0.3, r * 0.6, 0, 6.29); b.fill();
+  if (hash(x, y) > 0.6) { b.fillStyle = '#ffc6d9'; b.fillRect(x - 2, y - 2, 1, 1); b.fillRect(x + 2, y, 1, 1); }
+}
+function house(b, x, y, w, h, wall, roof, kind) {
+  b.fillStyle = 'rgba(30,60,30,.25)'; b.fillRect(x + 2, y + h, w, 3);
+  b.fillStyle = wall; b.fillRect(x, y + 8, w, h - 8);
+  for (let i = 0; i < 9; i++) { b.fillStyle = i % 2 ? roof : shade(roof, -18); b.fillRect(x - 2 + i, y + 8 - i, w + 4 - i * 2, 1); }
+  b.fillStyle = roof; b.fillRect(x - 2, y + 1, w + 4, 8);
+  b.fillStyle = shade(roof, -25); b.fillRect(x - 2, y + 8, w + 4, 1);
+  b.fillStyle = '#6b4a32'; b.fillRect(x + w / 2 - 3 | 0, y + h - 9, 6, 9);
+  b.fillStyle = '#ffe9a8'; b.fillRect(x + 4, y + 12, 5, 4); b.fillRect(x + w - 9, y + 12, 5, 4);
+  b.fillStyle = '#ffffff';
+  if (kind === 'bakery') { b.fillStyle = '#e0a55a'; b.fillRect(x + w / 2 - 4 | 0, y + 1, 8, 4); b.fillStyle = '#b8743a'; b.fillRect(x + w / 2 - 3 | 0, y + 2, 1, 2); b.fillRect(x + w / 2 | 0, y + 2, 1, 2); }
+  if (kind === 'smithy') { b.fillStyle = '#3a3a3a'; b.fillRect(x + w - 8, y - 6, 5, 8); b.fillStyle = '#2b2b2b'; b.fillRect(x + w / 2 - 4 | 0, y + 2, 8, 3); b.fillRect(x + w / 2 - 1 | 0, y + 5, 2, 2); }
+  if (kind === 'store') { b.fillStyle = '#f5d76e'; b.fillRect(x + w / 2 - 3 | 0, y + 1, 6, 5); b.fillStyle = '#b8902a'; b.fillRect(x + w / 2 - 1 | 0, y + 2, 2, 3); }
+  if (kind === 'hall') { b.fillStyle = '#f0d060'; b.fillRect(x + w / 2 - 1 | 0, y - 8, 2, 9); b.fillStyle = '#d94a4a'; b.fillRect(x + w / 2 + 1 | 0, y - 8, 5, 3); }
+  if (kind === 'cottage') { b.fillStyle = '#9a6c44'; b.fillRect(x + w - 8, y - 4, 4, 7); }
+}
+function shade(hex, d) { const n = parseInt(hex.slice(1), 16); const c = [n >> 16, n >> 8 & 255, n & 255].map(v => Math.max(0, Math.min(255, v + d))); return `rgb(${c.join(',')})`; }
+function drawPerson(x, y, look, frame, flip) {
+  const P = (a, b, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x + (flip ? -a - w : a)), Math.round(y + b), w, h); };
+  P(-3, 0, 6, 2, 'rgba(30,60,30,.3)');
+  const step = frame % 2;
+  P(-2, -3, 2, 3 - step, '#3a2a20'); P(0, -3, 2, 2 + step, '#3a2a20');
+  P(-3, -9, 6, 6, look.coat); if (look.apron) P(-2, -8, 4, 5, '#ffffff');
+  P(-2, -13, 4, 4, look.skin);
+  g.fillStyle = look.hair;
+  if (look.style === 'cap') P(-3, -14, 6, 2, look.cap); else if (look.style === 'tophat') { P(-2, -18, 4, 4, look.hat); P(-3, -14, 6, 1, look.hat); }
+  else if (look.style !== 'bald') { P(-2, -14, 4, 2, look.hair); if (['long', 'curly', 'bob', 'bun'].includes(look.style)) { P(-3, -13, 1, 4, look.hair); P(2, -13, 1, 4, look.hair); } if (look.style === 'bun') P(-1, -16, 2, 2, look.hair); }
+  if (look.beard) P(-2, -10, 4, 2, look.beard);
+  P(1, -12, 1, 1, '#2a1d17');
+}
+function cropSprite(ctx2, ox, oy, s, crop, stage, ready) {
+  const C = CROPS[crop], P = (a, b, w, h, c) => { ctx2.fillStyle = c; ctx2.fillRect(ox + a * s, oy + b * s, w * s, h * s); };
+  if (stage < 0.34) { P(3, 6, 1, 2, C.leaf); P(2, 6, 1, 1, C.leaf); P(4, 5, 1, 1, C.leaf); return; }
+  if (stage < 0.99) { P(3, 4, 1, 4, C.leaf); P(1, 4, 2, 1, C.leaf); P(4, 3, 2, 1, C.leaf); P(2, 6, 1, 1, C.leaf); P(4, 6, 2, 1, C.leaf); if (crop === 'sunflower') P(3, 1, 1, 3, C.leaf); return; }
+  switch (crop) {
+    case 'radish': P(2, 2, 3, 3, C.leaf); P(2, 5, 3, 2, C.color); P(3, 7, 1, 1, C.color); break;
+    case 'lettuce': P(1, 3, 6, 4, C.leaf); P(2, 2, 4, 4, C.color); P(3, 3, 2, 2, '#c6ec8f'); break;
+    case 'pea': P(3, 1, 1, 7, C.leaf); P(1, 3, 2, 1, C.leaf); P(4, 2, 2, 1, C.leaf); P(1, 4, 1, 2, '#9be37a'); P(5, 3, 1, 2, '#9be37a'); P(4, 5, 1, 2, '#9be37a'); break;
+    case 'carrot': P(2, 1, 1, 3, C.leaf); P(4, 1, 1, 3, C.leaf); P(3, 2, 1, 2, C.leaf); P(2, 4, 3, 2, C.color); P(3, 6, 1, 2, C.color); break;
+    case 'marigold': P(3, 4, 1, 4, C.leaf); P(2, 1, 3, 3, C.color); P(3, 2, 1, 1, '#e07a1a'); P(1, 5, 2, 1, C.leaf); break;
+    case 'strawberry': P(1, 3, 6, 3, C.leaf); P(1, 5, 2, 2, C.color); P(4, 5, 2, 2, C.color); P(3, 6, 1, 2, C.color); P(2, 5, 1, 1, '#ffd0d6'); break;
+    case 'sunflower': P(3, 3, 1, 5, C.leaf); P(1, 0, 5, 4, C.color); P(2, 1, 3, 2, '#7a4a20'); P(4, 5, 2, 1, C.leaf); break;
+  }
+  if (ready) { P(6, 0, 1, 1, '#ffffff'); }
+}
+function drawWorld(now) {
+  const t = (now - t0) / 1000;
+  g.drawImage(base, 0, 0);
+  // river shimmer
+  for (let y = 0; y < VH; y += 2) { const cx = riverX(y), off = (y + t * 18) % 12; g.fillStyle = 'rgba(255,255,255,.35)'; if (hash(y, Math.floor(t * 2) % 4, 2) > 0.7) g.fillRect(cx - 8 + (off | 0), y, 3, 1); }
+  // repaint the bridge over the shimmer
+  g.drawImage(base, 80, 98, 46, 11, 80, 98, 46, 11);
+  // waterwheel
+  const wx = 111, wy = 33, turning = has('millFixed'), ang = turning ? t * 1.8 : 0.3;
+  g.fillStyle = '#6b4a32'; g.beginPath(); g.arc(wx, wy, 9, 0, 6.29); g.fill(); g.fillStyle = '#3f8fc2'; g.beginPath(); g.arc(wx, wy, 6, 0, 6.29); g.fill();
+  g.strokeStyle = '#8a5a3e'; g.lineWidth = 2; for (let i = 0; i < 6; i++) { const a = ang + i * 1.047; g.beginPath(); g.moveTo(wx, wy); g.lineTo(wx + Math.cos(a) * 9, wy + Math.sin(a) * 9); g.stroke(); }
+  if (turning) { g.fillStyle = 'rgba(255,255,255,.7)'; for (let i = 0; i < 3; i++) g.fillRect(wx - 6 + ((t * 20 + i * 5) % 12), wy + 9, 2, 1); }
+  // garden plots on the map mirror the real garden
+  for (let i = 0; i < 20; i++) {
+    const c = i % 5, r = (i / 5) | 0, x = 18 + c * 15, y = 124 + r * 14, p = G.plots[i];
+    g.fillStyle = '#5e4330'; g.fillRect(x, y, 12, 10); g.fillStyle = '#6e4f38'; g.fillRect(x + 1, y + 1, 10, 2);
+    if (p.c) cropSprite(g, x + 2, y + 1, 1.1, p.c, p.d / CROPS[p.c].grow, p.d >= CROPS[p.c].grow);
+  }
+  // the willow
+  willow(78, 88, t);
+  // market stalls on Saturdays
+  if (WEEK[(G.day - 1) % 7] === 'Sat') for (const [sx, sy, col] of [[190, 100, '#d94a4a'], [232, 100, '#3f7fbf'], [200, 132, '#e0a030']]) { g.fillStyle = '#9a6c44'; g.fillRect(sx, sy, 14, 6); g.fillStyle = col; g.fillRect(sx - 1, sy - 5, 16, 4); g.fillStyle = '#fff'; for (let i = 0; i < 16; i += 4) g.fillRect(sx - 1 + i, sy - 5, 2, 4); }
+  // villagers at home
+  const day = G.day, slot = G.slot;
+  const spots = { odile: [226, 112], hollis: [166, 84], mira: [204, 72], tomas: [has('millFixed') && slot === 3 ? 126 : 294, has('millFixed') && slot === 3 ? 52 : 156], bram: [108, 176], pip: slot >= 2 ? [200, 124] : [210, 76] };
+  if (day === 14) { spots.mira = [196, 112]; spots.tomas = [232, 122]; spots.bram = [206, 126]; spots.hollis = [224, 128]; }
+  for (const [id, [x, y]] of Object.entries(spots)) drawPerson(x, y, CHARS[id].look, 0, x > G.x);
+  if (has('corvin1') && day < 14 && slot % 2 === 0) drawPerson(day % 2 ? 236 : 90, day % 2 ? 132 : 116, CHARS.corvin.look, 0, true);
+  // the player
+  const moving = walker && walker.path.length; drawPerson(G.x, G.y, G.look, moving ? Math.floor(t * 8) : 0, walker && walker.dir < 0);
+  // petals and weather
+  if (petals.length < 26) petals.push({ x: Math.random() * VW, y: -4, v: 6 + Math.random() * 8, p: Math.random() * 6 });
+  for (const p of petals) { p.y += p.v / 60; p.x += Math.sin(t + p.p) * 0.2; if (p.y > VH) { p.y = -4; p.x = Math.random() * VW; } g.fillStyle = G.weather === 'rain' ? 'rgba(200,225,255,.7)' : '#ffd3e0'; g.fillRect(p.x | 0, p.y | 0, 1, G.weather === 'rain' ? 3 : 1); }
+  // time of day light
+  const tint = ['rgba(255,220,170,.10)', 'rgba(0,0,0,0)', 'rgba(255,170,80,.14)', 'rgba(40,20,90,.38)'][Math.min(3, G.slot)];
+  g.fillStyle = tint; g.fillRect(0, 0, VW, VH);
+  if (G.weather === 'rain') { g.fillStyle = 'rgba(40,60,90,.18)'; g.fillRect(0, 0, VW, VH); }
+  if (G.slot === 3) { g.fillStyle = 'rgba(255,220,120,.9)'; for (const [x, y] of [[30, 56], [51, 56], [140, 66], [167, 66], [198, 52], [225, 52], [256, 94], [279, 94]]) g.fillRect(x, y, 5, 4); }
+  // hover label
+  if (hoverPlace && !busy()) { const p = PLACES[hoverPlace]; const w = p.name.length * 4 + 8; g.fillStyle = 'rgba(30,24,48,.85)'; g.fillRect(Math.min(VW - w - 2, Math.max(2, p.x - w / 2)), p.y - 30, w, 11); g.fillStyle = '#fff'; g.font = '8px "Pixelify Sans", monospace'; g.textAlign = 'center'; g.fillText(p.name, Math.min(VW - w / 2 - 2, Math.max(2 + w / 2, p.x)), p.y - 22); }
+  // quest markers: where a story scene is waiting
+  for (const id of Object.keys(PLACES)) if (sceneFor(id, true)) { const p = PLACES[id], bob = Math.sin(t * 4) * 1.5; g.fillStyle = '#ffd23f'; g.fillRect(p.x - 1, p.y - 26 + bob, 3, 6); g.fillRect(p.x - 1, p.y - 18 + bob, 3, 2); }
+}
+function willow(x, y, t) {
+  g.fillStyle = 'rgba(30,60,30,.3)'; g.beginPath(); g.ellipse(x + 2, y + 8, 12, 4, 0, 0, 6.29); g.fill();
+  g.fillStyle = '#6b4a32'; g.fillRect(x - 1, y - 6, 3, 14); g.fillRect(x + 2, y - 4, 4, 2);
+  g.fillStyle = '#5fa35a'; g.beginPath(); g.arc(x + 2, y - 10, 11, 0, 6.29); g.fill();
+  for (let i = 0; i < 12; i++) { const sx = x - 8 + i * 1.8, sw = Math.sin(t * 1.5 + i) * 1.2; g.fillStyle = i % 2 ? '#7cc06a' : '#4f944c'; g.fillRect(sx + sw, y - 8, 1, 10 + (i % 3) * 2); }
+}
+
+// ---------- walking ----------
+let hoverPlace = null;
+function goTo(id) {
+  if (busy() || G.done) return;
+  if (G.loc === id && !walker) { arrive(id); return; }
+  const from = nearestNode(); const path = route(from, id);
+  walker = { path, to: id, dir: 1 }; closeMenu();
+}
+function nearestNode() { let b = 'farm', bd = 1e9; for (const [k, [x, y]] of Object.entries(NODES)) { const d = Math.hypot(x - G.x, y - G.y); if (d < bd) { bd = d; b = k; } } return b; }
+function stepWalker() {
+  if (!walker) return; const tgt = walker.path[0]; if (!tgt) { const to = walker.to; walker = null; G.loc = to; arrive(to); return; }
+  const dx = tgt[0] - G.x, dy = tgt[1] - G.y, d = Math.hypot(dx, dy), sp = 1.6;
+  if (Math.abs(dx) > 0.2) walker.dir = Math.sign(dx);
+  if (d <= sp) { G.x = tgt[0]; G.y = tgt[1]; walker.path.shift(); } else { G.x += dx / d * sp; G.y += dy / d * sp; }
+}
+cv.addEventListener('pointermove', e => { const [x, y] = toView(e); hoverPlace = placeAt(x, y); cv.style.cursor = hoverPlace ? 'pointer' : 'default'; });
+cv.addEventListener('pointerleave', () => { hoverPlace = null; });
+cv.addEventListener('click', e => { const [x, y] = toView(e); const p = placeAt(x, y); if (p) goTo(p); });
+function toView(e) { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * VW, (e.clientY - r.top) / r.height * VH]; }
+function placeAt(x, y) { let b = null, bd = 22; for (const [id, p] of Object.entries(PLACES)) { const d = Math.hypot(p.x - x, (p.y - 8) - y); if (d < bd) { bd = d; b = id; } } return b; }
+
+// ---------- scenes ----------
+function condOk(w) {
+  if (!w) return true;
+  if (w.day && (G.day < w.day[0] || G.day > w.day[1])) return false;
+  if (w.slot && !w.slot.includes(G.slot)) return false;
+  if (w.flags && !w.flags.every(has)) return false;
+  if (w.not && w.not.some(has)) return false;
+  if (w.hearts && !Object.entries(w.hearts).every(([k, n]) => hearts(k) >= n)) return false;
+  return true;
+}
+function sceneFor(loc, peek) {
+  for (const s of SCENES) {
+    if (G.seen[s.id]) continue; const at = Array.isArray(s.at) ? s.at : [s.at]; if (!at.includes(loc)) continue;
+    if (!condOk(s.when)) continue; const cost = s.cost ?? 1; if (G.slot + cost > 4 && !peek) continue;
+    if (peek && G.slot + cost > 4) continue;
+    return s;
+  }
+  return null;
+}
+function arrive(id) {
+  const s = sceneFor(id);
+  if (s) { playScene(s); return; }
+  openMenu(id);
+}
+let dlg = null;
+function playScene(s, onEnd) {
+  G.seen[s.id] = true; G.flags[s.id] = true;
+  const cost = s.cost ?? 1; G.slot = Math.min(4, G.slot + cost); hud();
+  runLines(s.lines.slice(), () => {
+    const a = s.after || {};
+    (a.flags || []).forEach(f => G.flags[f] = true);
+    if (a.seeds) for (const [k, n] of Object.entries(a.seeds)) G.seeds[k] = (G.seeds[k] || 0) + n;
+    if (a.coins) G.coins += a.coins;
+    if (a.affAll) for (const k in G.aff) addAff(k, a.affAll);
+    if (a.aff) for (const [k, n] of Object.entries(a.aff)) addAff(k, n);
+    (a.quests?.done || []).forEach(doneQuest); (a.quests?.add || []).forEach(addQuest);
+    if (a.effect === 'storm' && has('helpedBram')) G.plots.forEach(p => { if (p.c && p.d < CROPS[p.c].grow) p.storm = 1; });
+    if (a.journal) addJournal(a.journal);
+    hud(); panels(); save();
+    if (a.run) { startMini(a.run); return; }
+    if (onEnd) onEnd(); else afterScene();
+  });
+}
+function afterScene() { if (G.slot >= 4) { endDay(); return; } const next = sceneFor(G.loc); if (next) playScene(next); else openMenu(G.loc); }
+function runLines(lines, done) {
+  dlg = { lines, done }; nextLine();
+}
+function nextLine() {
+  const box = $('dialog');
+  while (dlg.lines.length) {
+    const L = dlg.lines[0];
+    if (Array.isArray(L) && L[2]) { const c = L[2], neg = c.startsWith('!'); const ok = neg ? !has(c.slice(1)) : has(c); if (!ok) { dlg.lines.shift(); continue; } }
+    break;
+  }
+  if (!dlg.lines.length) { box.classList.remove('on'); const d = dlg.done; dlg = null; d(); return; }
+  const L = dlg.lines.shift();
+  box.classList.add('on');
+  if (!Array.isArray(L)) {
+    const opts = L.choice.filter(o => !o.need || o.need.every(has));
+    showLine(dlg.lastWho || 'you', null, opts);
+    return;
+  }
+  dlg.lastWho = L[0]; showLine(L[0], fill(L[1]));
+}
+let typing = null;
+function showLine(who, text, opts) {
+  const nameEl = $('dname'), txt = $('dtext'), ch = $('dchoices'), pc = $('dport');
+  const isNar = who === 'nar';
+  pc.style.display = isNar ? 'none' : 'block'; if (!isNar) drawPortrait(pc, who === 'wren' ? 'wren' : who);
+  nameEl.textContent = isNar ? '' : who === 'you' ? G.name : who === 'wren' ? 'Gran\'s letter' : CHARS[who].name;
+  $('dialog').classList.toggle('nar', isNar); $('dialog').classList.toggle('letter', who === 'wren');
+  ch.innerHTML = '';
+  if (opts) {
+    txt.textContent = 'What do you say?';
+    opts.forEach((o, i) => { const b = document.createElement('button'); b.className = 'opt'; b.innerHTML = `<span class="k">${i + 1}</span>${esc(fill(o.t))}`; b.onclick = () => pickChoice(o); ch.appendChild(b); });
+    $('dnext').style.display = 'none'; setTimeout(() => ch.firstChild && ch.firstChild.focus(), 30); return;
+  }
+  $('dnext').style.display = 'block';
+  clearInterval(typing); txt.textContent = ''; let i = 0;
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) { txt.textContent = text; typing = null; return; }
+  typing = setInterval(() => { i += 2; txt.textContent = text.slice(0, i); if (i >= text.length) { clearInterval(typing); typing = null; } }, 16);
+  txt.dataset.full = text;
+}
+function advance() { if (!dlg) return; if ($('dchoices').children.length) return; if (typing) { clearInterval(typing); typing = null; $('dtext').textContent = $('dtext').dataset.full; return; } nextLine(); }
+function pickChoice(o) {
+  (o.flags || []).forEach(f => G.flags[f] = true);
+  if (o.aff) for (const [k, n] of Object.entries(o.aff)) { addAff(k, n); if (n > 0) heartPop(k, n); }
+  dlg.lines.unshift(['you', o.t], ...(o.say || []));
+  $('dchoices').innerHTML = ''; nextLine();
+}
+$('dialog').addEventListener('click', e => { if (e.target.closest('.opt')) return; advance(); });
+document.addEventListener('keydown', e => {
+  if (dlg) { if (e.key === ' ' || e.key === 'Enter') { if (!$('dchoices').children.length) { e.preventDefault(); advance(); } } else if (/^[1-4]$/.test(e.key)) { const b = $('dchoices').children[+e.key - 1]; if (b) b.click(); } }
+});
+function heartPop(who, n) { toast(`${CHARS[who].name.split(' ')[0]} ${'♥'.repeat(Math.min(3, n))}`); }
+
+// ---------- location menus ----------
+function busy() { return !!dlg || !!walker || $('mini').classList.contains('on') || !$('title').hidden; }
+function closeMenu() { $('menu').classList.remove('on'); }
+function openMenu(id) {
+  const p = PLACES[id], m = $('menu'), acts = [];
+  const who = p.who, wkday = WEEK[(G.day - 1) % 7];
+  const chat = (c) => acts.push({ t: `Chat with ${CHARS[c].name.split(' ')[0]}`, cost: 1, sub: G.talked[c] === G.day ? 'already chatted today' : '+1 friendship', dis: G.talked[c] === G.day, f: () => smallTalk(c) });
+  const gift = (c) => acts.push({ t: `Give ${CHARS[c].name.split(' ')[0]} a gift`, cost: 0, sub: G.gifted[c] === G.day ? 'already gave a gift today' : invList().length ? `loves ${CROPS[CHARS[c].loves].name.toLowerCase()}` : 'you have nothing to give yet', dis: G.gifted[c] === G.day || !invList().length, f: () => giftUI(c) });
+  if (id === 'farm') { acts.push({ t: 'Tend the garden', cost: 0, sub: readyCount() ? `${readyCount()} ready to harvest` : 'plant and harvest', f: () => startMini('garden') }); acts.push({ t: 'Go inside', cost: 0, f: () => goTo('cottage') }); }
+  if (id === 'cottage') {
+    if (has('mira1') && !has('cipherSolved')) acts.push({ t: 'Open Gran\'s box', cost: 1, sub: 'a logic puzzle', f: () => { if (useSlots(1)) startMini('cipher'); } });
+    acts.push({ t: 'Go to bed', cost: 0, sub: G.day >= BOOK.days - 1 ? 'tomorrow is the fair' : 'ends the day', f: () => endDay() });
+  }
+  if (id === 'store') { acts.push({ t: 'Buy seeds', cost: 0, f: () => shopUI() }); acts.push({ t: 'Sell produce to Hollis', cost: 0, sub: '70% of market price', dis: !invList().length, f: () => sellUI() }); chat('hollis'); gift('hollis'); }
+  if (id === 'bakery') { chat('mira'); gift('mira'); }
+  if (id === 'smithy') { if (G.quests.active.includes('iron') && !has('paidIron')) acts.push({ t: 'Pay for the iron gear', cost: 0, sub: `80 coins (you have ${G.coins})`, dis: G.coins < 80, f: () => { G.coins -= 80; G.flags.paidIron = true; addJournal('Paid Tomas 80 coins for the mill gear.'); hud(); arrive('smithy'); } }); chat('tomas'); gift('tomas'); }
+  if (id === 'mill') { if (has('millFixed')) acts.push({ t: 'Listen to the millstones', cost: 0, f: () => runLines([['nar', 'The wheel creaks round and round. Inside, the stones hum a low, steady song. Flour dust drifts in the light.']], () => openMenu('mill')) }); else if (has('tomasReady')) acts.push({ t: 'Repair the mill with Tomas', cost: 1, sub: 'a gear puzzle', f: () => { if (useSlots(1)) startMini('mill'); } }); else acts.push({ t: 'Look at the broken wheel', cost: 0, f: () => runLines([['nar', has('paidIron') ? 'Tomas isn\'t here yet. Check the smithy.' : 'The wheel is jammed with river weed and the gear train inside is twisted. You\'d need Tomas, and a new iron gear.']], () => openMenu('mill')) }); }
+  if (id === 'dock') { chat('bram'); gift('bram'); }
+  if (id === 'square') {
+    if (wkday === 'Sat' && G.day < 14) acts.push({ t: 'Run a market stall', cost: 1, sub: G.marketDone[G.day] ? 'done for today' : invList().length ? 'sell to customers, set your prices' : 'you need produce to sell', dis: !!G.marketDone[G.day] || !invList().length, f: () => { if (useSlots(1)) startMini('market'); } });
+    acts.push({ t: 'Read the noticeboard', cost: 0, f: () => noticeboard() });
+    chat('odile'); gift('odile'); chat('pip'); gift('pip');
+  }
+  m.innerHTML = `<div class="mh"><b>${esc(p.name)}</b><button class="x" id="mclose" aria-label="Close">×</button></div>` + acts.map((a, i) => `<button class="act" data-i="${i}" ${a.dis ? 'disabled' : ''}><span>${esc(a.t)}${a.sub ? `<small>${esc(a.sub)}</small>` : ''}</span>${a.cost ? `<em>${a.cost} time</em>` : ''}</button>`).join('');
+  m.classList.add('on');
+  m.querySelectorAll('.act').forEach(b => b.onclick = () => { const a = acts[+b.dataset.i]; if (a.cost && G.slot + a.cost > 4) { toast('Not enough time left today'); return; } closeMenu(); a.f(); });
+  $('mclose').onclick = closeMenu;
+}
+function readyCount() { return G.plots.filter(p => p.c && p.d >= CROPS[p.c].grow).length; }
+function smallTalk(c) {
+  if (!useSlots(1)) return; G.talked[c] = G.day; addAff(c, 1); heartPop(c, 1);
+  const pool = CHARS[c].small; runLines([[c, pool[(G.day + c.length) % pool.length]]], () => { save(); afterScene(); });
+}
+function noticeboard() {
+  const left = BOOK.days - G.day;
+  runLines([['nar', left > 0 ? `SPRING FAIR: Sunday, in ${left} day${left > 1 ? 's' : ''}. Produce contest! Pies! Music! (If anyone comes.)` : 'SPRING FAIR: TODAY!'], ['nar', 'MARKET: every Saturday morning in the square.'], ['nar', 'LOST: one goat, answers to Duchess. Do NOT feed her lettuce. — H. Finch']], () => openMenu('square'));
+}
+
+// ---------- small shop panels (in the mini overlay) ----------
+function panel(title, html, onClose) {
+  const m = $('mini'); m.innerHTML = `<div class="mwrap small"><div class="mh"><b>${esc(title)}</b><button class="x" id="pclose" aria-label="Close">×</button></div><div class="pbody">${html}</div></div>`;
+  m.classList.add('on'); $('pclose').onclick = () => { m.classList.remove('on'); (onClose || (() => openMenu(G.loc)))(); };
+}
+function shopUI() {
+  const rows = Object.entries(CROPS).map(([k, c]) => `<div class="row"><canvas class="spr" data-c="${k}" width="16" height="16"></canvas><div class="grow"><b>${c.name}</b> <span class="dim">${c.grow} days · sells ~${c.price}</span><small>${esc(c.tip)}</small></div><span class="n">${c.seed}c</span><button class="btn s" data-buy="${k}" data-n="1">Buy 1</button><button class="btn s" data-buy="${k}" data-n="4">Buy 4</button></div>`).join('');
+  panel(`Buy seeds · ${G.coins} coins`, rows);
+  paintSprites();
+  $('mini').querySelectorAll('[data-buy]').forEach(b => b.onclick = () => { const k = b.dataset.buy, n = +b.dataset.n, cost = CROPS[k].seed * n; if (G.coins < cost) { toast('Not enough coins'); return; } G.coins -= cost; G.seeds[k] = (G.seeds[k] || 0) + n; hud(); panels(); toast(`Bought ${n} ${CROPS[k].name.toLowerCase()} seed${n > 1 ? 's' : ''}`); shopUI(); });
+}
+function sellUI() {
+  const items = invList();
+  const rows = items.map(it => { const pr = Math.round(CROPS[it.c].price * QMULT[it.q] * 0.7); return `<div class="row"><canvas class="spr" data-c="${it.c}" width="16" height="16"></canvas><div class="grow"><b>${CROPS[it.c].name}</b> <span class="q">${STARS(it.q)}</span> <span class="dim">×${it.n}</span></div><span class="n">${pr}c each</span><button class="btn s" data-sell="${it.k}" data-n="1">Sell 1</button><button class="btn s" data-sell="${it.k}" data-n="${it.n}">Sell all</button></div>`; }).join('') || '<p class="dim">Nothing to sell.</p>';
+  panel(`Sell to Hollis · ${G.coins} coins`, rows + '<p class="dim small">Tip: the Saturday market pays more, if you can read your customers.</p>');
+  paintSprites();
+  $('mini').querySelectorAll('[data-sell]').forEach(b => b.onclick = () => { const k = b.dataset.sell, n = +b.dataset.n, [c, q] = k.split(':'), pr = Math.round(CROPS[c].price * QMULT[+q] * 0.7); G.inv[k] -= n; G.coins += pr * n; G.earned += pr * n; hud(); panels(); save(); sellUI(); });
+}
+function giftUI(c) {
+  const items = invList();
+  const rows = items.map(it => `<div class="row"><canvas class="spr" data-c="${it.c}" width="16" height="16"></canvas><div class="grow"><b>${CROPS[it.c].name}</b> <span class="q">${STARS(it.q)}</span> <span class="dim">×${it.n}</span>${it.c === CHARS[c].loves ? '<small class="love">Loved!</small>' : ''}</div><button class="btn s" data-g="${it.k}">Give</button></div>`).join('');
+  panel(`A gift for ${CHARS[c].name.split(' ')[0]}`, rows);
+  paintSprites();
+  $('mini').querySelectorAll('[data-g]').forEach(b => b.onclick = () => {
+    const k = b.dataset.g, crop = k.split(':')[0]; G.inv[k]--; G.gifted[c] = G.day; const n = crop === CHARS[c].loves ? 2 : 1; addAff(c, n);
+    $('mini').classList.remove('on'); hud(); panels(); save();
+    const line = crop === CHARS[c].loves ? { mira: 'Strawberries! Oh, you angel. These are going straight into a tart.', tomas: 'Carrots. Biscuit\'s going to lose her mind. ...Thank you.', bram: 'Radishes! I\'ll have them pickled by Sunday.', pip: 'A SUNFLOWER. I\'m going to save every single seed.', hollis: 'Look at the crispness on that. You understand lettuce.', odile: 'Peas! Just like Wren used to bring.' }[c] : 'For me? That\'s kind of you.';
+    heartPop(c, n); runLines([[c, line]], () => openMenu(G.loc));
+  });
+}
+function paintSprites() { document.querySelectorAll('canvas.spr').forEach(c => { const x = c.getContext('2d'); x.clearRect(0, 0, 16, 16); cropSprite(x, 0, 0, 2, c.dataset.c, 1, false); }); }
+
+// ---------- the day cycle ----------
+function endDay() {
+  closeMenu(); if (G.day >= BOOK.days) return;
+  // overnight growth: each plot keeps a running average of help and harm from its neighbours
+  const nb = i => { const c = i % 5, r = (i / 5) | 0, out = []; if (c > 0) out.push(i - 1); if (c < 4) out.push(i + 1); if (r > 0) out.push(i - 5); if (r < 3) out.push(i + 5); return out; };
+  G.plots.forEach((p, i) => { if (!p.c || p.d >= CROPS[p.c].grow) return; p.acc += plotDelta(i); p.n++; p.d++; });
+  G.day++; G.slot = 0; G.loc = 'cottage'; G.x = NODES.cottage[0]; G.y = NODES.cottage[1];
+  G.weather = hash(G.day, BOOK.id.length, 7) < 0.3 ? 'rain' : 'sunny';
+  const msgs = [];
+  if (G.day === 7) { let hit = 0; G.plots.forEach((p, i) => { if (!p.c || p.c === 'marigold' || p.d >= CROPS[p.c].grow) return; if (!nb(i).some(j => G.plots[j].c === 'marigold')) { p.pest = 1; hit++; } }); msgs.push(hit ? `Aphids swept through overnight. ${hit} crop${hit > 1 ? 's' : ''} without a marigold beside ${hit > 1 ? 'them' : 'it'} lost a star.` : 'Aphids swept through the village gardens overnight, but your marigolds kept them off.'); }
+  if (G.weather === 'rain') msgs.push('Soft rain overnight. The garden looks happy.');
+  save(); hud(); panels();
+  dayCard(() => {
+    if (G.day === BOOK.days) { startMini('fair'); return; }
+    if (msgs.length) runLines(msgs.map(m => ['nar', m]), () => { goHomeMorning(); }); else goHomeMorning();
+  });
+}
+function goHomeMorning() { G.loc = 'farm'; G.x = NODES.farm[0]; G.y = NODES.farm[1]; const s = sceneFor('farm'); if (s) playScene(s); else openMenu('farm'); }
+function plotDelta(i) {
+  const p = G.plots[i]; if (!p.c) return 0; let d = 0;
+  const c = i % 5, r = (i / 5) | 0, nbs = []; if (c > 0) nbs.push(i - 1); if (c < 4) nbs.push(i + 1); if (r > 0) nbs.push(i - 5); if (r < 3) nbs.push(i + 5);
+  for (const j of nbs) { const o = G.plots[j].c; if (!o) continue; if ((HELPS[o] || []).includes(p.c)) d++; for (const [a, b] of FIGHTS) if ((a === p.c && b === o) || (b === p.c && a === o)) d--; }
+  return d;
+}
+function plotQuality(i) { const p = G.plots[i]; const avg = p.n ? p.acc / p.n : plotDelta(i); return Math.max(0, Math.min(3, 1 + Math.round(avg) - (p.pest || 0) - (p.storm || 0))); }
+function dayCard(then) {
+  const el = $('daycard'); el.innerHTML = `<b>Day ${G.day}</b><span>${WEEK[(G.day - 1) % 7]} · ${G.weather === 'rain' ? 'Rain' : 'Sunny'}${G.day === BOOK.days ? ' · Fair day!' : ''}</span>`;
+  el.classList.add('on'); setTimeout(() => { el.classList.remove('on'); then(); }, 1300);
+}
+
+// ---------- HUD, panels, toasts ----------
+function hud() {
+  $('hday').textContent = `Day ${G.day} of ${BOOK.days}`; $('hwhen').textContent = `${WEEK[(G.day - 1) % 7]} · ${SLOTS[Math.min(3, G.slot)]}`;
+  $('hcoins').textContent = G.coins; $('hpips').innerHTML = [0, 1, 2, 3].map(i => `<i class="${i < G.slot ? 'used' : ''}"></i>`).join('');
+}
+function panels() {
+  $('pquests').innerHTML = (G.quests.active.length ? G.quests.active.map(q => `<li><b>${esc(QUESTS[q].t)}</b><span>${esc(QUESTS[q].d)}</span></li>`).join('') : '<li class="dim">No tasks right now.</li>') + (G.quests.done.length ? `<li class="done-h">Done</li>` + G.quests.done.map(q => `<li class="done">${esc(QUESTS[q].t)}</li>`).join('') : '');
+  const seeds = Object.entries(G.seeds).filter(([, n]) => n > 0);
+  $('pbag').innerHTML = `<div class="coins">${G.coins} coins</div><h4>Seeds</h4>${seeds.length ? seeds.map(([k, n]) => `<div class="bi"><canvas class="spr" data-c="${k}" width="16" height="16"></canvas>${CROPS[k].name} <span class="dim">×${n}</span></div>`).join('') : '<p class="dim">None</p>'}<h4>Produce</h4>${invList().length ? invList().map(it => `<div class="bi"><canvas class="spr" data-c="${it.c}" width="16" height="16"></canvas>${CROPS[it.c].name} <span class="q">${STARS(it.q)}</span> <span class="dim">×${it.n}</span></div>`).join('') : '<p class="dim">Nothing harvested yet</p>'}`;
+  $('pfriends').innerHTML = Object.keys(G.aff).map(k => `<div class="fr"><canvas class="por" data-p="${k}"></canvas><div><b>${CHARS[k].name}</b><span class="dim">${CHARS[k].role}${G.seen[k === 'hollis' ? 'hollis1' : k === 'odile' ? 'intro' : k + '1'] || (k === 'pip' && G.seen.mira1) ? '' : ' · not met yet'}</span><span class="hearts">${'♥'.repeat(hearts(k))}<s>${'♥'.repeat(10 - hearts(k))}</s></span></div></div>`).join('');
+  $('pjournal').innerHTML = G.journal.slice().reverse().map(j => `<li><span class="dim">Day ${j.day}</span> ${esc(j.t)}</li>`).join('') || '<li class="dim">Your story starts here.</li>';
+  document.querySelectorAll('canvas.por').forEach(c => drawPortrait(c, c.dataset.p));
+  paintSprites();
+}
+document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { document.querySelectorAll('[data-tab]').forEach(o => o.setAttribute('aria-selected', String(o === b))); document.querySelectorAll('.tabp').forEach(p => p.hidden = p.id !== b.dataset.tab); });
+let toastT = 0;
+function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2200); }
+
+// ---------- title screen ----------
+let lookPick = 0;
+function titleScreen() {
+  const s = loadSave(), el = $('title'); el.hidden = false;
+  el.innerHTML = `<div class="tcard"><h1>Hearthvale<span>Heir</span></h1><p class="book">${BOOK.title}</p>
+    <label for="pname">Your name</label><input id="pname" maxlength="14" value="${esc(s?.name || 'Ash')}" autocomplete="off">
+    <p class="lab">Your look</p><div class="looks">${LOOKS.map((l, i) => `<button class="look" data-l="${i}" aria-pressed="${i === lookPick}" aria-label="Look ${i + 1}"><canvas data-look="${i}"></canvas></button>`).join('')}</div>
+    <div class="tbtns"><button class="btn big" id="bnew">${s ? 'Start over' : 'Begin'}</button>${s && !s.done ? `<button class="btn big alt" id="bcont">Continue, day ${s.day}</button>` : ''}</div></div>`;
+  el.querySelectorAll('canvas[data-look]').forEach(c => { const i = +c.dataset.look; G = G || newState('x', LOOKS[i]); const keep = G.look; G.look = LOOKS[i]; drawPortrait(c, 'you'); G.look = keep; });
+  el.querySelectorAll('.look').forEach(b => b.onclick = () => { lookPick = +b.dataset.l; el.querySelectorAll('.look').forEach(o => o.setAttribute('aria-pressed', String(o === b))); });
+  $('bnew').onclick = () => { const nm = $('pname').value.trim() || 'Ash'; G = newState(nm, LOOKS[lookPick]); el.hidden = true; hud(); panels(); save(); dayCard(() => goHomeMorning()); };
+  if ($('bcont')) $('bcont').onclick = () => { G = s; el.hidden = true; hud(); panels(); if (G.loc) openMenu(G.loc); };
+}
+
+// ---------- loop ----------
+function frame(now) { if (G && base) { stepWalker(); drawWorld(now); } requestAnimationFrame(frame); }
+
+// ===== Hearthvale: Heir — mini-games =====
+const mini = $('mini');
+function closeMini() { mini.classList.remove('on'); mini.innerHTML = ''; }
+function startMini(id) { closeMenu(); ({ garden: gardenGame, mill: millGame, cipher: cipherGame, market: marketGame, fair: fairGame })[id](); }
+
+// ---------- 1. Garden planner (strategy) ----------
+let gSel = null, gFocus = -1;
+function gardenGame() {
+  const seeds = Object.entries(G.seeds).filter(([, n]) => n > 0);
+  if (!gSel || !G.seeds[gSel]) gSel = seeds.length ? seeds[0][0] : null;
+  mini.innerHTML = `<div class="mwrap"><div class="mh"><b>Willowmere garden</b><span class="dim">Day ${G.day} · ${readyCount()} ready</span><button class="x" id="gclose" aria-label="Close">×</button></div>
+    <div class="garden"><div class="beds" id="beds"></div>
+    <div class="gside"><p class="lab">Seeds</p><div class="seedbar" id="seedbar"></div>
+    <div class="ginfo" id="ginfo"></div>
+    <div class="gbtns"><button class="btn" id="gharv" ${readyCount() ? '' : 'disabled'}>Harvest all ready</button><button class="btn alt" id="gdone">Done</button></div></div></div></div>`;
+  mini.classList.add('on');
+  const beds = $('beds');
+  for (let i = 0; i < 20; i++) { const b = document.createElement('button'); b.className = 'bed'; b.dataset.i = i; b.innerHTML = `<canvas width="32" height="32"></canvas><span class="st"></span><span class="dd"></span>`; beds.appendChild(b);
+    b.onclick = () => clickPlot(i); b.onmouseenter = () => { gFocus = i; gInfo(); }; b.onfocus = () => { gFocus = i; gInfo(); }; }
+  $('seedbar').innerHTML = Object.keys(CROPS).map(k => `<button class="seed" data-s="${k}" aria-pressed="${k === gSel}" ${G.seeds[k] ? '' : 'disabled'}><canvas class="spr" data-c="${k}" width="16" height="16"></canvas><span>${CROPS[k].name}</span><b>${G.seeds[k] || 0}</b></button>`).join('');
+  paintSprites();
+  $('seedbar').querySelectorAll('.seed').forEach(b => b.onclick = () => { gSel = b.dataset.s; gardenGame(); });
+  $('gclose').onclick = $('gdone').onclick = () => { closeMini(); panels(); save(); openMenu('farm'); };
+  $('gharv').onclick = () => { let n = 0; G.plots.forEach((p, i) => { if (p.c && p.d >= CROPS[p.c].grow) { invAdd(p.c, plotQuality(i)); G.plots[i] = { c: null }; n++; } }); toast(`Harvested ${n} crop${n > 1 ? 's' : ''}`); save(); gardenGame(); };
+  drawBeds(); gInfo();
+}
+function drawBeds() {
+  document.querySelectorAll('.bed').forEach(b => {
+    const i = +b.dataset.i, p = G.plots[i], c = b.querySelector('canvas').getContext('2d');
+    c.fillStyle = '#5e4330'; c.fillRect(0, 0, 32, 32); c.fillStyle = '#6e4f38'; for (let y = 3; y < 32; y += 7) c.fillRect(2, y, 28, 2);
+    const st = b.querySelector('.st'), dd = b.querySelector('.dd');
+    if (p.c) {
+      const C = CROPS[p.c], ready = p.d >= C.grow; cropSprite(c, 4, 2, 3, p.c, p.d / C.grow, ready);
+      st.textContent = STARS(plotQuality(i)); dd.textContent = ready ? 'Ready!' : `${C.grow - p.d}d`; b.classList.toggle('ready', ready);
+      b.classList.toggle('risk', G.day < 7 && !ready && p.c !== 'marigold' && !nbrs(i).some(j => G.plots[j].c === 'marigold'));
+      b.setAttribute('aria-label', `${C.name}, ${ready ? 'ready to harvest' : (C.grow - p.d) + ' days left'}, quality ${plotQuality(i)} of 3`);
+    } else { st.textContent = ''; dd.textContent = ''; b.classList.remove('ready', 'risk'); b.setAttribute('aria-label', 'Empty plot'); }
+  });
+}
+function nbrs(i) { const c = i % 5, r = (i / 5) | 0, o = []; if (c > 0) o.push(i - 1); if (c < 4) o.push(i + 1); if (r > 0) o.push(i - 5); if (r < 3) o.push(i + 5); return o; }
+function deltaFor(i, crop) { let d = 0, why = []; for (const j of nbrs(i)) { const o = G.plots[j].c; if (!o) continue; if ((HELPS[o] || []).includes(crop)) { d++; why.push(`+1 from ${CROPS[o].name.toLowerCase()}`); } for (const [a, b] of FIGHTS) if ((a === crop && b === o) || (b === crop && a === o)) { d--; why.push(`−1 fighting ${CROPS[o].name.toLowerCase()}`); } } return { d, why }; }
+function gInfo() {
+  const el = $('ginfo'); if (!el) return; const i = gFocus;
+  if (!G.flags.gardenTip) { el.innerHTML = `<b>Gran's advice</b><p>Plants next to each other help or hurt. Peas feed the soil around them. Sunflowers bring bees to strawberries and peas, and shade lettuce. Marigolds keep pests off their neighbours. Carrots and radishes fight underground.</p><p>Neighbours count while they grow side by side, so a radish harvested early stops helping.</p>`; G.flags.gardenTip = true; return; }
+  if (i < 0) { el.innerHTML = gSel ? `<b>Planting ${CROPS[gSel].name}</b><p>${esc(CROPS[gSel].tip)}</p><p class="dim">Point at an empty plot to see how good it would grow there.</p>` : '<p>No seeds. Buy some at Finch\'s store.</p>'; return; }
+  const p = G.plots[i];
+  if (!p.c) { if (!gSel) { el.innerHTML = '<p>No seeds. Buy some at Finch\'s store.</p>'; return; } const { d, why } = deltaFor(i, gSel); const q = Math.max(0, Math.min(3, 1 + d)); const risk = gSel !== 'marigold' && G.day < 7 && !nbrs(i).some(j => G.plots[j].c === 'marigold');
+    el.innerHTML = `<b>${CROPS[gSel].name} here</b><p class="q big">${STARS(q)}</p><p>${why.length ? why.join(', ') : 'No neighbours helping yet.'}</p>${risk ? '<p class="warn">Aphids come on day 7. No marigold next to this plot.</p>' : ''}<p class="dim">Ready in ${CROPS[gSel].grow} days, on day ${G.day + CROPS[gSel].grow}.</p>`; return; }
+  const C = CROPS[p.c], ready = p.d >= C.grow, { why } = deltaFor(i, p.c);
+  el.innerHTML = `<b>${C.name}</b><p class="q big">${STARS(plotQuality(i))}</p><p>${ready ? 'Ready to harvest. Click it.' : `${C.grow - p.d} days left.`}</p><p>${why.length ? 'Now: ' + why.join(', ') : 'No neighbours helping right now.'}</p>${p.pest ? '<p class="warn">Aphids took a star.</p>' : ''}${p.storm ? '<p class="warn">The storm took a star.</p>' : ''}${!ready ? `<button class="btn s" id="gpull">Pull it up</button>` : ''}`;
+  const pull = $('gpull'); if (pull) pull.onclick = () => { G.plots[i] = { c: null }; gardenGame(); };
+}
+function clickPlot(i) {
+  const p = G.plots[i];
+  if (p.c && p.d >= CROPS[p.c].grow) { const q = plotQuality(i); invAdd(p.c, q); G.plots[i] = { c: null }; toast(`${CROPS[p.c].name} ${STARS(q)}`); save(); gardenGame(); return; }
+  if (p.c) { gFocus = i; gInfo(); return; }
+  if (!gSel || !G.seeds[gSel]) { toast('Pick a seed first'); return; }
+  G.seeds[gSel]--; G.plots[i] = { c: gSel, d: 0, acc: 0, n: 0, pest: 0, storm: 0 };
+  if (G.quests.active.includes('plant')) { doneQuest('plant'); addJournal('Planted the first crops at Willowmere.'); }
+  gFocus = i; gardenGame(); gFocus = i; gInfo();
+}
+
+// ---------- 2. Mill repair (rotation puzzle) ----------
+const ROT = m => ((m << 1) | (m >> 3)) & 15, BIT = { N: 1, E: 2, S: 4, W: 8 };
+let mill = null;
+function millGame(level = 0) {
+  const sizes = [[5, 4], [6, 4], [7, 5]], [w, h] = sizes[level];
+  const rnd = mulberry32(G.day * 31 + level * 7 + 3);
+  const sr = (rnd() * h) | 0, er = (rnd() * h) | 0;
+  // carve a random path from the wheel (left) to the millstone (right)
+  let path = null;
+  for (let tries = 0; tries < 200 && !path; tries++) {
+    const seen = new Set(), stack = [[0, sr]], prev = {};
+    seen.add(`0,${sr}`);
+    const dfs = (x, y) => { if (x === w - 1 && y === er) return true; const dirs = [[1, 0], [0, 1], [0, -1], [-1, 0]].sort(() => rnd() - 0.4); for (const [dx, dy] of dirs) { const nx = x + dx, ny = y + dy, k = `${nx},${ny}`; if (nx < 0 || ny < 0 || nx >= w || ny >= h || seen.has(k)) continue; seen.add(k); prev[k] = [x, y]; if (dfs(nx, ny)) return true; } return false; };
+    if (dfs(0, sr)) { path = []; let c = [w - 1, er]; while (c) { path.unshift(c); c = prev[`${c[0]},${c[1]}`]; } if (path.length < w + 1) path = null; }
+  }
+  const grid = Array.from({ length: h }, () => Array(w).fill(0));
+  const dirBit = (a, b) => b[0] > a[0] ? BIT.E : b[0] < a[0] ? BIT.W : b[1] > a[1] ? BIT.S : BIT.N;
+  path.forEach((c, i) => { let m = 0; if (i === 0) m |= BIT.W; else m |= dirBit(c, path[i - 1]); if (i === path.length - 1) m |= BIT.E; else m |= dirBit(c, path[i + 1]); grid[c[1]][c[0]] = m; });
+  const shapes = [5, 3, 3, 7, 5, 3];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (!grid[y][x]) grid[y][x] = shapes[(rnd() * shapes.length) | 0];
+  const solution = grid.map(r => r.slice());
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const n = 1 + ((rnd() * 3) | 0); for (let k = 0; k < n; k++) grid[y][x] = ROT(grid[y][x]); }
+  mill = { level, w, h, sr, er, grid, moves: 0, sol: solution };
+  mini.innerHTML = `<div class="mwrap"><div class="mh"><b>Repairing the mill · section ${level + 1} of 3</b><button class="x" id="mclose2" aria-label="Stop for now">×</button></div>
+    <p class="mtip">Click a piece to turn it. Make one clear line of shafts from the <b>waterwheel</b> on the left to the <b>millstone</b> on the right. Lit pieces are connected to the wheel.</p>
+    <div class="millrow"><div class="endcol" aria-hidden="true"><div class="ec wheel" style="top:${(sr + 0.5) / h * 100}%"></div></div><div class="mgrid" id="mgrid" style="grid-template-columns:repeat(${w},minmax(0,1fr))"></div><div class="endcol" aria-hidden="true"><div class="ec stone" style="top:${(er + 0.5) / h * 100}%"></div></div></div>
+    <p class="mtip dim" id="mstat"></p><div class="gbtns"><button class="btn alt" id="mlater">Stop for now</button></div></div>`;
+  mini.classList.add('on');
+  const mg = $('mgrid');
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const b = document.createElement('button'); b.className = 'mt'; b.dataset.x = x; b.dataset.y = y; b.innerHTML = '<canvas width="40" height="40"></canvas>'; b.onclick = () => { mill.grid[y][x] = ROT(mill.grid[y][x]); mill.moves++; drawMill(); }; mg.appendChild(b); }
+  $('mclose2').onclick = $('mlater').onclick = () => { closeMini(); toast('You can come back to the mill any time.'); afterScene(); };
+  drawMill();
+}
+function millLit() {
+  const { w, h, grid, sr } = mill, lit = new Set(); if (!(grid[sr][0] & BIT.W)) return lit;
+  const q = [[0, sr]]; lit.add(`0,${sr}`);
+  while (q.length) { const [x, y] = q.shift(), m = grid[y][x];
+    for (const [b, dx, dy, ob] of [[BIT.N, 0, -1, BIT.S], [BIT.E, 1, 0, BIT.W], [BIT.S, 0, 1, BIT.N], [BIT.W, -1, 0, BIT.E]]) { if (!(m & b)) continue; const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue; if (!(grid[ny][nx] & ob)) continue; const k = `${nx},${ny}`; if (!lit.has(k)) { lit.add(k); q.push([nx, ny]); } } }
+  return lit;
+}
+function drawMill() {
+  const lit = millLit(), { w, h, grid, er } = mill, solved = lit.has(`${w - 1},${er}`) && (grid[er][w - 1] & BIT.E);
+  document.querySelectorAll('.mt').forEach(b => {
+    const x = +b.dataset.x, y = +b.dataset.y, m = grid[y][x], on = lit.has(`${x},${y}`), c = b.querySelector('canvas').getContext('2d');
+    c.fillStyle = on ? '#5a4632' : '#3d3328'; c.fillRect(0, 0, 40, 40);
+    c.strokeStyle = 'rgba(0,0,0,.25)'; c.strokeRect(0.5, 0.5, 39, 39);
+    const col = on ? '#ffcf5a' : '#9a8f80', dk = on ? '#b8862a' : '#6b6258';
+    for (const [bit, dx, dy] of [[BIT.N, 0, -1], [BIT.E, 1, 0], [BIT.S, 0, 1], [BIT.W, -1, 0]]) if (m & bit) { c.fillStyle = dk; c.fillRect(dx ? (dx > 0 ? 20 : 0) : 16, dy ? (dy > 0 ? 20 : 0) : 16, dx ? 20 : 8, dy ? 20 : 8); c.fillStyle = col; c.fillRect(dx ? (dx > 0 ? 20 : 0) : 18, dy ? (dy > 0 ? 20 : 0) : 18, dx ? 20 : 4, dy ? 20 : 4); }
+    c.fillStyle = dk; c.beginPath(); c.arc(20, 20, 9, 0, 6.29); c.fill(); c.fillStyle = col; for (let k = 0; k < 8; k++) { const a = k * 0.785 + (on && solved ? performance.now() / 300 : 0); c.fillRect(20 + Math.cos(a) * 9 - 2, 20 + Math.sin(a) * 9 - 2, 4, 4); } c.beginPath(); c.arc(20, 20, 7, 0, 6.29); c.fill(); c.fillStyle = dk; c.beginPath(); c.arc(20, 20, 2.5, 0, 6.29); c.fill();
+    b.setAttribute('aria-label', `Piece ${x + 1},${y + 1}${on ? ', connected' : ''}`);
+  });
+  const st = $('mstat'); if (st) st.textContent = solved ? 'It turns!' : `${lit.size} piece${lit.size === 1 ? '' : 's'} connected to the wheel.`;
+  if (solved && !mill.solved) { mill.solved = true; setTimeout(() => {
+    if (mill.level < 2) { toast(`Section ${mill.level + 1} done!`); millGame(mill.level + 1); }
+    else { closeMini(); G.flags.millSolved = true; save(); arrive('mill'); }
+  }, 700); }
+}
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+// ---------- 3. Gran's cipher box (logic puzzle) ----------
+const SYMS = ['sun', 'moon', 'wheat', 'fish', 'leaf', 'star'];
+const ANSWER = ['wheat', 'sun', 'fish', 'leaf'];
+let dials = [0, 0, 0, 0], tries = [];
+function symbol(c, s) {
+  const x = c.getContext('2d'); c.width = 16; c.height = 16; x.clearRect(0, 0, 16, 16); const P = (a, b, w, h, col) => { x.fillStyle = col; x.fillRect(a, b, w, h); };
+  if (s === 'sun') { P(5, 5, 6, 6, '#ffcf3a'); P(7, 1, 2, 3, '#ffcf3a'); P(7, 12, 2, 3, '#ffcf3a'); P(1, 7, 3, 2, '#ffcf3a'); P(12, 7, 3, 2, '#ffcf3a'); }
+  if (s === 'moon') { P(5, 3, 6, 10, '#e8e4c8'); P(8, 3, 4, 8, '#2b2440'); P(4, 5, 2, 6, '#e8e4c8'); }
+  if (s === 'wheat') { P(7, 3, 2, 12, '#d9a441'); for (let i = 0; i < 4; i++) { P(4, 3 + i * 2, 3, 1, '#f0c45a'); P(9, 3 + i * 2, 3, 1, '#f0c45a'); } }
+  if (s === 'fish') { P(3, 6, 8, 4, '#5fb3e0'); P(11, 5, 3, 6, '#5fb3e0'); P(5, 7, 1, 1, '#1e2a3a'); }
+  if (s === 'leaf') { P(4, 5, 8, 6, '#6cbf4a'); P(6, 3, 4, 2, '#6cbf4a'); P(6, 11, 4, 2, '#6cbf4a'); P(7, 4, 1, 10, '#3f8f45'); }
+  if (s === 'star') { P(7, 2, 2, 12, '#fff3a8'); P(2, 7, 12, 2, '#fff3a8'); P(5, 5, 6, 6, '#fff3a8'); }
+}
+function cipherGame() {
+  mini.innerHTML = `<div class="mwrap"><div class="mh"><b>Gran's box</b><button class="x" id="cclose" aria-label="Close">×</button></div>
+    <div class="cipher"><div class="verse"><p class="lab">Carved into the lid</p>
+      <ol><li>Night things have no place here. This box is for morning work.</li><li>The wheat is sown before the fish is caught.</li><li>The sun is never first to rise here, nor last to set.</li><li>The leaf hangs right beside the fish.</li><li>And the leaf falls last.</li></ol>
+      <p class="dim">Four dials, read left to right. Each symbol is used once.</p></div>
+    <div><div class="dials">${[0, 1, 2, 3].map(i => `<div class="dial"><button class="btn s" data-u="${i}" aria-label="Dial ${i + 1} up">▲</button><canvas data-d="${i}"></canvas><span data-n="${i}"></span><button class="btn s" data-dn="${i}" aria-label="Dial ${i + 1} down">▼</button></div>`).join('')}</div>
+    <div class="gbtns"><button class="btn" id="ctry">Try the lock</button><button class="btn alt" id="cback">Give up for now</button></div>
+    <ul class="tries" id="ctries"></ul></div></div></div>`;
+  mini.classList.add('on');
+  const draw = () => { document.querySelectorAll('[data-d]').forEach(c => symbol(c, SYMS[dials[+c.dataset.d]])); document.querySelectorAll('[data-n]').forEach(s => s.textContent = SYMS[dials[+s.dataset.n]]); $('ctries').innerHTML = tries.map(t => `<li>${t.s.join(' · ')} — ${t.r}</li>`).join(''); };
+  mini.querySelectorAll('[data-u]').forEach(b => b.onclick = () => { const i = +b.dataset.u; dials[i] = (dials[i] + 5) % 6; draw(); });
+  mini.querySelectorAll('[data-dn]').forEach(b => b.onclick = () => { const i = +b.dataset.dn; dials[i] = (dials[i] + 1) % 6; draw(); });
+  $('cclose').onclick = $('cback').onclick = () => { closeMini(); openMenu('cottage'); };
+  $('ctry').onclick = () => {
+    const pick = dials.map(d => SYMS[d]), right = pick.filter((s, i) => s === ANSWER[i]).length;
+    if (right === 4) { tries = []; closeMini(); G.flags.cipherSolved = true; save(); arrive('cottage'); return; }
+    tries.unshift({ s: pick, r: right ? `the lock clicks ${right} time${right > 1 ? 's' : ''}, but holds` : 'not a sound' }); tries = tries.slice(0, 5); draw();
+  };
+  draw();
+}
+
+// ---------- 4. Saturday market (strategy) ----------
+const STRANGERS = [
+  { name: 'A traveller', look: { skin: '#d8a27a', hair: '#6b4a32', style: 'short', coat: '#8a7a5a', bg: '#eadfc8' } },
+  { name: 'A Greyhaven cook', look: { skin: '#f0c4a0', hair: '#e8e6e2', style: 'bob', coat: '#ffffff', bg: '#f3e6d4' } },
+  { name: 'A farmer from upriver', look: { skin: '#a86f4c', hair: '#2e2420', style: 'cap', cap: '#a8473a', coat: '#5a7a4a', bg: '#dcebc8' } },
+  { name: 'A lady in fine gloves', look: { skin: '#f3d0b0', hair: '#d9a441', style: 'long', coat: '#b04a7a', bg: '#f2d6e6' } },
+  { name: 'A pedlar', look: { skin: '#c98e64', hair: '#1f1a18', style: 'messy', coat: '#7a5aa6', bg: '#e2d8f0' } }
+];
+const MTYPES = { thrifty: { lo: 0.82, hi: 1.02, cue: 'count their coins twice before saying hello' }, regular: { lo: 1.0, hi: 1.28, cue: 'seem in a cheerful mood' }, wealthy: { lo: 1.3, hi: 1.7, cue: 'have polished boots and very fine gloves' }, collector: { lo: 1.45, hi: 1.8, cue: 'inspect every leaf very closely' } };
+let mk = null;
+function marketGame() {
+  G.marketDone[G.day] = true;
+  const rnd = mulberry32(G.day * 97 + 5), friends = ['mira', 'odile', 'hollis', 'bram', 'pip', 'tomas'].filter(k => hearts(k) >= 1 || k === 'mira');
+  const queue = [];
+  for (let i = 0; i < 6; i++) {
+    const friend = i % 2 === 1 && friends.length ? friends[(rnd() * friends.length) | 0] : null;
+    const stock = invList(); const want = stock.length && rnd() < 0.8 ? stock[(rnd() * stock.length) | 0].c : Object.keys(CROPS)[(rnd() * 7) | 0];
+    const type = friend ? 'regular' : ['thrifty', 'regular', 'wealthy', 'collector', 'regular'][(rnd() * 5) | 0];
+    const st = friend ? null : STRANGERS[(rnd() * STRANGERS.length) | 0];
+    queue.push({ friend, st, want, type, f: MTYPES[type].lo + rnd() * (MTYPES[type].hi - MTYPES[type].lo), countered: false });
+  }
+  mk = { queue, i: 0, earned: 0, sold: 0, log: [] };
+  marketTurn();
+}
+function custName(c) { return c.friend ? CHARS[c.friend].name.split(' ')[0] : c.st.name; }
+function marketTurn(msg) {
+  const c = mk.queue[mk.i];
+  if (!c) { marketEnd(); return; }
+  const have = invList().filter(it => it.c === c.want);
+  const willing = (it) => CROPS[it.c].price * QMULT[it.q] * (c.type === 'collector' && it.q < 2 ? 0.85 : c.f) * (c.friend ? 1 + hearts(c.friend) * 0.02 : 1);
+  const lines = { radish: 'Radishes, if you\'ve got them. For pickling.', lettuce: 'I need a good lettuce. My mother-in-law is visiting, and she judges salads.', pea: 'Any peas? Fresh ones?', carrot: 'Carrots, please. Lots of carrots.', marigold: 'Something bright for the table. Marigolds?', strawberry: 'Strawberries! Please tell me you have strawberries.', sunflower: 'A sunflower. Don\'t ask why. Long story.' };
+  mini.innerHTML = `<div class="mwrap"><div class="mh"><b>Saturday market · customer ${mk.i + 1} of 6</b><span class="dim">Earned ${mk.earned}c</span></div>
+    <div class="market"><div class="cust"><canvas id="mkp"></canvas><div><b>${esc(custName(c))}</b><p>"${esc(lines[c.want])}"</p>${c.friend ? `<p class="dim">A friend: ${'♥'.repeat(hearts(c.friend))}. Overcharging friends costs friendship; a bargain earns it.</p>` : `<p class="dim">They ${MTYPES[c.type].cue}.</p>`}</div></div>
+    ${msg ? `<p class="mmsg">${esc(msg)}</p>` : ''}
+    <div id="mkbody"></div></div></div>`;
+  mini.classList.add('on');
+  const pc = $('mkp'); if (c.friend) drawPortrait(pc, c.friend); else { const keep = G.look; G.look = c.st.look; drawPortrait(pc, 'you'); G.look = keep; }
+  const body = $('mkbody');
+  if (!have.length) { body.innerHTML = `<p>You don't have any ${CROPS[c.want].name.toLowerCase()}.</p><p class="dim">"Pity. Maybe next week."</p><div class="gbtns"><button class="btn" id="mknext">Next customer</button></div>`; $('mknext').onclick = () => { mk.i++; marketTurn(); }; return; }
+  const it = have[0], base = CROPS[it.c].price * QMULT[it.q];
+  const offers = [['Bargain', 0.8], ['Fair', 1.0], ['Premium', 1.3], ['Steep', 1.6]].map(([n, m]) => ({ n, m, p: Math.round(base * m) }));
+  body.innerHTML = `<p>You have <b>${CROPS[it.c].name} ${STARS(it.q)}</b> ×${it.n}. Fair price is about ${Math.round(base)}c.</p><div class="offers">${offers.map((o, i) => `<button class="btn offer" data-o="${i}"><b>${o.n}</b><span>${o.p}c</span></button>`).join('')}</div>`;
+  body.querySelectorAll('.offer').forEach(b => b.onclick = () => {
+    const o = offers[+b.dataset.o], w = willing(it);
+    if (o.p <= w) sell(c, it, o.p, o.m);
+    else if (!c.countered) { c.countered = true; const counter = Math.max(1, Math.floor(w * 0.97)); body.innerHTML = `<p>"${o.p}? Hm. I'll give you ${counter}, and not a coin more."</p><div class="gbtns"><button class="btn" id="mkyes">Deal at ${counter}c</button><button class="btn alt" id="mkno">No thanks</button></div>`; $('mkyes').onclick = () => sell(c, it, counter, counter / base); $('mkno').onclick = () => { mk.log.push(`${custName(c)} walked away`); mk.i++; marketTurn(`${custName(c)} shrugs and wanders off.`); }; }
+  });
+}
+function sell(c, it, price, m) {
+  G.inv[it.k]--; G.coins += price; G.earned += price; mk.earned += price; mk.sold++;
+  let msg = `Sold to ${custName(c)} for ${price}c.`;
+  if (c.friend && m >= 1.3) { addAff(c.friend, -1); msg += ` ${custName(c)} pays, but looks a little hurt.`; }
+  if (c.friend && m <= 0.85) { addAff(c.friend, 1); msg += ` ${custName(c)} beams. ♥`; }
+  mk.log.push(msg); hud(); mk.i++; marketTurn(msg);
+}
+function marketEnd() {
+  addJournal(`Ran a market stall on day ${G.day}: sold ${mk.sold} item${mk.sold === 1 ? '' : 's'} for ${mk.earned} coins.`);
+  mini.innerHTML = `<div class="mwrap small"><div class="mh"><b>Market's over</b></div><div class="pbody"><p class="big">You earned <b>${mk.earned} coins</b> from ${mk.sold} sale${mk.sold === 1 ? '' : 's'}.</p><ul class="tries">${mk.log.map(l => `<li>${esc(l)}</li>`).join('')}</ul><div class="gbtns"><button class="btn" id="mkdone">Pack up the stall</button></div></div></div>`;
+  $('mkdone').onclick = () => { closeMini(); panels(); save(); afterScene(); };
+}
+
+// ---------- 5. The Spring Fair (finale) ----------
+let basket = [];
+function fairGame() {
+  const crowd = Object.values(G.aff).reduce((s, n) => s + n, 0);
+  const intro = [['nar', 'Fair day. Bunting hangs across the square, and the smell of baking drifts from Mira\'s stall.'],
+    ['nar', crowd >= 25 ? 'And people came. Neighbours, cousins from upriver, families who haven\'t been back in years. The square is full.' : crowd >= 12 ? 'A decent crowd turns up. More than last year, people keep saying.' : 'A thin crowd wanders between the stalls. Some faces you don\'t know yet.'],
+    has('millFixed') ? ['mira', 'Forty pies, {name}! FORTY! And the cartwheel tart. Real Hearthvale flour, milled in Hearthvale!'] : ['mira', 'Twelve pies. It\'s what Greyhaven flour could buy. They\'re very good pies, though.'],
+    ['odile', 'Growers, bring your baskets to the judges\' table! Up to three items each.']];
+  runLines(intro, basketPick);
+}
+function judgeScore(items) {
+  let s = 0; const notes = [];
+  for (const it of items) { const C = CROPS[it.c]; s += C.prestige * (1 + it.q); if (it.c === 'pea') { s += 4; notes.push('Odile lights up at the peas'); } if (it.c === 'lettuce') { s += 4; notes.push('Hollis holds the lettuce up to the light'); } if (it.c === 'strawberry') { s += 4; notes.push('Pell weighs a strawberry and nods despite himself'); } if (it.q === 3) { s += 2; } }
+  if (new Set(items.map(i => i.c)).size === 3) { s += 3; notes.push('the judges like the variety'); }
+  return { s, notes };
+}
+function basketPick() {
+  const items = invList();
+  mini.innerHTML = `<div class="mwrap"><div class="mh"><b>Your basket for the produce contest</b></div>
+    <div class="fair"><div class="judges">${[['odile', has('knowJudges') ? 'Loves peas' : '?'], ['hollis', has('knowJudges') ? 'Loves lettuce' : '?'], ['corvin', has('knowJudges') ? 'Values what sells' : '?']].map(([k, t]) => `<div class="judge"><canvas class="por" data-p="${k}"></canvas><b>${CHARS[k].name.split(' ')[0]}</b><span class="dim">${t}</span></div>`).join('')}</div>
+    <p class="dim">Pick up to three items. Quality, a judge's favourite, and variety all count.</p>
+    <div class="pick">${items.length ? items.map(it => `<button class="pitem" data-k="${it.k}" aria-pressed="${basket.includes(it.k)}"><canvas class="spr" data-c="${it.c}" width="16" height="16"></canvas><span>${CROPS[it.c].name}</span><span class="q">${STARS(it.q)}</span></button>`).join('') : '<p>You have nothing to enter. You\'ll cheer for everyone else.</p>'}</div>
+    <div class="gbtns"><button class="btn" id="fsubmit">${basket.length ? `Enter ${basket.length} item${basket.length > 1 ? 's' : ''}` : 'Enter nothing'}</button></div></div></div>`;
+  mini.classList.add('on'); document.querySelectorAll('canvas.por').forEach(c => drawPortrait(c, c.dataset.p)); paintSprites();
+  mini.querySelectorAll('.pitem').forEach(b => b.onclick = () => { const k = b.dataset.k; if (basket.includes(k)) basket = basket.filter(x => x !== k); else if (basket.length < 3) basket.push(k); basketPick(); });
+  $('fsubmit').onclick = () => { const its = basket.map(k => { const [c, q] = k.split(':'); return { c, q: +q }; }); basket = []; closeMini(); fairResults(its); };
+}
+function fairResults(items) {
+  const { s: bs, notes } = judgeScore(items);
+  const crowd = Object.values(G.aff).reduce((s, n) => s + n, 0);
+  const pies = has('millFixed') ? 10 : hearts('mira') >= 4 ? 5 : 2;
+  let total = bs + pies + Math.round(crowd / 2) + (has('helpedBram') ? 4 : 0) + (has('stoodUp') ? 2 : 0) - (has('corvinMaybe') ? 2 : 0);
+  const ribbon = bs >= 26 ? 'blue' : bs >= 16 ? 'red' : null;
+  const tier = total >= 55 ? 'best' : total >= 38 ? 'good' : 'poor';
+  G.ending = { tier, total, basket: bs, ribbon, crowd };
+  const lines = [];
+  lines.push(['nar', items.length ? `The judges taste and poke and confer. ${notes.length ? notes.join('; ') + '.' : 'They nod politely.'}` : 'You cheer from the side as the other baskets are judged.']);
+  if (ribbon === 'blue') lines.push(['odile', 'First prize, the blue ribbon, goes to... Willowmere! {name}, your gran would be bursting.']);
+  else if (ribbon === 'red') lines.push(['odile', 'Second prize, the red ribbon, to Willowmere! A fine first season.']);
+  else lines.push(['odile', 'First prize to Mrs. Tabb\'s marrows, again. Better luck next year, {name}.']);
+  if (has('helpedBram')) lines.push(['bram', 'Told everyone how you hauled my boats in the storm. Half the dock came just to shake your hand.']);
+  if (has('millFixed')) lines.push(['tomas', '...The flour\'s good. Mira says so. She\'s said so eleven times.']);
+  lines.push(['nar', 'That evening, the council meets on the steps of the hall while the music plays.']);
+  if (tier === 'best') lines.push(['odile', 'The vote is seven to nothing. The commons stays with Hearthvale. I haven\'t seen the square this full since I was a girl.']);
+  else if (tier === 'good') lines.push(['odile', 'Four votes to three. The commons stays with Hearthvale. Close. But close is enough.']);
+  else lines.push(['odile', 'The council has... postponed the vote until autumn. It wasn\'t enough. Not yet.']);
+  lines.push(['nar', 'As the lanterns come on, Corvin Pell finds you at the edge of the square.']);
+  lines.push(['corvin', tier === 'poor' ? 'Autumn, then. I\'m a patient man.' : 'Congratulations. Truly. A remarkable little fair.']);
+  lines.push(['corvin', 'But my employers were never very interested in the commons, {name}. Not really.']);
+  lines.push(['nar', 'He looks past you, down the lane, toward the river and the dark shape of the willow.']);
+  lines.push(['corvin', 'Good night, heir of Willowmere.']);
+  if (has('suspectCorvin')) lines.push(['nar', 'Walking home, you notice the soil under the willow has been turned over. Freshly. Someone has been digging again.']);
+  if (has('knowRhyme')) lines.push(['nar', 'Where the willow drinks, the old iron sleeps. And the hearth will wake when the village is whole. Tonight, for the first time, the village felt whole.']);
+  else if (has('cipherSolved')) lines.push(['nar', 'Where the willow drinks, the old iron sleeps. Bram has the other half of the rhyme. Maybe it\'s time to earn it.']);
+  else lines.push(['nar', 'Somewhere in the attic, Gran\'s box is still locked.']);
+  addJournal(`The Spring Fair. ${ribbon ? `Won the ${ribbon} ribbon.` : 'No ribbon this year.'} ${tier === 'poor' ? 'The council postponed the vote.' : 'The council voted to keep the commons.'}`);
+  runLines(lines, endCard);
+}
+function endCard() {
+  G.done = true; save();
+  const e = G.ending, code = saveCode();
+  mini.innerHTML = `<div class="mwrap small"><div class="mh"><b>${BOOK.title} — complete</b></div><div class="pbody endc">
+    <p class="big">${e.tier === 'best' ? 'The best fair in living memory.' : e.tier === 'good' ? 'The commons is saved, just.' : 'The fight goes on into autumn.'}</p>
+    <div class="estats"><div><span>Fair score</span><b>${e.total}</b></div><div><span>Ribbon</span><b>${e.ribbon ? e.ribbon : 'none'}</b></div><div><span>Coins</span><b>${G.coins}</b></div><div><span>Friendship</span><b>${e.crowd} ♥</b></div></div>
+    <p>Mill: <b>${has('millFixed') ? 'turning' : 'still broken'}</b> · Gran's box: <b>${has('cipherSolved') ? 'opened' : 'locked'}</b> · Bram's rhyme: <b>${has('knowRhyme') ? 'learned' : 'not yet'}</b> · Storm: <b>${has('helpedBram') ? 'helped Bram' : has('coveredGarden') ? 'saved the garden' : '—'}</b></p>
+    <p>Your story continues in <b>${BOOK.next}</b>. Keep this code: the next book can read it, so your choices, friendships and secrets carry over.</p>
+    <textarea id="scode" readonly rows="3">${code}</textarea>
+    <div class="gbtns"><button class="btn" id="copyc">Copy save code</button><button class="btn alt" id="again">Play again</button></div></div></div>`;
+  mini.classList.add('on');
+  $('copyc').onclick = () => { const t = $('scode'); t.select(); (navigator.clipboard ? navigator.clipboard.writeText(t.value) : Promise.reject()).then(() => toast('Copied'), () => toast('Select the text and copy it')); };
+  $('again').onclick = () => { try { localStorage.removeItem(SAVE_KEY); } catch (e) { } closeMini(); G = null; titleScreen(); };
+}
+function saveCode() {
+  const keep = ['millFixed', 'cipherSolved', 'knowRhyme', 'helpedBram', 'coveredGarden', 'corvinFirm', 'corvinAsked', 'corvinMaybe', 'stoodUp', 'suspectCorvin', 'pipFriend', 'tomasTeam', 'askedKey'];
+  const data = { b: BOOK.id, n: G.name, l: LOOKS.indexOf(LOOKS.find(l => l.hair === G.look.hair && l.coat === G.look.coat)), f: keep.filter(has), a: G.aff, e: G.ending.tier, r: G.ending.ribbon, c: G.coins };
+  return 'HV1-' + btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+}
+
+document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => goTo(b.dataset.go));
+buildBase(); titleScreen(); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
