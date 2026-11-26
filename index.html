@@ -3,8 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HN — Things I've Made</title>
+<title>Rezurrekt's Madness</title>
+<meta property="og:title" content="Rezurrekt's Madness">
+<meta property="og:description" content="Games, simulations and small tools, built and shared by HN.">
 <meta name="description" content="Games, simulations and small tools, built and shared by HN.">
+<script>
+// Apply the saved theme (or the device setting) before the page paints, so there is no flash
+(function () { let t = null; try { t = localStorage.getItem('theme'); } catch (e) {}
+  if (t !== 'light' && t !== 'dark') t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  document.documentElement.dataset.theme = t; })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -13,11 +21,28 @@
   --bg: #eceef1; --surface: #ffffff; --line: #d9dde3;
   --ink: #15181d; --ink-2: #48505b; --ink-3: #6f7782;
   --hi: #2a78d6; --dot: #b3b9c2;
+  --soft: #f4f5f7; --line-hover: #c4cad2; --shadow: rgba(21,24,29,.10);
+  --t-grey: #b3b9c2; --t-blue: #2a78d6; --t-ink: #6f7782; --t-tile: #e4e7eb; --t-white: #ffffff; --t-line: #d9dde3;
   --display: "Instrument Serif", Georgia, serif;
   --ui: "Public Sans", system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, monospace;
 }
+html[data-theme="dark"] {
+  --bg: #12151a; --surface: #1b1f26; --line: #2c323b;
+  --ink: #eceef1; --ink-2: #b4bbc5; --ink-3: #8a929d;
+  --hi: #5aa2f0; --dot: #4a515c;
+  --soft: #161a20; --line-hover: #3d4550; --shadow: rgba(0,0,0,.45);
+  --t-grey: #59616c; --t-blue: #5aa2f0; --t-ink: #9aa2ad; --t-tile: #252a32; --t-white: #e9edf2; --t-line: #313842;
+  color-scheme: dark;
+}
 * { box-sizing: border-box; }
+html, body { transition: background-color .2s ease, color .2s ease; }
+.theme-btn { position: fixed; top: 14px; left: 14px; z-index: 10; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); cursor: pointer; box-shadow: 0 4px 14px var(--shadow); }
+.theme-btn:hover { color: var(--ink); border-color: var(--line-hover); }
+.theme-btn:focus-visible { outline: 2px solid var(--hi); outline-offset: 3px; }
+.theme-btn svg { width: 18px; height: 18px; }
+.theme-btn .moon, html[data-theme="dark"] .theme-btn .sun { display: none; }
+html[data-theme="dark"] .theme-btn .moon { display: block; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--ui); font-size: 16px; line-height: 1.55; }
 .wrap { max-width: 1040px; margin: 0 auto; padding: 72px 24px 56px; }
 header h1 { font-family: var(--display); font-weight: 400; font-size: clamp(48px, 8vw, 84px); line-height: .95; margin: 0; letter-spacing: -.01em; }
@@ -26,25 +51,29 @@ header p { color: var(--ink-2); max-width: 56ch; font-size: 17px; margin: 16px 0
 .label { font-size: 12.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-3); margin: 56px 0 14px; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
 .card { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; color: inherit; text-decoration: none; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
-.card:hover { transform: translateY(-3px); box-shadow: 0 14px 34px rgba(21,24,29,.10); border-color: #c4cad2; }
+.card:hover { transform: translateY(-3px); box-shadow: 0 14px 34px var(--shadow); border-color: var(--line-hover); }
 .card:focus-visible { outline: 2px solid var(--hi); outline-offset: 3px; }
-.thumb { height: 170px; background: #f4f5f7; border-bottom: 1px solid var(--line); display: block; }
+.thumb { height: 170px; background: var(--soft); border-bottom: 1px solid var(--line); display: block; }
 .thumb canvas { width: 100%; height: 100%; display: block; }
 .body { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
 .body h2 { font-family: var(--display); font-weight: 400; font-size: 30px; line-height: 1.05; margin: 0; }
 .body p { margin: 0; color: var(--ink-2); font-size: 15px; }
 .meta { margin-top: auto; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--ink-3); }
 .tags { display: flex; gap: 6px; flex-wrap: wrap; }
-.tags span { font-family: var(--mono); font-size: 11.5px; background: #f4f5f7; border: 1px solid var(--line); border-radius: 99px; padding: 1px 8px; }
+.tags span { font-family: var(--mono); font-size: 11.5px; background: var(--soft); border: 1px solid var(--line); border-radius: 99px; padding: 1px 8px; }
 .go { color: var(--hi); font-weight: 600; }
 .card.soon { border-style: dashed; background: transparent; pointer-events: none; }
 .card.soon .body { justify-content: center; align-items: center; text-align: center; min-height: 260px; color: var(--ink-3); }
 footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--ink-3); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
 footer a { color: var(--ink-2); }
-@media (prefers-reduced-motion: reduce) { .card { transition: none; } .card:hover { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .card, html, body { transition: none; } .card:hover { transform: none; } }
 </style>
 </head>
 <body>
+<button class="theme-btn" id="themeBtn" type="button" aria-label="Switch to dark theme" title="Switch theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/></svg>
+</button>
 <div class="wrap">
   <header>
     <h1>Things I've <em>made</em></h1>
@@ -53,6 +82,17 @@ footer a { color: var(--ink-2); }
 
   <div class="label">Games</div>
   <div class="grid">
+    <a class="card" href="games/bramblecove/">
+      <span class="thumb"><canvas data-thumb="bramblecove" aria-hidden="true"></canvas></span>
+      <span class="body">
+        <h2>Bramblecove Café</h2>
+        <p>A cozy pixel merge game made for phones. A storm washed the colour out of a harbour town. Merge seeds, tea and baked goods to fill orders, spend stars to bring the town back, and make choices that change how the story ends.</p>
+        <span class="meta">
+          <span class="tags"><span>merge</span><span>story</span></span>
+          <span class="go">Open →</span>
+        </span>
+      </span>
+    </a>
     <a class="card" href="games/saltmere/">
       <span class="thumb"><canvas data-thumb="saltmere" aria-hidden="true"></canvas></span>
       <span class="body">
@@ -174,9 +214,11 @@ footer a { color: var(--ink-2); }
 </div>
 
 <script>
-// Small preview drawings for each card, in the page's grey + blue palette
+// Small preview drawings for each card, in the page's grey + blue palette (colours follow the theme)
 (function () {
-  const GREY = '#b3b9c2', BLUE = '#2a78d6', INK = '#6f7782';
+  let GREY, BLUE, INK, TILE, WHITE, LINE;
+  function readColours() { const s = getComputedStyle(document.documentElement), v = n => s.getPropertyValue(n).trim();
+    GREY = v('--t-grey'); BLUE = v('--t-blue'); INK = v('--t-ink'); TILE = v('--t-tile'); WHITE = v('--t-white'); LINE = v('--t-line'); }
   function rng(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return s / 2147483647; }; }
   const T = {
     lives(x, w, h) {
@@ -195,7 +237,7 @@ footer a { color: var(--ink-2); }
       const lx = w * .3, ly = h * .62;
       x.globalAlpha = .18; x.fillStyle = BLUE; x.beginPath(); x.moveTo(lx, ly - 70); x.lineTo(w, h * .05); x.lineTo(w, h * .42); x.fill();
       x.globalAlpha = 1;
-      for (let i = 0; i < 5; i++) { x.fillStyle = i % 2 ? '#ffffff' : BLUE; x.fillRect(lx - 7, ly - 14 - i * 12, 14, 12); }
+      for (let i = 0; i < 5; i++) { x.fillStyle = i % 2 ? WHITE : BLUE; x.fillRect(lx - 7, ly - 14 - i * 12, 14, 12); }
       x.fillStyle = INK; x.fillRect(lx - 9, ly - 78, 18, 8); x.fillStyle = '#ffd166'; x.fillRect(lx - 5, ly - 76, 10, 5);
       x.strokeStyle = INK; x.strokeRect(lx - 7.5, ly - 74.5, 15, 74);
     },
@@ -203,9 +245,9 @@ footer a { color: var(--ink-2); }
       const R = rng(11), cw = 34, gap = 8, cols = 5, rows = 3, ox = (w - (cols * cw + (cols - 1) * gap)) / 2, oy = (h - (rows * cw + (rows - 1) * gap)) / 2;
       for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
         const X = ox + c * (cw + gap), Y = oy + r * (cw + gap), on = R() < .35;
-        x.globalAlpha = 1; x.fillStyle = on ? BLUE : '#e4e7eb'; x.fillRect(X, Y, cw, cw);
+        x.globalAlpha = 1; x.fillStyle = on ? BLUE : TILE; x.fillRect(X, Y, cw, cw);
         if (!on) { x.fillStyle = GREY; for (let k = 0; k < 3; k++) { x.beginPath(); x.arc(X + 9 + k * 8, Y + cw / 2 + (k % 2 ? -4 : 4), 2.6, 0, 7); x.fill(); } }
-        else { x.fillStyle = '#fff'; x.globalAlpha = .9; x.beginPath(); x.arc(X + cw / 2, Y + cw / 2, 5, 0, 7); x.fill(); }
+        else { x.fillStyle = WHITE; x.globalAlpha = .9; x.beginPath(); x.arc(X + cw / 2, Y + cw / 2, 5, 0, 7); x.fill(); }
       }
     },
     island(x, w, h) {
@@ -249,16 +291,26 @@ footer a { color: var(--ink-2); }
         x.beginPath(); x.arc(px, py, 3.4, 0, 7); x.fill();
       }
     },
+    bramblecove(x, w, h) {
+      // a merge board: pairs of tiles climbing to a bigger piece
+      const cs = 22, gap = 5, cols = 8, rows = 4, ox = (w - (cols * cs + (cols - 1) * gap)) / 2, oy = (h - (rows * cs + (rows - 1) * gap)) / 2, R = rng(13);
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        const X = ox + c * (cs + gap), Y = oy + r * (cs + gap), k = R();
+        x.globalAlpha = 1; x.fillStyle = TILE; x.fillRect(X, Y, cs, cs);
+        if (k < .32) { const s = k < .1 ? 14 : k < .2 ? 10 : 6; x.fillStyle = k < .1 ? BLUE : GREY; x.fillRect(X + (cs - s) / 2, Y + (cs - s) / 2, s, s); }
+      }
+    },
     mindflow(x, w, h) {
       const R = rng(4), cols = 7, rows = 4, cw = 30, ch = 26, gap = 6, ox = (w - (cols * cw + (cols - 1) * gap)) / 2, oy = (h - (rows * ch + (rows - 1) * gap)) / 2;
       for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) { const X = ox + c * (cw + gap), Y = oy + r * (ch + gap);
-        x.globalAlpha = 1; x.fillStyle = '#fff'; x.fillRect(X, Y, cw, ch); x.strokeStyle = '#d9dde3'; x.strokeRect(X + .5, Y + .5, cw - 1, ch - 1);
+        x.globalAlpha = 1; x.fillStyle = WHITE === '#ffffff' ? '#ffffff' : TILE; x.fillRect(X, Y, cw, ch); x.strokeStyle = LINE; x.strokeRect(X + .5, Y + .5, cw - 1, ch - 1);
         const k = R(); if (k < .3) { x.fillStyle = BLUE; x.globalAlpha = .8; x.fillRect(X + 4, Y + 6, cw - 8, 5); }
         if (k > .75) { x.fillStyle = GREY; x.globalAlpha = .8; x.fillRect(X + 4, Y + 14, cw - 12, 4); } }
     }
   };
   const cvs = [...document.querySelectorAll('canvas[data-thumb]')];
   function drawAll() {
+    readColours();
     for (const c of cvs) {
       const f = T[c.dataset.thumb]; if (!f) continue;
       const dpr = window.devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
@@ -268,6 +320,15 @@ footer a { color: var(--ink-2); }
     }
   }
   drawAll();
+  const btn = document.getElementById('themeBtn');
+  function label() { const dark = document.documentElement.dataset.theme === 'dark'; btn.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme'); }
+  label();
+  btn.addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label(); drawAll();
+  });
   let t; window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(drawAll, 120); });
 })();
 </script>
